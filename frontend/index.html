@@ -567,7 +567,7 @@
   const devSelect = (list, cur, onchange, empty) => { const s = el('select', { class: 'dev-select', onchange: (e) => onchange(e.target.value) }); if (!list.length) s.append(el('option', { value: '' }, empty)); list.forEach((d, i) => s.append(el('option', { value: d.deviceId, selected: d.deviceId === cur ? '' : null }, d.label || (empty + ' ' + (i + 1))))); return s; };
   async function goLive(c) {
     if (goingLive) return;
-    if (c.live && c.provider === 'livekit' && !pubRoom) { try { const creds = await api('/api/stream/creds?token=' + c.address); return credsModal(c, creds); } catch (e) { return toast(e.message); } }
+    if (c.live && c.provider === 'livekit' && !pubRoom) { try { const creds = await api('/api/stream/creds?token=' + c.address); if (!creds.stream_key) return toast('You are streaming from a browser tab — use the controls on the player'); return credsModal(c, creds); } catch (e) { return toast(e.message); } }
     let mode = 'webcam', cam = '', mic = '', previewStream = null;
     const preview = el('video', { class: 'preview', playsinline: '' }); preview.muted = true; preview.autoplay = true;
     const title = el('input', { class: 'field', placeholder: 'Enter a descriptive title…', maxlength: 80, oninput: () => { next.disabled = !title.value.trim(); } });

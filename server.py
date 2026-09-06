@@ -257,7 +257,9 @@ def cf(method: str, path: str, data=None):
 
 
 def _provider(s) -> str:
-    return "livekit" if ("ingress_id" in s.keys() and s["ingress_id"]) else "cf"
+    if "ingress_id" in s.keys() and s["ingress_id"]:
+        return "livekit"
+    return "livekit" if (lk.ENABLED and not s["input_uid"]) else "cf"
 
 
 def _creds(s: dict) -> dict:
@@ -286,20 +288,21 @@ async def h_stream_start(request):
     title = str(body.get("title") or "")[:80]
     async with _start_locks.setdefault(addr, asyncio.Lock()):      # one live input per coin, even under a click storm
         s = _stream_row(addr)
-        if lk.ENABLED and not (s and s["ingress_id"]):
-            try:
-                ing = await asyncio.to_thread(lk.create_ingress, addr, f"{t['symbol']} {t['name']}")
-            except Exception as exc:  # noqa: BLE001
-                print(f"[lk] create_ingress failed: {exc}")
-                return web.json_response({"error": "LiveKit refused the API key/secret — check LIVEKIT_* variables"}, status=503)
-            if s:
+        mode = str(body.get("mode") or "rtmp")
+        if lk.ENABLED:
+            if not s:
+                x("INSERT OR IGNORE INTO streams(address,input_uid,rtmps_url,stream_key,whip_url,hls_url,whep_url,title,wallet,created_ts) VALUES(?,?,?,?,?,?,?,?,?,?)",
+                  (addr, "", "", "", "", "", "", title, w, int(time.time())))
+                s = _stream_row(addr)
+            if mode == "rtmp" and not s["ingress_id"]:
+                try:
+                    ing = await asyncio.to_thread(lk.create_ingress, addr, f"{t['symbol']} {t['name']}")
+                except Exception as exc:  # noqa: BLE001
+                    print(f"[lk] create_ingress failed: {exc}")
+                    msg = "All streaming slots are busy right now, try again in a minute" if "resource_exhausted" in str(exc) else "LiveKit refused the request — check LIVEKIT_* variables"
+                    return web.json_response({"error": msg}, status=503)
                 x("UPDATE streams SET ingress_id=?, rtmps_url=?, stream_key=? WHERE address=?", (ing["ingress_id"], ing["url"], ing["stream_key"], addr))
-            else:
-                x("INSERT OR IGNORE INTO streams(address,input_uid,rtmps_url,stream_key,whip_url,hls_url,whep_url,title,wallet,created_ts,ingress_id) VALUES(?,?,?,?,?,?,?,?,?,?,?)",
-                  (addr, "", ing["url"], ing["stream_key"], "", "", "", title, w, int(time.time()), ing["ingress_id"]))
-            s = _stream_row(addr)
-            if s["ingress_id"] != ing["ingress_id"]:
-                asyncio.create_task(asyncio.to_thread(lk.delete_ingress, ing["ingress_id"]))
+                s = _stream_row(addr)
         if not s:
             li = await asyncio.to_thread(cf, "POST", "", {"meta": {"name": f"{t['symbol']} {addr}"}, "recording": {"mode": "automatic"}, "preferLowLatency": False})
             x("INSERT OR IGNORE INTO streams(address,input_uid,rtmps_url,stream_key,whip_url,hls_url,whep_url,title,wallet,created_ts) VALUES(?,?,?,?,?,?,?,?,?,?)",
@@ -350,12 +353,15 @@ async def h_stream_reset(request):
     t = db.get_token(C, addr)
     async with _start_locks.setdefault(addr, asyncio.Lock()):
         try:
+            await asyncio.to_thread(lk.delete_ingress, s["ingress_id"])
+        except Exception as exc:  # noqa: BLE001
+            print(f"[lk] delete_ingress failed: {str(exc)[:100]}")
+        x("UPDATE streams SET ingress_id='', rtmps_url='', stream_key='' WHERE address=?", (addr,))
+        try:
             ing = await asyncio.to_thread(lk.create_ingress, addr, f"{t['symbol']} {t['name']}")
         except Exception as exc:  # noqa: BLE001
             return web.json_response({"error": f"LiveKit: {str(exc)[:100]}"}, status=503)
-        old = s["ingress_id"]
         x("UPDATE streams SET ingress_id=?, rtmps_url=?, stream_key=? WHERE address=?", (ing["ingress_id"], ing["url"], ing["stream_key"], addr))
-        asyncio.create_task(asyncio.to_thread(lk.delete_ingress, old))
     return web.json_response(_creds(_stream_row(addr)), headers=NO_CACHE)
 
 
@@ -367,8 +373,18 @@ async def h_stream_stop(request):
     if not w or not s or s["wallet"] != w:
         return web.json_response({"error": "not yours"}, status=403)
     x("UPDATE streams SET ended_ts=?, live=0 WHERE address=?", (int(time.time()), addr))
+    if s["ingress_id"]:                                   # ingress objects are a scarce LiveKit resource: free it, next Go live mints a new key
+        asyncio.create_task(asyncio.to_thread(_release_ingress, addr, s["ingress_id"]))
     await broadcast_all({"t": "live", "token": addr, "live": False})
     return web.json_response({"ok": True})
+
+
+def _release_ingress(addr: str, ingress_id: str) -> None:
+    try:
+        lk.delete_ingress(ingress_id)
+    except Exception as exc:  # noqa: BLE001
+        print(f"[lk] delete_ingress failed: {str(exc)[:100]}")
+    x("UPDATE streams SET ingress_id='', rtmps_url='', stream_key='' WHERE address=? AND ingress_id=?", (addr, ingress_id))
 
 
 async def track_head():
