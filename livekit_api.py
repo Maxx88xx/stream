@@ -54,11 +54,20 @@ def _twirp(service: str, method: str, body: dict, grant: dict) -> dict:
 
 def create_ingress(room: str, name: str) -> dict:
     """RTMP ingress bound to `room`; returns {ingress_id, url, stream_key}. The
-    creator publishes as participant 'creator' — that is what live detection looks for."""
-    r = _twirp("Ingress", "CreateIngress", {"input_type": "RTMP_INPUT", "name": name[:64], "room_name": room,
-                                             "participant_identity": "creator", "participant_name": name[:64],
-                                             "enable_transcoding": True}, {"ingressAdmin": True})
-    return {"ingress_id": r["ingress_id"], "url": r["url"], "stream_key": r["stream_key"]}
+    creator publishes as participant 'creator' — that is what live detection looks for.
+    LiveKit Cloud caps ingress objects and counts just-deleted ones for a while,
+    so a resource_exhausted answer is retried a few times."""
+    for attempt in range(4):
+        try:
+            r = _twirp("Ingress", "CreateIngress", {"input_type": "RTMP_INPUT", "name": name[:64], "room_name": room,
+                                                     "participant_identity": "creator", "participant_name": name[:64],
+                                                     "enable_transcoding": True}, {"ingressAdmin": True})
+            return {"ingress_id": r["ingress_id"], "url": r["url"], "stream_key": r["stream_key"]}
+        except RuntimeError as exc:
+            if "resource_exhausted" not in str(exc) or attempt == 3:
+                raise
+            time.sleep(2.5 * (attempt + 1))
+    raise RuntimeError("unreachable")
 
 
 def delete_ingress(ingress_id: str) -> None:
