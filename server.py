@@ -212,7 +212,8 @@ async def h_candles(request):
     if not t:
         return web.json_response({"error": "unknown coin"}, status=404)
     tf = int(request.query.get("tf") or 60)
-    tf = tf if tf in (60, 300, 900, 3600) else 60
+    tf = tf if tf in (5, 15, 60, 300, 900, 3600) else 60
+    limit = max(10, min(2000, int(request.query.get("limit") or 300)))
     lock = _candle_locks.setdefault(addr, asyncio.Lock())
     async with lock:
         head, quote = await asyncio.gather(asyncio.to_thread(chain.block_number),
@@ -229,7 +230,7 @@ async def h_candles(request):
                 with _lock:
                     market.store_trades(C, t["curve"], rows, to)
         with _lock:
-            rows = market.candles(C, t["curve"], quote, tf, head)
+            rows = market.candles(C, t["curve"], quote, tf, head, limit)
             trades = [dict(r) for r in C.execute("SELECT block, side, quote, tokens FROM trades WHERE curve=? ORDER BY block DESC, idx DESC LIMIT 30", (t["curve"],))]
     dec, usd, sym = quote
     for tr in trades:
