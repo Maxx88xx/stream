@@ -281,16 +281,31 @@ async def h_stream_start(request):
     async with _start_locks.setdefault(addr, asyncio.Lock()):      # one live input per coin, even under a click storm
         s = _stream_row(addr)
         if not s:
-            li = await asyncio.to_thread(cf, "POST", "", {"meta": {"name": f"{t['symbol']} {addr}"}, "recording": {"mode": "automatic"}})
+            li = await asyncio.to_thread(cf, "POST", "", {"meta": {"name": f"{t['symbol']} {addr}"}, "recording": {"mode": "automatic"}, "preferLowLatency": True})
             x("INSERT OR IGNORE INTO streams(address,input_uid,rtmps_url,stream_key,whip_url,hls_url,whep_url,title,wallet,created_ts) VALUES(?,?,?,?,?,?,?,?,?,?)",
               (addr, li["uid"], li["rtmps"]["url"], li["rtmps"]["streamKey"], li["webRTC"]["url"], li["playback"]["hls"],
                li["webRTCPlayback"]["url"], title, w, int(time.time())))
             s = _stream_row(addr)
             if s["input_uid"] != li["uid"]:                          # lost a race anyway: drop the extra input
                 asyncio.create_task(asyncio.to_thread(cf, "DELETE", f"/{li['uid']}"))
+        else:                                                        # older inputs: switch them to Low-Latency HLS too
+            asyncio.create_task(asyncio.to_thread(_ensure_ll, s["input_uid"]))
         x("UPDATE streams SET title=?, started_ts=?, ended_ts=0 WHERE address=?", (title, int(time.time()), addr))
         s = _stream_row(addr)
     return web.json_response(_creds(s), headers=NO_CACHE)
+
+
+_ll_done: set = set()
+
+
+def _ensure_ll(uid: str) -> None:
+    if uid in _ll_done:
+        return
+    try:
+        cf("PUT", f"/{uid}", {"recording": {"mode": "automatic"}, "preferLowLatency": True})
+        _ll_done.add(uid)
+    except Exception as exc:  # noqa: BLE001
+        print(f"[cf] preferLowLatency update failed for {uid}: {exc}")
 
 
 async def h_stream_creds(request):

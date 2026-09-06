@@ -464,10 +464,13 @@
         el('button', { class: 'pbtn primary', onclick: async () => { try { const s = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true }); await publish(creds.whip_url, s, preview); status.textContent = 'Publishing screen'; } catch (e) { toast(e.message); } } }, 'Screen'),
         el('button', { class: 'pbtn', onclick: async () => { await stopPublish(); status.textContent = 'Not publishing'; } }, 'Stop')),
         el('p', { class: 'hint' }, 'Viewers see you within ~10 seconds. Keep this tab open while live.'));
-      else body.append(el('p', { class: 'hint' }, 'OBS → Settings → Stream → Service: Custom. For low latency set Output → Advanced: Keyframe Interval 1 s, Rate Control CBR 2500–4500 Kbps, Tune zerolatency, Profile main. Default keyframe “0 (auto)” adds 30+ seconds of delay.'),
+      else body.append(
+        el('p', { class: 'hint', style: 'margin-top:0' }, el('b', { style: 'font-weight:500;color:var(--text-primary)' }, 'Option A — WHIP, delay under 1 second (OBS 31 or newer).'), ' Settings → Stream: Service ', el('b', { style: 'font-weight:500;color:var(--text-primary)' }, 'WHIP'), ', Server = the URL below, Bearer Token empty. Output: Audio encoder FFmpeg Opus, Video x264 or NVENC, CBR 3000–6000 Kbps, Keyframe Interval 1 s, B-frames 0.'),
+        el('div', { class: 'key' }, 'WHIP URL', el('code', {}, '•'.repeat(24)), el('button', { class: 'pbtn', onclick: () => { navigator.clipboard?.writeText(creds.whip_url); toast('WHIP URL copied'); } }, 'Copy')),
+        el('p', { class: 'hint' }, el('b', { style: 'font-weight:500;color:var(--text-primary)' }, 'Option B — RTMPS, delay 5–10 seconds, gets recorded.'), ' Service Custom, Server + Stream key below. Output → Advanced: Keyframe Interval 2 s, B-frames 0, CBR. Keyframe “0 (auto)” makes the delay 30+ seconds.'),
         el('div', { class: 'key' }, 'Server', el('code', {}, creds.rtmps_url), el('button', { class: 'pbtn', onclick: () => { navigator.clipboard?.writeText(creds.rtmps_url); toast('Copied'); } }, 'Copy')),
         el('div', { class: 'key' }, 'Stream key', el('code', {}, '•'.repeat(24)), el('button', { class: 'pbtn', onclick: () => { navigator.clipboard?.writeText(creds.stream_key); toast('Key copied'); } }, 'Copy')),
-        el('p', { class: 'hint' }, 'Start streaming in OBS; the page flips to LIVE automatically. The key is permanent — never share it.'));
+        el('p', { class: 'hint' }, 'Start streaming in OBS; the page flips to LIVE on its own. These credentials are permanent — never share them.'));
     };
     paint();
     const tabs = el('div', { class: 'tabs-pill', style: 'margin-bottom:16px' }, el('div', { class: 'tabs-list', style: 'width:100%' },
