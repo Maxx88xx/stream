@@ -130,3 +130,51 @@ def stats(c) -> dict:
     meta = c.execute("SELECT COUNT(*) AS n FROM tokens WHERE meta_done=1").fetchone()["n"]
     return {"tokens": n, "named": named, "meta": meta,
             "scanned_to": int(get_progress(c, "scanned_to", 0) or 0)}
+
+
+# ---- streams / chat / bans (written by the web process) ----
+
+EXTRA_SCHEMA = """
+CREATE TABLE IF NOT EXISTS streams (
+  address    TEXT PRIMARY KEY,
+  input_uid  TEXT NOT NULL,
+  rtmps_url  TEXT NOT NULL,
+  stream_key TEXT NOT NULL,
+  whip_url   TEXT NOT NULL,
+  hls_url    TEXT NOT NULL,
+  whep_url   TEXT NOT NULL,
+  title      TEXT DEFAULT '',
+  live       INTEGER DEFAULT 0,
+  started_ts INTEGER DEFAULT 0,
+  ended_ts   INTEGER DEFAULT 0,
+  wallet     TEXT NOT NULL,
+  created_ts INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS chat (
+  id      INTEGER PRIMARY KEY AUTOINCREMENT,
+  room    TEXT NOT NULL,
+  wallet  TEXT NOT NULL,
+  text    TEXT NOT NULL,
+  ts      INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS chat_room ON chat(room, id DESC);
+CREATE TABLE IF NOT EXISTS bans (wallet TEXT PRIMARY KEY, room TEXT NOT NULL DEFAULT '*', by_wallet TEXT, ts INTEGER);
+CREATE TABLE IF NOT EXISTS trades (
+  curve  TEXT NOT NULL,
+  block  INTEGER NOT NULL,
+  idx    INTEGER NOT NULL,
+  side   TEXT NOT NULL,
+  quote  TEXT NOT NULL,
+  tokens TEXT NOT NULL,
+  PRIMARY KEY (curve, block, idx)
+);
+CREATE INDEX IF NOT EXISTS trades_curve ON trades(curve, block);
+CREATE TABLE IF NOT EXISTS trades_progress (curve TEXT PRIMARY KEY, block INTEGER NOT NULL);
+"""
+
+
+def connect_web() -> sqlite3.Connection:
+    """The web process's read-write handle: catalog read, streams/chat write."""
+    c = connect()
+    c.executescript(EXTRA_SCHEMA)
+    return c

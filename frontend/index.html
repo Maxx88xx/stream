@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>pons.live</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lightweight-charts/4.2.0/lightweight-charts.standalone.production.min.js"></script>
+<style>
+  :root { --bg:#0b0e11; --panel:#12161b; --panel2:#171c22; --line:#232a33; --text:#e6e9ee; --muted:#8b93a1; --green:#4ade80; --green2:#22c55e; --red:#f87171; --yellow:#facc15; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font-family:Inter,system-ui,sans-serif; font-size:14px; }
+  a { color:inherit; text-decoration:none; }
+  .mono { font-family:"JetBrains Mono",monospace; }
+  #app { display:grid; grid-template-columns:220px 1fr; min-height:100vh; }
+  nav { border-right:1px solid var(--line); padding:18px 14px; position:sticky; top:0; height:100vh; }
+  .logo { font-weight:800; font-size:20px; letter-spacing:-.5px; padding:6px 10px 18px; }
+  .logo b { color:var(--green); }
+  .nav a { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:10px; color:var(--muted); font-weight:600; }
+  .nav a.on, .nav a:hover { background:var(--panel2); color:var(--text); }
+  .nav .dot { width:8px; height:8px; border-radius:50%; background:var(--red); box-shadow:0 0 8px var(--red); }
+  main { min-width:0; }
+  .top { display:flex; gap:12px; align-items:center; padding:14px 22px; border-bottom:1px solid var(--line); position:sticky; top:0; background:rgba(11,14,17,.9); backdrop-filter:blur(8px); z-index:5; }
+  .search { flex:1; display:flex; align-items:center; gap:10px; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:10px 14px; }
+  .search input { flex:1; background:none; border:0; outline:0; color:var(--text); font:inherit; font-size:14px; }
+  .btn { background:var(--green); color:#04120a; border:0; border-radius:10px; padding:10px 16px; font-weight:700; cursor:pointer; font:inherit; }
+  .btn.ghost { background:var(--panel2); color:var(--text); border:1px solid var(--line); }
+  .btn.red { background:var(--red); color:#fff; }
+  .btn:disabled { opacity:.5; cursor:default; }
+  .page { padding:22px; }
+  h2 { margin:0 0 14px; font-size:18px; display:flex; align-items:center; gap:10px; }
+  h2 .count { color:var(--muted); font-weight:500; font-size:13px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:14px; margin-bottom:30px; }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:14px; overflow:hidden; cursor:pointer; transition:transform .12s, border-color .12s; }
+  .card:hover { transform:translateY(-2px); border-color:#3a4350; }
+  .card.new { animation:pop .5s ease-out; }
+  @keyframes pop { from { transform:scale(.96); box-shadow:0 0 0 2px var(--green); } }
+  .thumb { position:relative; aspect-ratio:16/10; background:#0f1317 center/cover no-repeat; display:flex; align-items:center; justify-content:center; }
+  .thumb img { width:100%; height:100%; object-fit:cover; }
+  .thumb .ph { font-weight:800; font-size:28px; color:#2c3440; }
+  .badge { position:absolute; top:8px; left:8px; background:var(--red); color:#fff; font-size:11px; font-weight:800; padding:3px 7px; border-radius:6px; letter-spacing:.5px; }
+  .views { position:absolute; top:8px; right:8px; background:rgba(0,0,0,.6); color:#fff; font-size:11px; font-weight:600; padding:3px 7px; border-radius:6px; }
+  .meta { padding:10px 12px; display:flex; gap:10px; align-items:center; }
+  .meta img { width:36px; height:36px; border-radius:8px; object-fit:cover; background:#0f1317; }
+  .meta .n { font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .meta .s { color:var(--muted); font-size:12px; }
+  .meta .mc { margin-left:auto; text-align:right; font-size:12px; color:var(--green); font-weight:700; white-space:nowrap; }
+  .empty { color:var(--muted); padding:30px 0; text-align:center; }
+
+  /* coin page */
+  .coin { display:grid; grid-template-columns:1fr 360px; gap:18px; }
+  .head { display:flex; gap:14px; align-items:center; margin-bottom:14px; }
+  .head img { width:64px; height:64px; border-radius:12px; object-fit:cover; background:#0f1317; }
+  .head .t { font-size:20px; font-weight:800; }
+  .head .sub { color:var(--muted); font-size:13px; display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  .head .ca { cursor:pointer; }
+  .head .ca:hover { color:var(--text); }
+  .mcap { margin-left:auto; text-align:right; }
+  .mcap b { font-size:22px; color:var(--green); display:block; }
+  .mcap span { color:var(--muted); font-size:12px; }
+  .player { position:relative; background:#000; border-radius:14px; overflow:hidden; aspect-ratio:16/9; border:1px solid var(--line); }
+  .player iframe, .player video { width:100%; height:100%; border:0; display:block; }
+  .player .off { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; color:var(--muted); background:#0f1317 center/cover; }
+  .player .off img { width:96px; height:96px; border-radius:16px; object-fit:cover; opacity:.9; }
+  .player .lv { position:absolute; top:12px; left:12px; display:flex; gap:8px; z-index:2; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:14px; margin-top:14px; }
+  .tfs { display:flex; gap:6px; margin-bottom:10px; }
+  .tfs button { background:var(--panel2); border:1px solid var(--line); color:var(--muted); border-radius:8px; padding:4px 10px; cursor:pointer; font:inherit; font-size:12px; font-weight:600; }
+  .tfs button.on { color:var(--text); border-color:var(--green); }
+  #chart { height:280px; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th { text-align:left; color:var(--muted); font-weight:500; padding:6px 4px; border-bottom:1px solid var(--line); }
+  td { padding:6px 4px; border-bottom:1px solid #1b2028; }
+  .buy { color:var(--green); font-weight:700; } .sell { color:var(--red); font-weight:700; }
+  .chat { display:flex; flex-direction:column; height:calc(100vh - 140px); position:sticky; top:80px; }
+  .chat .msgs { flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:6px; padding:4px 0; }
+  .msg { font-size:13px; line-height:1.35; word-break:break-word; }
+  .msg b { color:var(--green); cursor:pointer; }
+  .msg.sys { color:var(--muted); font-style:italic; }
+  .chat form { display:flex; gap:8px; margin-top:10px; }
+  .chat input { flex:1; background:var(--panel2); border:1px solid var(--line); border-radius:10px; padding:10px 12px; color:var(--text); font:inherit; outline:0; }
+  .row { display:flex; gap:10px; align-items:center; }
+  .kv { display:grid; grid-template-columns:auto 1fr; gap:6px 14px; font-size:13px; }
+  .kv span:nth-child(odd) { color:var(--muted); }
+  .links a { color:var(--green); margin-right:12px; }
+  .modal { position:fixed; inset:0; background:rgba(0,0,0,.7); display:flex; align-items:center; justify-content:center; z-index:50; }
+  .modal .box { background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:22px; width:min(560px,94vw); max-height:90vh; overflow:auto; }
+  .modal h3 { margin:0 0 14px; }
+  .tabs { display:flex; gap:6px; margin-bottom:14px; }
+  .tabs button { flex:1; background:var(--panel2); border:1px solid var(--line); color:var(--muted); padding:8px; border-radius:10px; cursor:pointer; font:inherit; font-weight:600; }
+  .tabs button.on { color:var(--text); border-color:var(--green); }
+  .field { width:100%; background:var(--panel2); border:1px solid var(--line); border-radius:10px; padding:10px 12px; color:var(--text); font:inherit; outline:0; margin-bottom:10px; }
+  .key { display:flex; gap:8px; align-items:center; background:var(--panel2); border:1px solid var(--line); border-radius:10px; padding:8px 10px; margin-bottom:8px; font-size:12px; }
+  .key code { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .hint { color:var(--muted); font-size:12px; margin:8px 0; }
+  .wallets button { display:block; width:100%; text-align:left; margin-bottom:8px; }
+  .preview { width:100%; aspect-ratio:16/9; background:#000; border-radius:10px; margin-bottom:10px; }
+  .toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:var(--panel2); border:1px solid var(--line); padding:10px 16px; border-radius:10px; z-index:60; }
+  @media (max-width:980px) { #app { grid-template-columns:1fr; } nav { display:none; } .coin { grid-template-columns:1fr; } .chat { height:60vh; position:static; } }
+</style>
+</head>
+<body>
+<div id="app">
+  <nav>
+    <div class="logo">pons<b>.live</b></div>
+    <div class="nav">
+      <a href="/live" data-link id="nav-live"><span class="dot"></span> Live</a>
+      <a href="/" data-link id="nav-home">✦ Explore</a>
+    </div>
+  </nav>
+  <main>
+    <div class="top">
+      <div class="search">🔍 <input id="q" placeholder="search coins by name, ticker or CA"></div>
+      <button class="btn ghost" id="wallet">Connect wallet</button>
+    </div>
+    <div class="page" id="page"></div>
+  </main>
+</div>
+<div id="modal"></div>
+<script>
+(() => {
+  const $ = (s, r = document) => r.querySelector(s);
+  const el = (tag, attrs = {}, ...kids) => { const e = document.createElement(tag); for (const [k, v] of Object.entries(attrs)) { if (k === 'class') e.className = v; else if (k.startsWith('on')) e.addEventListener(k.slice(2), v); else if (k === 'html') e.innerHTML = v; else e.setAttribute(k, v); } for (const k of kids.flat()) if (k != null) e.append(k.nodeType ? k : document.createTextNode(String(k))); return e; };
+  const fmtUsd = (v) => { v = Number(v || 0); return v >= 1e9 ? '$' + (v / 1e9).toFixed(2) + 'B' : v >= 1e6 ? '$' + (v / 1e6).toFixed(2) + 'M' : v >= 1e3 ? '$' + (v / 1e3).toFixed(1) + 'K' : '$' + v.toFixed(v < 10 ? 2 : 0); };
+  const short = (a) => a ? a.slice(0, 4) + '..' + a.slice(-4) : '';
+  const ago = (s) => s < 60 ? s + 's ago' : s < 3600 ? Math.floor(s / 60) + 'm ago' : s < 86400 ? Math.floor(s / 3600) + 'h ago' : Math.floor(s / 86400) + 'd ago';
+  const toast = (m) => { const t = el('div', { class: 'toast' }, m); document.body.append(t); setTimeout(() => t.remove(), 2200); };
+  const api = async (p, opt = {}) => { const h = { 'Content-Type': 'application/json', ...(session ? { Authorization: 'Bearer ' + session.token } : {}) }; const r = await fetch(p, { ...opt, headers: h, body: opt.body ? JSON.stringify(opt.body) : undefined }); const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || r.statusText); return j; };
+
+  // ---- wallet (EIP-6963 + window.ethereum) → nonce → personal_sign → session ----
+  let session = null; try { session = JSON.parse(localStorage.getItem('pl_session') || 'null'); } catch {}
+  const providers = [];
+  addEventListener('eip6963:announceProvider', (e) => { if (!providers.some(p => p.info.uuid === e.detail.info.uuid)) providers.push(e.detail); });
+  dispatchEvent(new Event('eip6963:requestProvider'));
+  let activeProvider = null;
+  async function signIn(prov) {
+    const eth = prov.provider;
+    const [acc] = await eth.request({ method: 'eth_requestAccounts' });
+    const address = acc.toLowerCase();
+    const { message } = await api('/api/auth/nonce', { method: 'POST', body: { address } });
+    const hex = '0x' + Array.from(new TextEncoder().encode(message), b => b.toString(16).padStart(2, '0')).join('');
+    const signature = await eth.request({ method: 'personal_sign', params: [hex, address] });
+    const r = await api('/api/auth/verify', { method: 'POST', body: { address, signature } });
+    session = { token: r.token, address: r.address, wallet: prov.info.name };
+    localStorage.setItem('pl_session', JSON.stringify(session));
+    activeProvider = eth;
+    paintWallet(); ws.send(JSON.stringify({ t: 'auth', token: session.token })); render();
+  }
+  function walletModal() {
+    const list = providers.length ? providers : (window.ethereum ? [{ info: { name: 'Browser wallet', uuid: 'legacy' }, provider: window.ethereum }] : []);
+    openModal(el('div', {}, el('h3', {}, 'Connect wallet'),
+      list.length ? el('div', { class: 'wallets' }, ...list.map(p => el('button', { class: 'btn ghost', onclick: async () => { try { closeModal(); await signIn(p); } catch (e) { toast(e.message || 'connect failed'); } } }, p.info.icon ? el('img', { src: p.info.icon, width: 20, height: 20, style: 'vertical-align:middle;margin-right:8px;border-radius:4px' }) : null, p.info.name)))
+        : el('p', { class: 'hint' }, 'No wallet extension found. Install MetaMask, Rabby or the Robinhood wallet.'),
+      el('p', { class: 'hint' }, 'You will sign a message. No transaction, no gas.')));
+  }
+  function paintWallet() { $('#wallet').textContent = session ? short(session.address) : 'Connect wallet'; }
+  $('#wallet').onclick = () => { if (session) { if (confirm('Sign out?')) { session = null; localStorage.removeItem('pl_session'); paintWallet(); render(); } } else walletModal(); };
+  paintWallet();
+
+  // ---- modal ----
+  function openModal(node) { const m = $('#modal'); m.innerHTML = ''; m.append(el('div', { class: 'modal', onclick: (e) => { if (e.target.classList.contains('modal')) closeModal(); } }, el('div', { class: 'box' }, node))); }
+  function closeModal() { $('#modal').innerHTML = ''; }
+
+  // ---- websocket: launches, live flags, chat ----
+  let ws, wsRoom = null; const handlers = { launch: [], live: [], chat: [], history: [], viewers: [], banned: [] };
+  function connectWs() {
+    ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws');
+    ws.onopen = () => { if (session) ws.send(JSON.stringify({ t: 'auth', token: session.token })); if (wsRoom) ws.send(JSON.stringify({ t: 'sub', room: wsRoom })); };
+    ws.onmessage = (e) => { const m = JSON.parse(e.data); (handlers[m.t] || []).forEach(f => f(m)); };
+    ws.onclose = () => setTimeout(connectWs, 1500);
+  }
+  const on = (t, f) => handlers[t].push(f);
+  const off = (t, f) => { handlers[t] = handlers[t].filter(x => x !== f); };
+  const wsSend = (o) => { if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); };
+  connectWs();
+
+  // ---- router ----
+  document.addEventListener('click', (e) => { const a = e.target.closest('a[data-link]'); if (a) { e.preventDefault(); go(a.getAttribute('href')); } });
+  function go(p) { history.pushState({}, '', p); render(); }
+  addEventListener('popstate', render);
+  let cleanup = null;
+  function render() {
+    if (cleanup) { cleanup(); cleanup = null; }
+    const p = location.pathname;
+    $('#nav-live').classList.toggle('on', p === '/live');
+    $('#nav-home').classList.toggle('on', p === '/');
+    if (p.startsWith('/coin/')) return coinPage(p.split('/')[2]);
+    if (p === '/search') return searchPage(new URLSearchParams(location.search).get('q') || '');
+    return homePage(p === '/live');
+  }
+  $('#q').addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target.value.trim()) go('/search?q=' + encodeURIComponent(e.target.value.trim())); });
+
+  // ---- cards ----
+  function card(c) {
+    const ph = () => el('div', { class: 'ph' }, (c.symbol || '?').slice(0, 4));
+    const img = c.image ? el('img', { src: c.image, loading: 'lazy', onerror: (e) => e.target.replaceWith(ph()) }) : ph();
+    return el('div', { class: 'card', onclick: () => go('/coin/' + c.address) },
+      el('div', { class: 'thumb' }, img, c.live ? el('span', { class: 'badge' }, 'LIVE') : null, c.live ? el('span', { class: 'views' }, `${c.viewers} watching`) : null),
+      el('div', { class: 'meta' }, el('div', {}, el('div', { class: 'n' }, c.name || short(c.address)), el('div', { class: 's' }, (c.symbol ? '$' + c.symbol : '') + (c.title ? ' · ' + c.title : ''))), el('div', { class: 'mc' }, fmtUsd(c.mcap_usd), el('br'), el('span', { style: 'color:var(--muted);font-weight:500' }, 'mcap'))));
+  }
+  async function homePage(liveOnly) {
+    const page = $('#page'); page.innerHTML = '';
+    const liveH = el('h2', {}, 'Live now', el('span', { class: 'count', id: 'live-count' }, '')); const liveGrid = el('div', { class: 'grid', id: 'live-grid' });
+    page.append(liveH, liveGrid);
+    let recGrid;
+    if (!liveOnly) { page.append(el('h2', {}, 'New launches on PONS', el('span', { class: 'count', id: 'rec-count' }, ''))); recGrid = el('div', { class: 'grid', id: 'rec-grid' }); page.append(recGrid); }
+    const paintLive = async () => { const { rows } = await api('/api/streams'); liveGrid.innerHTML = ''; $('#live-count').textContent = rows.length ? rows.length + ' streams' : ''; if (!rows.length) liveGrid.append(el('div', { class: 'empty' }, 'nobody is live right now')); rows.forEach(r => liveGrid.append(card(r))); };
+    await paintLive();
+    if (recGrid) { const { rows, stats } = await api('/api/recent'); $('#rec-count').textContent = stats.tokens.toLocaleString('en-US') + ' coins indexed'; rows.forEach(r => recGrid.append(card(r))); }
+    const onLaunch = (m) => { if (!recGrid) return; const c = card(m.coin); c.classList.add('new'); recGrid.prepend(c); if (recGrid.children.length > 60) recGrid.lastChild.remove(); };
+    const onLive = () => paintLive();
+    on('launch', onLaunch); on('live', onLive);
+    cleanup = () => { off('launch', onLaunch); off('live', onLive); };
+  }
+  async function searchPage(qs) {
+    const page = $('#page'); page.innerHTML = ''; $('#q').value = qs;
+    page.append(el('h2', {}, `results for “${qs}”`)); const grid = el('div', { class: 'grid' }); page.append(grid);
+    const { rows } = await api('/api/search?q=' + encodeURIComponent(qs));
+    if (!rows.length) grid.append(el('div', { class: 'empty' }, 'nothing found')); rows.forEach(r => grid.append(card(r)));
+  }
+
+  // ---- coin page ----
+  async function coinPage(addr) {
+    const page = $('#page'); page.innerHTML = '';
+    let c; try { c = await api('/api/token/' + addr); } catch (e) { page.append(el('div', { class: 'empty' }, 'unknown coin')); return; }
+    const isDev = session && session.address === c.deployer;
+    const playerBox = el('div', { class: 'player' });
+    const paintPlayer = () => {
+      playerBox.innerHTML = '';
+      if (c.live && c.hls_url) {
+        const host = new URL(c.hls_url).origin;
+        playerBox.append(el('iframe', { src: `${host}/${c.input_uid}/iframe?autoplay=true&muted=true`, allow: 'autoplay; fullscreen; picture-in-picture', allowfullscreen: '' }));
+        playerBox.append(el('div', { class: 'lv' }, el('span', { class: 'badge', style: 'position:static' }, 'LIVE'), el('span', { class: 'views', style: 'position:static', id: 'viewers' }, `${c.viewers} watching`)));
+      } else {
+        playerBox.append(el('div', { class: 'off' }, c.image ? el('img', { src: c.image }) : null, el('div', {}, isDev ? 'you are not live yet' : 'stream is offline')));
+      }
+    };
+    paintPlayer();
+    const chartBox = el('div', { id: 'chart' });
+    const tfs = el('div', { class: 'tfs' });
+    const tradesBox = el('div');
+    const left = el('div', {},
+      el('div', { class: 'head' }, c.image ? el('img', { src: c.image }) : el('div', { class: 'ph', style: 'width:64px;height:64px;border-radius:12px;background:#0f1317' }), el('div', {}, el('div', { class: 't' }, c.name, ' ', el('span', { style: 'color:var(--muted);font-weight:600' }, '$' + c.symbol)),
+        el('div', { class: 'sub' }, el('span', { class: 'ca mono', onclick: () => { navigator.clipboard?.writeText(c.address); toast('CA copied'); } }, 'CA: ' + short(c.address) + ' ⧉'), el('span', {}, 'dev ' + short(c.deployer)), c.graduated ? el('span', { style: 'color:var(--yellow)' }, 'graduated') : el('span', {}, 'on the curve'))),
+        el('div', { class: 'mcap' }, el('b', {}, fmtUsd(c.mcap_usd)), el('span', {}, 'market cap'))),
+      playerBox,
+      isDev ? el('div', { class: 'panel row' }, el('button', { class: 'btn', onclick: () => goLive(c) }, c.live ? 'Manage stream' : '🔴 Go live'), el('span', { class: 'hint' }, 'camera, screen or OBS')) : null,
+      el('div', { class: 'panel' }, tfs, chartBox),
+      el('div', { class: 'panel' }, el('h2', {}, 'Trades'), tradesBox),
+      el('div', { class: 'panel' }, el('h2', {}, 'About'), el('p', { style: 'white-space:pre-wrap;margin:0 0 10px' }, c.description || '—'),
+        el('div', { class: 'links' }, c.twitter ? el('a', { href: c.twitter, target: '_blank', rel: 'noopener' }, 'X') : null, c.telegram ? el('a', { href: c.telegram, target: '_blank', rel: 'noopener' }, 'Telegram') : null, c.website ? el('a', { href: c.website, target: '_blank', rel: 'noopener' }, 'Website') : null,
+          el('a', { href: 'https://www.ponsfamily.com/' + c.address, target: '_blank', rel: 'noopener' }, 'Trade on PONS ↗'))));
+    // chat
+    const msgs = el('div', { class: 'msgs' });
+    const input = el('input', { placeholder: session ? 'say something…' : 'connect wallet to chat', maxlength: 280 });
+    const form = el('form', { class: 'chat-form', onsubmit: (e) => { e.preventDefault(); if (!session) return walletModal(); if (input.value.trim()) { wsSend({ t: 'chat', text: input.value.trim() }); input.value = ''; } } }, input, el('button', { class: 'btn' }, 'Send'));
+    const chat = el('div', { class: 'panel chat', style: 'margin-top:0' }, el('h2', {}, 'Live chat', el('span', { class: 'count', id: 'chat-viewers' }, '')), msgs, form);
+    const addMsg = (m, sys) => { const n = el('div', { class: 'msg' + (sys ? ' sys' : '') }, sys ? m.text : [el('b', { title: isDev ? 'click to ban' : m.wallet, onclick: () => { if (isDev && m.wallet !== session.address && confirm('ban ' + m.who + '?')) wsSend({ t: 'ban', wallet: m.wallet }); } }, m.who), ': ', m.text]); msgs.append(n); msgs.scrollTop = msgs.scrollHeight; while (msgs.children.length > 300) msgs.firstChild.remove(); };
+    page.append(el('div', { class: 'coin' }, left, chat));
+    wsRoom = c.address; wsSend({ t: 'sub', room: c.address });
+    const hHist = (m) => { msgs.innerHTML = ''; m.rows.forEach(r => addMsg(r)); };
+    const hChat = (m) => addMsg(m);
+    const hViewers = (m) => { if (m.token !== c.address) return; c.viewers = m.n; $('#chat-viewers').textContent = m.n + ' here'; const v = $('#viewers'); if (v) v.textContent = m.n + ' watching'; };
+    const hLive = async (m) => { if (m.token !== c.address) return; try { c = { ...c, ...(await api('/api/token/' + addr)) }; } catch {} paintPlayer(); };
+    const hBan = (m) => addMsg({ text: short(m.wallet) + ' was banned' }, true);
+    on('history', hHist); on('chat', hChat); on('viewers', hViewers); on('live', hLive); on('banned', hBan);
+    // chart
+    let tf = 60, chart, series, timer;
+    const paintChart = async () => {
+      const d = await api(`/api/candles/${c.address}?tf=${tf}`);
+      if (!chart) {
+        chart = LightweightCharts.createChart(chartBox, { layout: { background: { color: 'transparent' }, textColor: '#8b93a1' }, grid: { vertLines: { color: '#1b2028' }, horzLines: { color: '#1b2028' } }, timeScale: { timeVisible: true, secondsVisible: false, borderColor: '#232a33' }, rightPriceScale: { borderColor: '#232a33' }, height: 280, autoSize: true });
+        series = chart.addCandlestickSeries({ upColor: '#4ade80', downColor: '#f87171', borderVisible: false, wickUpColor: '#4ade80', wickDownColor: '#f87171', priceFormat: { type: 'custom', formatter: fmtUsd } });
+      }
+      series.setData(d.candles); if (d.candles.length) chart.timeScale().fitContent();
+      tradesBox.innerHTML = '';
+      const tb = el('table', {}, el('tr', {}, el('th', {}, 'side'), el('th', {}, d.quote), el('th', {}, '$' + c.symbol), el('th', {}, 'usd'), el('th', {}, 'when')));
+      d.trades.forEach(t => tb.append(el('tr', {}, el('td', { class: t.side }, t.side), el('td', { class: 'mono' }, t.quote_units.toFixed(4)), el('td', { class: 'mono' }, Math.round(t.tokens_units).toLocaleString('en-US')), el('td', { class: 'mono' }, fmtUsd(t.usd)), el('td', {}, ago(t.ago)))));
+      if (!d.trades.length) tb.append(el('tr', {}, el('td', { colspan: 5, class: 'empty' }, 'no trades yet')));
+      tradesBox.append(tb);
+    };
+    [[60, '1m'], [300, '5m'], [900, '15m'], [3600, '1h']].forEach(([v, l]) => tfs.append(el('button', { class: v === tf ? 'on' : '', onclick: (e) => { tf = v; [...tfs.children].forEach(b => b.classList.toggle('on', b === e.target)); paintChart(); } }, l)));
+    paintChart().catch(() => {}); timer = setInterval(() => paintChart().catch(() => {}), 10000);
+    cleanup = () => { clearInterval(timer); off('history', hHist); off('chat', hChat); off('viewers', hViewers); off('live', hLive); off('banned', hBan); wsRoom = null; if (chart) chart.remove(); stopPublish(); };
+  }
+
+  // ---- go live: browser (WHIP) or OBS (RTMPS key) ----
+  let pc = null, localStream = null;
+  async function stopPublish() { if (pc) { pc.close(); pc = null; } if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; } }
+  async function publish(whipUrl, stream, previewEl) {
+    await stopPublish();
+    localStream = stream; previewEl.srcObject = stream;
+    pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.cloudflare.com:3478' }], bundlePolicy: 'max-bundle' });
+    stream.getTracks().forEach(t => pc.addTransceiver(t, { direction: 'sendonly' }));
+    const offer = await pc.createOffer(); await pc.setLocalDescription(offer);
+    await new Promise(res => { if (pc.iceGatheringState === 'complete') return res(); const t = setTimeout(res, 2500); pc.onicegatheringstatechange = () => { if (pc.iceGatheringState === 'complete') { clearTimeout(t); res(); } }; });
+    const r = await fetch(whipUrl, { method: 'POST', headers: { 'Content-Type': 'application/sdp' }, body: pc.localDescription.sdp });
+    if (!r.ok) throw new Error('WHIP ' + r.status);
+    await pc.setRemoteDescription({ type: 'answer', sdp: await r.text() });
+    stream.getVideoTracks()[0]?.addEventListener('ended', stopPublish);
+  }
+  async function goLive(c) {
+    let creds; try { creds = await api('/api/stream/start', { method: 'POST', body: { token: c.address, title: c.title || '' } }); } catch (e) { return toast(e.message); }
+    let tab = 'browser';
+    const preview = el('video', { class: 'preview', autoplay: '', muted: '', playsinline: '' });
+    const status = el('div', { class: 'hint' }, pc ? 'publishing from this browser' : 'not publishing');
+    const title = el('input', { class: 'field', placeholder: 'stream title (optional)', value: creds.title || '', maxlength: 80 });
+    const body = el('div');
+    const paint = () => {
+      body.innerHTML = '';
+      if (tab === 'browser') body.append(preview, status, el('div', { class: 'row' },
+        el('button', { class: 'btn', onclick: async () => { try { await publish(creds.whip_url, await navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720 }, audio: true }), preview); status.textContent = 'publishing camera'; } catch (e) { toast(e.message); } } }, '📷 Camera'),
+        el('button', { class: 'btn', onclick: async () => { try { const s = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true }); await publish(creds.whip_url, s, preview); status.textContent = 'publishing screen'; } catch (e) { toast(e.message); } } }, '🖥 Screen'),
+        el('button', { class: 'btn ghost', onclick: async () => { await stopPublish(); status.textContent = 'not publishing'; } }, 'Stop')),
+        el('p', { class: 'hint' }, 'Viewers see you within ~10 seconds. Keep this tab open while live.'));
+      else body.append(el('p', { class: 'hint' }, 'OBS → Settings → Stream → Service: Custom'),
+        el('div', { class: 'key' }, 'Server', el('code', {}, creds.rtmps_url), el('button', { class: 'btn ghost', onclick: () => { navigator.clipboard?.writeText(creds.rtmps_url); toast('copied'); } }, 'copy')),
+        el('div', { class: 'key' }, 'Stream key', el('code', {}, '•'.repeat(24)), el('button', { class: 'btn ghost', onclick: () => { navigator.clipboard?.writeText(creds.stream_key); toast('key copied'); } }, 'copy')),
+        el('p', { class: 'hint' }, 'Start streaming in OBS; the page flips to LIVE automatically. The key is yours forever, never share it.'));
+    };
+    paint();
+    openModal(el('div', {}, el('h3', {}, 'Go live · $' + c.symbol), title,
+      el('div', { class: 'tabs' }, el('button', { class: 'on', onclick: (e) => { tab = 'browser'; [...e.target.parentNode.children].forEach(b => b.classList.toggle('on', b === e.target)); paint(); } }, 'From this browser'), el('button', { onclick: (e) => { tab = 'obs'; [...e.target.parentNode.children].forEach(b => b.classList.toggle('on', b === e.target)); paint(); } }, 'OBS / stream key')),
+      body,
+      el('div', { class: 'row', style: 'margin-top:14px;justify-content:space-between' },
+        el('button', { class: 'btn ghost', onclick: async () => { const t = title.value.trim(); await api('/api/stream/start', { method: 'POST', body: { token: c.address, title: t } }).catch(() => {}); toast('saved'); } }, 'Save title'),
+        el('button', { class: 'btn red', onclick: async () => { await stopPublish(); await api('/api/stream/stop', { method: 'POST', body: { token: c.address } }).catch(() => {}); closeModal(); toast('stream ended'); } }, 'End stream'))));
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>
