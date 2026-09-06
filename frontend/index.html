@@ -86,11 +86,13 @@
   .tabs-tab.is-active { background:var(--bg-white); box-shadow:0 1px 3px #11111114; }
 
   /* stream page layout: player 66% + chat 27% (pump.fun proportions), chat as tall as the player */
-  .stream-layout { grid-template-columns:minmax(0,2.45fr) minmax(300px,1fr); gap:24px; align-items:start; }
+  .token-buy-shell { max-width:1320px; }
+  .stream-layout { grid-template-columns:minmax(0,3fr) minmax(300px,1fr); gap:20px; align-items:start; }
+  .stream-card { padding:14px; background:var(--bg-white); border:1px solid var(--float-border); border-radius:28px; }
   .stream-col { display:grid; gap:16px; min-width:0; }
   .stream-col .stream-stage { border-radius:16px; }
   .chat-card { display:flex; flex-direction:column; padding:18px 20px 20px; aspect-ratio:auto; height:100%; box-sizing:border-box; background:var(--bg-white); }
-  .stream-layout .chat-card { align-self:start; max-height:none; }
+  .stream-layout .chat-card { align-self:start; position:sticky; top:92px; height:calc(100vh - 110px); max-height:900px; }
   .chat-card .chat-head { display:flex; align-items:center; justify-content:space-between; padding:0 0 12px; }
   .chat-card .chat-head h3 { margin:0; font-size:20px; font-weight:500; }
   .chat-card .chat-head span { background:var(--panel-blue); border-radius:999px; padding:3px 10px; font-size:13px; color:var(--text-muted); font-variant-numeric:tabular-nums; }
@@ -117,7 +119,7 @@
   .stream-stage .sc-vol { width:100px; }
   .stream-live .launch-card-live-badge { font-size:13px; padding:5px 10px; }
   .stream-live .launch-card-viewers { font-size:13px; padding:5px 10px; }
-  @media (max-width:900px) { .stream-layout { grid-template-columns:1fr; } .stream-layout .chat-card { height:60vh; } .stream-meta { flex-wrap:wrap; } }
+  @media (max-width:900px) { .stream-layout { grid-template-columns:1fr; } .stream-layout .chat-card { position:static; height:60vh; } .stream-meta { flex-wrap:wrap; } }
   /* go-live flow + player controls */
   .golive { display:grid; gap:6px; }
   .golive-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
@@ -534,10 +536,9 @@
         actionBtn));
     const startedTimer = setInterval(() => { if (c.started_ts && c.live) startedEl.textContent = 'Started ' + ago(Date.now() / 1000 - c.started_ts); }, 30000);
     // chat panel is exactly as tall as the player (pump.fun layout); the player's height follows its 16:9 width
-    const fitChat = () => { if (window.innerWidth > 900) chatCard.style.height = stage.getBoundingClientRect().height + 'px'; else chatCard.style.height = ''; };
-    const ro = new ResizeObserver(fitChat); ro.observe(stage); requestAnimationFrame(fitChat);
+
     const market = el('section', { class: 'token-market-card float' }, stats, chart);
-    wrap.append(el('div', { class: 'token-buy-layout stream-layout' }, el('div', { class: 'stream-col' }, stage, metaRow, market), chatCard));
+    wrap.append(el('div', { class: 'token-buy-layout stream-layout' }, el('div', { class: 'stream-col' }, el('section', { class: 'stream-card float' }, stage), metaRow, market), chatCard));
     // activity
     const tradesList = el('ul', { class: 'token-trades-list' });
     const tradesCount = el('span', { class: 'token-activity-count' }, '0');
@@ -574,7 +575,7 @@
     RANGES.forEach(([lbl]) => ranges.append(el('button', { class: 'noxa-chart-range' + (lbl === range ? ' is-active' : ''), onclick: (e) => { range = lbl; [...ranges.children].forEach(b => b.classList.toggle('is-active', b === e.target)); changeEl.lastChild.textContent = lbl; paintChart(true).catch(() => {}); } }, lbl)));
     paintChart(true).catch(() => {}); timer = setInterval(() => paintChart().catch(() => {}), 3000);
     const onResize = () => paintChart(true).catch(() => {}); addEventListener('resize', onResize);
-    cleanup = () => { clearInterval(timer); clearInterval(startedTimer); ro.disconnect(); removeEventListener('resize', onResize); off('history', hHist); off('chat', hChat); off('viewers', hViewers); off('live', hLive); off('banned', hBan); wsRoom = null; stopPlay(); stopHls(); stopLk(); document.removeEventListener('publish-changed', onPub); };
+    cleanup = () => { clearInterval(timer); clearInterval(startedTimer); removeEventListener('resize', onResize); off('history', hHist); off('chat', hChat); off('viewers', hViewers); off('live', hLive); off('banned', hBan); wsRoom = null; stopPlay(); stopHls(); stopLk(); document.removeEventListener('publish-changed', onPub); };
   }
 
   // ---- go live: browser (WHIP) or OBS (RTMPS key) ----
