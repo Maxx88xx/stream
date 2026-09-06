@@ -216,7 +216,7 @@ async def h_candles(request):
     limit = max(10, min(2000, int(request.query.get("limit") or 300)))
     lock = _candle_locks.setdefault(addr, asyncio.Lock())
     async with lock:
-        head, quote = await asyncio.gather(asyncio.to_thread(chain.block_number),
+        head, quote = await asyncio.gather(asyncio.to_thread(chain.block_number) if not _head["n"] else asyncio.sleep(0, _head["n"]),
                                            asyncio.to_thread(market.quote_info, t.get("pair_token") or ""))
         with _lock:
             frm = market.trade_start(C, t["curve"], head)
@@ -306,6 +306,16 @@ async def h_stream_stop(request):
     x("UPDATE streams SET ended_ts=?, live=0 WHERE address=?", (int(time.time()), addr))
     await broadcast_all({"t": "live", "token": addr, "live": False})
     return web.json_response({"ok": True})
+
+
+async def track_head():
+    """Latest block every 3 s: card ages and the candles endpoint read it instead of calling the RPC per request."""
+    while True:
+        try:
+            _head["n"] = await asyncio.to_thread(chain.block_number)
+        except Exception:  # noqa: BLE001
+            pass
+        await asyncio.sleep(3)
 
 
 async def poll_stream_status(app):
@@ -524,7 +534,7 @@ def make_app() -> web.Application:
     r.add_static("/assets", FRONTEND / "assets")
 
     async def on_start(app):
-        app["tasks"] = [asyncio.create_task(live.run(on_launch)), asyncio.create_task(poll_stream_status(app))]
+        app["tasks"] = [asyncio.create_task(live.run(on_launch)), asyncio.create_task(poll_stream_status(app)), asyncio.create_task(track_head())]
         if (os.environ.get("BACKFILL") or "1") == "1":
             threading.Thread(target=_backfill_thread, daemon=True).start()
 
