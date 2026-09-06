@@ -20,8 +20,9 @@ from PIL import Image
 from . import db
 
 IMG_DIR = os.path.join(db.DATA_DIR, "img")
+CACHE_CAP = int(os.environ.get("IMG_CACHE_MB") or 150) * 1024 * 1024   # thumbnails are a cache: keep the volume for the catalog
 MAX_BYTES = 12 * 1024 * 1024
-SIZE = 320
+SIZE = 256
 UA = {"User-Agent": "pons.live/1.0 (+catalog thumbnails)"}
 GATEWAYS = ("https://{cid}.ipfs.nftstorage.link{tail}", "https://{cid}.ipfs.dweb.link{tail}",
             "https://ipfs.io/ipfs/{cid}{tail}", "https://gateway.pinata.cloud/ipfs/{cid}{tail}")
@@ -109,6 +110,7 @@ def ensure(addr: str, url: str) -> str | None:
     except Exception:  # noqa: BLE001
         return None
     os.makedirs(IMG_DIR, exist_ok=True)
+    _trim_cache()
     tmp = f"{p}.{os.getpid()}.{threading.get_ident()}.tmp"      # unique: concurrent requests for one coin
     try:
         with open(tmp, "wb") as f:
@@ -117,3 +119,40 @@ def ensure(addr: str, url: str) -> str | None:
     except OSError:
         return p if os.path.exists(p) else None
     return p
+
+
+_trim_lock = threading.Lock()
+_trim_at = {"ts": 0.0}
+
+
+def _trim_cache() -> None:
+    """Every few minutes: if the thumbnail dir exceeds CACHE_CAP, drop the
+    least recently used files until it is 20% under the cap."""
+    import time
+    if time.time() - _trim_at["ts"] < 300 or not _trim_lock.acquire(blocking=False):
+        return
+    try:
+        _trim_at["ts"] = time.time()
+        files = []
+        total = 0
+        with os.scandir(IMG_DIR) as it:
+            for e in it:
+                if e.is_file() and e.name.endswith(".jpg"):
+                    st = e.stat()
+                    files.append((st.st_atime, st.st_size, e.path))
+                    total += st.st_size
+        if total <= CACHE_CAP:
+            return
+        files.sort()
+        target = CACHE_CAP * 0.8
+        for _, size, path in files:
+            if total <= target:
+                break
+            try:
+                os.remove(path)
+                total -= size
+            except OSError:
+                pass
+        print(f"[img] cache trimmed to {total // 1024 // 1024} MB")
+    finally:
+        _trim_lock.release()
