@@ -57,6 +57,7 @@ def names(c, batch: int = 600) -> None:
         c.commit()
         done += len(toks)
         print(f"[backfill]   names +{len(toks)} (total {done}, {time.time() - t0:.0f}s)")
+        time.sleep(0.2)
     print(f"[backfill] names done: {done} in {time.time() - t0:.0f}s")
 
 
@@ -72,6 +73,7 @@ def meta(c, batch: int = 50, limit: int | None = None) -> None:
             db.set_meta(c, r["address"], chain.decode_launch_input(inputs.get(r["tx"], "")))
         c.commit()
         done += len(rows)
+        time.sleep(0.2)
         if done % 1000 < batch:
             print(f"[backfill]   meta {done} ({time.time() - t0:.0f}s)")
     print(f"[backfill] meta done: {done} in {time.time() - t0:.0f}s")

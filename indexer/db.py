@@ -51,8 +51,20 @@ def connect(readonly: bool = False) -> sqlite3.Connection:
         c.execute("PRAGMA journal_mode=WAL")
         c.execute("PRAGMA synchronous=NORMAL")
         c.executescript(SCHEMA)
+        _migrate(c)
     c.row_factory = sqlite3.Row
     return c
+
+
+def _migrate(c) -> None:
+    """One-time: rebuild the FTS index keyed by tokens.rowid (v2)."""
+    r = c.execute("SELECT value FROM progress WHERE key='fts_v2'").fetchone()
+    if r:
+        return
+    c.execute("DELETE FROM tokens_fts")
+    c.execute("INSERT INTO tokens_fts(rowid,address,name,symbol) SELECT rowid,address,name,symbol FROM tokens WHERE names_done=1")
+    c.execute("INSERT OR REPLACE INTO progress(key,value) VALUES('fts_v2','1')")
+    c.commit()
 
 
 def get_progress(c, key: str, default=None):
@@ -78,8 +90,9 @@ def set_names(c, named: dict) -> None:
     """{address: (name, symbol)} → tokens + FTS."""
     for addr, (name, sym) in named.items():
         c.execute("UPDATE tokens SET name=?, symbol=?, names_done=1 WHERE address=?", (name, sym, addr))
-        c.execute("DELETE FROM tokens_fts WHERE address=?", (addr,))
-        c.execute("INSERT INTO tokens_fts(address,name,symbol) VALUES(?,?,?)", (addr, name, sym))
+        # FTS rowid == tokens.rowid: delete/insert by rowid is O(log n); by `address` it was a full FTS scan
+        c.execute("DELETE FROM tokens_fts WHERE rowid=(SELECT rowid FROM tokens WHERE address=?)", (addr,))
+        c.execute("INSERT INTO tokens_fts(rowid,address,name,symbol) SELECT rowid,?,?,? FROM tokens WHERE address=?", (addr, name, sym, addr))
 
 
 def set_meta(c, addr: str, meta: dict) -> None:
