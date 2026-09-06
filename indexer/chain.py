@@ -173,6 +173,11 @@ def names_symbols(tokens: list) -> dict:
     return out
 
 
+def decimals(token: str) -> int:
+    r = rpc(ALCHEMY_HTTP, "eth_call", [{"to": token, "data": "0x313ce567"}, "latest"])
+    return int(r, 16) if r and r != "0x" else 18
+
+
 def curve_states(curves: list) -> dict:
     """{curve: (quote_reserve, token_reserve, graduated)} via multicall."""
     out = {}

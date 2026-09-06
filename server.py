@@ -211,7 +211,8 @@ async def h_candles(request):
     tf = tf if tf in (60, 300, 900, 3600) else 60
     lock = _candle_locks.setdefault(addr, asyncio.Lock())
     async with lock:
-        head = await asyncio.to_thread(chain.block_number)
+        head, quote = await asyncio.gather(asyncio.to_thread(chain.block_number),
+                                           asyncio.to_thread(market.quote_info, t.get("pair_token") or ""))
         with _lock:
             frm = market.trade_start(C, t["curve"], head)
         if frm is not None and frm <= head:
@@ -224,9 +225,9 @@ async def h_candles(request):
                 with _lock:
                     market.store_trades(C, t["curve"], rows, to)
         with _lock:
-            rows = market.candles(C, t["curve"], t.get("pair_token") or "", tf, head)
+            rows = market.candles(C, t["curve"], quote, tf, head)
             trades = [dict(r) for r in C.execute("SELECT block, side, quote, tokens FROM trades WHERE curve=? ORDER BY block DESC, idx DESC LIMIT 30", (t["curve"],))]
-    dec, usd, sym = market.quote_info(t.get("pair_token") or "")
+    dec, usd, sym = quote
     for tr in trades:
         tr["quote_units"] = int(tr.pop("quote")) / 10 ** dec
         tr["tokens_units"] = int(tr.pop("tokens")) / 1e18
@@ -474,14 +475,22 @@ async def h_index(request):
 
 
 def _backfill_thread():
-    try:
-        from indexer import backfill
-        c = db.connect()
-        backfill.launches(c)
-        backfill.names(c)
-        backfill.meta(c)
-    except Exception as exc:  # noqa: BLE001
-        print(f"[backfill] thread died: {exc}", file=sys.stderr)
+    """Catalog maintenance, forever: initial launches/names/meta backfill,
+    then a sweep every minute for stragglers (a launch whose enrichment hit
+    a 429 in the live loop gets its name/metadata here). Never dies: an RPC
+    error just means a pause."""
+    from indexer import backfill
+    c = db.connect()
+    while True:
+        try:
+            backfill.launches(c)
+            backfill.names(c)
+            backfill.meta(c)
+        except Exception as exc:  # noqa: BLE001
+            print(f"[backfill] error, retrying in 30s: {str(exc)[:120]}", file=sys.stderr)
+            time.sleep(30)
+            continue
+        time.sleep(60)
 
 
 def make_app() -> web.Application:

@@ -31,14 +31,52 @@ def eth_usd() -> float:
     return _eth_usd["v"]
 
 
+_pair_cache: dict = {}          # pair_token → {"dec", "sym", "usd", "ts"}
+_PAIR_TTL = 300
+
+
+def _dexscreener_usd(token: str) -> float:
+    """USD price of a Robinhood-chain token from its deepest USDG/ETH pool."""
+    try:
+        req = urllib.request.Request(f"https://api.dexscreener.com/latest/dex/tokens/{token}", headers={"User-Agent": "Mozilla/5.0 pons.live"})
+        with urllib.request.urlopen(req, timeout=8) as r:
+            pairs = (json.load(r).get("pairs") or [])
+    except Exception:  # noqa: BLE001
+        return 0.0
+    best, liq = 0.0, -1.0
+    for pr in pairs:
+        if pr.get("chainId") != "robinhood" or (pr.get("baseToken") or {}).get("address", "").lower() != token:
+            continue
+        L = float((pr.get("liquidity") or {}).get("usd") or 0)
+        if L > liq and pr.get("priceUsd"):
+            best, liq = float(pr["priceUsd"]), L
+    return best
+
+
 def quote_info(pair_token: str) -> tuple[int, float, str]:
-    """(decimals, usd_per_unit, symbol) for the quote asset of a launch."""
+    """(decimals, usd_per_unit, symbol) for the quote asset of a launch.
+    Native ETH → Coinbase; USDG → $1; anything else (Robinhood tokenized
+    stocks: NVDA, SPCX, SPY…) → DexScreener price of that token, cached 5 min.
+    Does network I/O — call it off the event loop."""
     p = (pair_token or "").lower()
     if p in ("", "0x0000000000000000000000000000000000000000"):
         return 18, eth_usd(), "ETH"
     if p == USDG:
         return 6, 1.0, "USDG"
-    return 18, 0.0, "?"          # tokenized stocks etc.: no USD rate here
+    e = _pair_cache.get(p)
+    if e and time.time() - e["ts"] < _PAIR_TTL:
+        return e["dec"], e["usd"], e["sym"]
+    if not e:
+        try:
+            sym = chain.names_symbols([p]).get(p, ("", "?"))[1] or "?"
+            dec = chain.decimals(p)
+        except Exception:  # noqa: BLE001
+            sym, dec = "?", 18
+        e = {"dec": dec, "sym": sym, "usd": 0.0, "ts": 0.0}
+    usd = _dexscreener_usd(p)
+    e.update(usd=usd or e["usd"], ts=time.time())
+    _pair_cache[p] = e
+    return e["dec"], e["usd"], e["sym"]
 
 
 def enrich_market(rows: list) -> list:
@@ -98,10 +136,12 @@ def store_trades(c, curve: str, rows: list, scanned_to: int) -> None:
     c.commit()
 
 
-def candles(c, curve: str, pair_token: str, tf: int = 60, head: int | None = None, limit: int = 300) -> list:
-    """OHLC of market cap in USD per `tf` seconds, from stored trades."""
+def candles(c, curve: str, quote: tuple, tf: int = 60, head: int | None = None, limit: int = 300) -> list:
+    """OHLC of market cap in USD per `tf` seconds, from stored trades; flat
+    candles fill the gaps up to now so the chart shows a timeline, not a dot.
+    `quote` = quote_info(pair_token), resolved by the caller (network)."""
     head = head or chain.block_number()
-    dec, usd, _ = quote_info(pair_token)
+    dec, usd, _ = quote
     now = time.time()
     rows = c.execute("SELECT block, idx, side, quote, tokens FROM trades WHERE curve=? ORDER BY block, idx", (curve,)).fetchall()
     out = []
@@ -118,4 +158,11 @@ def candles(c, curve: str, pair_token: str, tf: int = 60, head: int | None = Non
             k["high"] = max(k["high"], price); k["low"] = min(k["low"], price); k["close"] = price; k["volume"] += vol
         else:
             out.append({"time": bucket, "open": out[-1]["close"] if out else price, "high": price, "low": price, "close": price, "volume": vol})
+    if out:                                                   # flat fill from the last trade to now
+        last = out[-1]
+        b = last["time"] + tf
+        end = int(now // tf) * tf
+        while b <= end and len(out) < limit * 2:
+            out.append({"time": b, "open": last["close"], "high": last["close"], "low": last["close"], "close": last["close"], "volume": 0.0})
+            b += tf
     return out[-limit:]

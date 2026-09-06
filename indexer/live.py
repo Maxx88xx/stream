@@ -63,7 +63,12 @@ async def run(on_launch, stop: asyncio.Event | None = None) -> None:
                     row["ts"] = int(time.time())
                     t0 = time.time()
                     if await asyncio.to_thread(lambda: (db.insert_launches(c, [row]), c.commit())[0]):
-                        for t in await _enrich(c, [row]):
+                        try:
+                            enriched = await _enrich(c, [row])
+                        except Exception as exc:  # noqa: BLE001   # 429 etc.: push it bare, the backfill sweep names it
+                            print(f"[live] enrich failed for {row['address']}: {str(exc)[:80]}")
+                            enriched = [await asyncio.to_thread(db.get_token, c, row["address"])]
+                        for t in enriched:
                             await on_launch(t)
                         print(f"[live] {row['address']} block {row['block']} in {time.time() - t0:.1f}s")
                     await asyncio.to_thread(lambda: (db.set_progress(c, "live_block", row["block"]), c.commit()))

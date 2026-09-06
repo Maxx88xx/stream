@@ -61,20 +61,23 @@ def names(c, batch: int = 600) -> None:
     print(f"[backfill] names done: {done} in {time.time() - t0:.0f}s")
 
 
-def meta(c, batch: int = 50, limit: int | None = None) -> None:
+def meta(c, batch: int = 15, limit: int | None = None) -> None:
+    """15 tx/s ≈ 255 CU/s: stays under Alchemy's free-tier 330 CU/s so the
+    live loop and the web keep getting answers instead of 429s."""
     t0 = time.time()
     done = 0
     while limit is None or done < limit:
         rows = c.execute("SELECT address, tx FROM tokens WHERE meta_done=0 ORDER BY block DESC LIMIT ?", (batch,)).fetchall()
         if not rows:
             break
+        t1 = time.time()
         inputs = chain.fetch_tx_inputs([r["tx"] for r in rows])
         for r in rows:
             db.set_meta(c, r["address"], chain.decode_launch_input(inputs.get(r["tx"], "")))
         c.commit()
         done += len(rows)
-        time.sleep(0.2)
-        if done % 1000 < batch:
+        time.sleep(max(0.0, 1.0 - (time.time() - t1)))
+        if done % 3000 < batch:
             print(f"[backfill]   meta {done} ({time.time() - t0:.0f}s)")
     print(f"[backfill] meta done: {done} in {time.time() - t0:.0f}s")
 
