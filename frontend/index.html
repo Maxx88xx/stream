@@ -421,11 +421,21 @@
     await pc.setRemoteDescription({ type: 'answer', sdp: await r.text() });
     stream.getVideoTracks()[0]?.addEventListener('ended', stopPublish);
   }
+  let goingLive = false;
   async function goLive(c) {
-    let creds; try { creds = await api('/api/stream/start', { method: 'POST', body: { token: c.address, title: c.title || '' } }); } catch (e) { return toast(e.message); }
+    if (goingLive) return;
+    goingLive = true; toast('Preparing your stream…');
+    let creds; try { creds = await api('/api/stream/start', { method: 'POST', body: { token: c.address, title: c.title || '' } }); } catch (e) { goingLive = false; return toast(e.message); }
+    goingLive = false;
     let tab = 'browser';
     const preview = el('video', { class: 'preview', autoplay: '', muted: '', playsinline: '' });
     const status = el('div', { class: 'hint' }, pc ? 'Publishing from this browser' : 'Not publishing');
+    const liveLine = el('p', { class: 'hint', style: 'display:flex;align-items:center;gap:8px;margin:0 0 12px' }, el('span', { class: 'launch-card-viewers' }, '○'), 'Waiting for video…');
+    const paintLive = (isLive) => { liveLine.innerHTML = ''; liveLine.append(isLive ? el('span', { class: 'launch-card-live-badge' }, 'LIVE') : el('span', { class: 'launch-card-viewers' }, 'OFFLINE'), isLive ? 'Cloudflare is receiving your video — viewers see it within ~15 seconds.' : 'Waiting for video. Start streaming in OBS or from this browser; the page flips to LIVE on its own.'); };
+    paintLive(creds.live);
+    const livePoll = setInterval(async () => { try { const r = await api('/api/stream/creds?token=' + c.address); paintLive(r.live); } catch {} }, 3000);
+    const stopPoll = () => clearInterval(livePoll);
+    new MutationObserver(() => { if (!document.body.contains(liveLine)) stopPoll(); }).observe($('#modal'), { childList: true });
     const title = el('input', { class: 'field', placeholder: 'Stream title (optional)', value: creds.title || '', maxlength: 80 });
     const body = el('div');
     const paint = () => {
@@ -444,7 +454,7 @@
     const tabs = el('div', { class: 'tabs-pill', style: 'margin-bottom:16px' }, el('div', { class: 'tabs-list', style: 'width:100%' },
       el('button', { class: 'tabs-tab is-active', style: 'flex:1', onclick: (e) => { tab = 'browser'; [...e.target.parentNode.children].forEach(b => b.classList.toggle('is-active', b === e.target)); paint(); } }, 'From this browser'),
       el('button', { class: 'tabs-tab', style: 'flex:1', onclick: (e) => { tab = 'obs'; [...e.target.parentNode.children].forEach(b => b.classList.toggle('is-active', b === e.target)); paint(); } }, 'OBS / stream key')));
-    openModal(el('div', {}, el('h3', {}, 'Go live · $' + c.symbol), title, tabs, body,
+    openModal(el('div', {}, el('h3', {}, 'Go live · $' + c.symbol), liveLine, title, tabs, body,
       el('div', { class: 'row', style: 'margin-top:16px;justify-content:space-between' },
         el('button', { class: 'pbtn', onclick: async () => { const t = title.value.trim(); await api('/api/stream/start', { method: 'POST', body: { token: c.address, title: t } }).catch(() => {}); toast('Saved'); } }, 'Save title'),
         el('button', { class: 'pbtn danger', onclick: async () => { await stopPublish(); await api('/api/stream/stop', { method: 'POST', body: { token: c.address } }).catch(() => {}); closeModal(); toast('Stream ended'); } }, 'End stream'))));

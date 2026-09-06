@@ -259,6 +259,9 @@ def _creds(s: dict) -> dict:
             "hls_url": s["hls_url"], "whep_url": s["whep_url"], "title": s["title"], "live": bool(s["live"])}
 
 
+_start_locks: dict = {}
+
+
 async def h_stream_start(request):
     w = _wallet(request)
     if not w:
@@ -275,15 +278,18 @@ async def h_stream_start(request):
     if not (CF_ACCOUNT and CF_TOKEN):
         return web.json_response({"error": "streaming not configured"}, status=503)
     title = str(body.get("title") or "")[:80]
-    s = _stream_row(addr)
-    if not s:
-        li = await asyncio.to_thread(cf, "POST", "", {"meta": {"name": f"{t['symbol']} {addr}"}, "recording": {"mode": "automatic"}})
-        x("INSERT INTO streams(address,input_uid,rtmps_url,stream_key,whip_url,hls_url,whep_url,title,wallet,created_ts) VALUES(?,?,?,?,?,?,?,?,?,?)",
-          (addr, li["uid"], li["rtmps"]["url"], li["rtmps"]["streamKey"], li["webRTC"]["url"], li["playback"]["hls"],
-           li["webRTCPlayback"]["url"], title, w, int(time.time())))
+    async with _start_locks.setdefault(addr, asyncio.Lock()):      # one live input per coin, even under a click storm
         s = _stream_row(addr)
-    x("UPDATE streams SET title=?, started_ts=?, ended_ts=0 WHERE address=?", (title, int(time.time()), addr))
-    s = _stream_row(addr)
+        if not s:
+            li = await asyncio.to_thread(cf, "POST", "", {"meta": {"name": f"{t['symbol']} {addr}"}, "recording": {"mode": "automatic"}})
+            x("INSERT OR IGNORE INTO streams(address,input_uid,rtmps_url,stream_key,whip_url,hls_url,whep_url,title,wallet,created_ts) VALUES(?,?,?,?,?,?,?,?,?,?)",
+              (addr, li["uid"], li["rtmps"]["url"], li["rtmps"]["streamKey"], li["webRTC"]["url"], li["playback"]["hls"],
+               li["webRTCPlayback"]["url"], title, w, int(time.time())))
+            s = _stream_row(addr)
+            if s["input_uid"] != li["uid"]:                          # lost a race anyway: drop the extra input
+                asyncio.create_task(asyncio.to_thread(cf, "DELETE", f"/{li['uid']}"))
+        x("UPDATE streams SET title=?, started_ts=?, ended_ts=0 WHERE address=?", (title, int(time.time()), addr))
+        s = _stream_row(addr)
     return web.json_response(_creds(s), headers=NO_CACHE)
 
 
@@ -319,7 +325,7 @@ async def track_head():
 
 
 async def poll_stream_status(app):
-    """Every 10 s: ask Cloudflare whether each started stream is actually
+    """Every 3 s: ask Cloudflare whether each started stream is actually
     receiving video; flip `live` and tell the pages."""
     while True:
         try:
@@ -341,7 +347,7 @@ async def poll_stream_status(app):
                     print(f"[cf] {s['address']} live={now_live}")
         except Exception as exc:  # noqa: BLE001
             print(f"[cf] poll error: {exc}")
-        await asyncio.sleep(10)
+        await asyncio.sleep(3)
 
 
 # ---- WebSocket: launch feed, chat rooms, viewer counts ----
