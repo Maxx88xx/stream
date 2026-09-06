@@ -91,7 +91,7 @@ def launch_logs(frm: int, to: int) -> list:
         return rpc(PUBLIC_RPC, "eth_getLogs", [{"address": PONS_CORE, "topics": [LAUNCH_TOPIC],
                                                 "fromBlock": hex(frm), "toBlock": hex(to)}])
     except RpcError as exc:
-        if "exceeds limit" in str(exc) and to > frm:
+        if to > frm and any(k in str(exc) for k in ("exceeds limit", "timed out", "timeout", "too many", "429")):
             mid = (frm + to) // 2
             return launch_logs(frm, mid) + launch_logs(mid + 1, to)
         raise

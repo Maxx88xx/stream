@@ -26,7 +26,12 @@ def launches(c) -> None:
     total = 0
     while frm <= head:
         to = min(head, frm + CHUNK - 1)
-        logs = chain.launch_logs(frm, to)
+        try:
+            logs = chain.launch_logs(frm, to)
+        except chain.RpcError as exc:                     # the public RPC has bad minutes; wait it out
+            print(f"[backfill]   {frm}-{to}: {str(exc)[:80]} — retrying in 15s")
+            time.sleep(15)
+            continue
         rows = [chain.parse_launch_log(lg) for lg in logs]
         n = db.insert_launches(c, rows)
         db.set_progress(c, "scanned_to", to)
