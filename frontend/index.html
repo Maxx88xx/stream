@@ -9,6 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/pons.css">
 <script src="/assets/hls.min.js"></script>
+<script src="/assets/livekit-client.umd.js"></script>
 <style>
   /* ---- pons.css carries PONS's own rules; below: page chrome + the stream/chat bits PONS doesn't have ---- */
   html { background:var(--bg-page); color-scheme:dark; }
@@ -386,9 +387,28 @@
       await new Promise((res, rej) => { const t = setTimeout(() => rej(new Error('no video')), 8000); const chk = () => { if (video.videoWidth > 0) { clearTimeout(t); res(); } else if (pc.connectionState === 'failed' || pc.connectionState === 'closed') { clearTimeout(t); rej(new Error('rtc ' + pc.connectionState)); } else setTimeout(chk, 200); }; chk(); });
       pc.onconnectionstatechange = () => { if (pc === playPc && (pc.connectionState === 'failed' || pc.connectionState === 'disconnected')) setTimeout(() => { if (pc === playPc && c.live) whepPlay(video).catch(() => { video.srcObject = null; hlsPlay(video); }); }, 1500); };
     };
+    // LiveKit playback (WebRTC room): sub-second, works for OBS/RTMP and browser publishers alike
+    let lkRoom = null;
+    const stopLk = () => { if (lkRoom) { const r = lkRoom; lkRoom = null; r.disconnect().catch(() => {}); } };
+    const lkPlay = async (video) => {
+      stopLk(); const note = overlay('Connecting to stream…'); stage.append(note);
+      const { url, token } = await api('/api/lk/viewer?token=' + c.address);
+      const LK = window.LivekitClient; const room = lkRoom = new LK.Room({ adaptiveStream: true, dynacast: true });
+      const audio = el('audio', { autoplay: '' }); stage.append(audio);
+      const attach = (track) => { if (track.kind === 'video') { track.attach(video); video.muted = true; video.play().then(() => note.remove()).catch(() => { note.textContent = 'Tap to play'; note.style.pointerEvents = 'auto'; note.style.cursor = 'pointer'; note.onclick = () => video.play().then(() => note.remove()); }); } else if (track.kind === 'audio') { track.attach(audio); audio.play().catch(() => {}); } };
+      room.on(LK.RoomEvent.TrackSubscribed, (track) => attach(track));
+      room.on(LK.RoomEvent.Disconnected, () => { if (lkRoom === room && c.live) setTimeout(() => { if (lkRoom === room) lkPlay(video).catch(() => {}); }, 1500); });
+      await room.connect(url, token);
+      room.remoteParticipants.forEach(p => p.trackPublications.forEach(pub => { if (pub.track) attach(pub.track); }));
+      video.addEventListener('click', () => { audio.muted = false; audio.play().catch(() => {}); room.startAudio().catch(() => {}); }, { once: true });
+    };
     const paintPlayer = () => {
-      stage.innerHTML = ''; stopPlay(); stopHls();
-      if (c.live && c.hls_url) {
+      stage.innerHTML = ''; stopPlay(); stopHls(); stopLk();
+      if (c.live && c.provider === 'livekit') {
+        const video = el('video', { playsinline: '', controls: '' }); video.muted = true; video.autoplay = true; video.playsInline = true;
+        stage.append(video, el('div', { class: 'stream-live' }, el('span', { class: 'launch-card-live-badge' }, 'LIVE'), el('span', { class: 'launch-card-viewers', id: 'viewers' }, `${c.viewers} watching`)));
+        lkPlay(video).catch((e) => { console.warn('livekit', e); });
+      } else if (c.live && c.hls_url) {
         const video = el('video', { playsinline: '', controls: '' }); video.muted = true; video.autoplay = true; video.playsInline = true;   // property, not attribute: Chrome ignores the attribute on dynamic elements → autoplay would be blocked
         stage.append(video, el('div', { class: 'stream-live' }, el('span', { class: 'launch-card-live-badge' }, 'LIVE'), el('span', { class: 'launch-card-viewers', id: 'viewers' }, `${c.viewers} watching`)));
         if (c.ingest === 'webrtc' && c.whep_url && window.RTCPeerConnection) whepPlay(video).catch(() => { video.srcObject = null; hlsPlay(video); });
@@ -442,12 +462,23 @@
     RANGES.forEach(([lbl]) => ranges.append(el('button', { class: 'noxa-chart-range' + (lbl === range ? ' is-active' : ''), onclick: (e) => { range = lbl; [...ranges.children].forEach(b => b.classList.toggle('is-active', b === e.target)); changeEl.lastChild.textContent = lbl; paintChart(true).catch(() => {}); } }, lbl)));
     paintChart(true).catch(() => {}); timer = setInterval(() => paintChart().catch(() => {}), 3000);
     const onResize = () => paintChart(true).catch(() => {}); addEventListener('resize', onResize);
-    cleanup = () => { clearInterval(timer); removeEventListener('resize', onResize); off('history', hHist); off('chat', hChat); off('viewers', hViewers); off('live', hLive); off('banned', hBan); wsRoom = null; stopPlay(); stopHls(); stopPublish(); };
+    cleanup = () => { clearInterval(timer); removeEventListener('resize', onResize); off('history', hHist); off('chat', hChat); off('viewers', hViewers); off('live', hLive); off('banned', hBan); wsRoom = null; stopPlay(); stopHls(); stopLk(); stopPublish(); };
   }
 
   // ---- go live: browser (WHIP) or OBS (RTMPS key) ----
   let pc = null, localStream = null;
-  async function stopPublish() { if (pc) { pc.close(); pc = null; } if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; } }
+  async function stopPublish() { if (pc) { pc.close(); pc = null; } if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; } if (pubRoom) { const r = pubRoom; pubRoom = null; await r.disconnect().catch(() => {}); } }
+  let pubRoom = null;
+  async function lkPublish(c, kind, previewEl) {
+    await stopPublish();
+    const { url, token } = await api('/api/lk/publisher', { method: 'POST', body: { token: c.address } });
+    const LK = window.LivekitClient; const room = pubRoom = new LK.Room();
+    await room.connect(url, token);
+    if (kind === 'screen') await room.localParticipant.setScreenShareEnabled(true, { audio: true });
+    else { await room.localParticipant.setCameraEnabled(true); await room.localParticipant.setMicrophoneEnabled(true); }
+    const pubs = [...room.localParticipant.trackPublications.values()];
+    const ms = new MediaStream(pubs.filter(p => p.track).map(p => p.track.mediaStreamTrack)); previewEl.srcObject = ms; previewEl.muted = true;
+  }
   async function publish(whipUrl, stream, previewEl) {
     await stopPublish();
     localStream = stream; previewEl.srcObject = stream;
@@ -480,14 +511,14 @@
     const paint = () => {
       body.innerHTML = '';
       if (tab === 'browser') body.append(preview, status, el('div', { class: 'row' },
-        el('button', { class: 'pbtn primary', onclick: async () => { try { await publish(creds.whip_url, await navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720 }, audio: true }), preview); status.textContent = 'Publishing camera'; } catch (e) { toast(e.message); } } }, 'Camera'),
-        el('button', { class: 'pbtn primary', onclick: async () => { try { const s = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true }); await publish(creds.whip_url, s, preview); status.textContent = 'Publishing screen'; } catch (e) { toast(e.message); } } }, 'Screen'),
+        el('button', { class: 'pbtn primary', onclick: async () => { try { if (creds.provider === 'livekit') await lkPublish(c, 'camera', preview); else await publish(creds.whip_url, await navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720 }, audio: true }), preview); status.textContent = 'Publishing camera'; } catch (e) { toast(e.message); } } }, 'Camera'),
+        el('button', { class: 'pbtn primary', onclick: async () => { try { if (creds.provider === 'livekit') await lkPublish(c, 'screen', preview); else { const s = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true }); await publish(creds.whip_url, s, preview); } status.textContent = 'Publishing screen'; } catch (e) { toast(e.message); } } }, 'Screen'),
         el('button', { class: 'pbtn', onclick: async () => { await stopPublish(); status.textContent = 'Not publishing'; } }, 'Stop')),
         el('p', { class: 'hint' }, 'Viewers see you within ~10 seconds. Keep this tab open while live.'));
       else body.append(
         el('div', { class: 'key' }, 'Server', el('code', {}, creds.rtmps_url), el('button', { class: 'pbtn', onclick: () => { navigator.clipboard?.writeText(creds.rtmps_url); toast('Copied'); } }, 'Copy')),
         el('div', { class: 'key' }, 'Stream key', el('code', {}, '•'.repeat(24)), el('button', { class: 'pbtn', onclick: () => { navigator.clipboard?.writeText(creds.stream_key); toast('Key copied'); } }, 'Copy')),
-        el('p', { class: 'hint' }, 'OBS → Settings → Stream → Service: Custom. In Output set Keyframe Interval to 2 (“0 auto” means ~25 s delay).'));
+        el('p', { class: 'hint' }, 'OBS → Settings → Stream → Service: Custom, paste Server and Stream key. Viewers see you within a couple of seconds.'));
     };
     paint();
     const tabs = el('div', { class: 'tabs-pill', style: 'margin-bottom:16px' }, el('div', { class: 'tabs-list', style: 'width:100%' },
