@@ -142,10 +142,13 @@ async def h_verify(request):
 
 async def h_me(request):
     w = _wallet(request)
-    return web.json_response({"address": w, "coins": db.by_deployer(C, w) if w else []})
+    return web.json_response({"address": w, "coins": [_pub(t) for t in db.by_deployer(C, w)] if w else []})
 
 
 # ---- catalog ----
+
+_head = {"n": 0}              # latest block, refreshed by the status poller (card ages)
+
 
 def _pub(t: dict, stream: dict | None = None) -> dict:
     """Public shape of a token row (+ live stream state)."""
@@ -154,6 +157,7 @@ def _pub(t: dict, stream: dict | None = None) -> dict:
                                   "mcap_usd", "graduated", "created_ts")}
     s = stream if stream is not None else _stream_row(t["address"])
     out["image"] = f"/img/{t['address']}" if t.get("image") else ""
+    out["age"] = max(0, int((_head["n"] - (t.get("block") or 0)) * market.BLOCK_SECONDS)) if _head["n"] else None
     out["live"] = bool(s and s["live"])
     out["title"] = (s or {}).get("title", "")
     out["viewers"] = len(ROOMS.get(t["address"], set()))
@@ -307,6 +311,10 @@ async def poll_stream_status(app):
     """Every 10 s: ask Cloudflare whether each started stream is actually
     receiving video; flip `live` and tell the pages."""
     while True:
+        try:
+            _head["n"] = await asyncio.to_thread(chain.block_number)
+        except Exception:  # noqa: BLE001
+            pass
         try:
             for s in q("SELECT address, input_uid, live FROM streams WHERE started_ts>0 AND ended_ts=0"):
                 try:
