@@ -42,6 +42,7 @@
   @keyframes live-blink { 50% { opacity:.25; } }
   .launch-card-viewers { -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); color:#fff; background:#111111b8; border-radius:999px; padding:4px 8px; font-size:10px; line-height:1.2; }
   .launch-card.is-new { animation:card-pop .7s var(--ease-out); }
+  .launch-explore-grid .launch-card:hover { box-shadow:0 0 0 2px var(--accent); transform:none; background:var(--panel-blue); }
   @keyframes card-pop { from { box-shadow:0 0 0 2px var(--accent); } }
   .launch-card-logo .ph { font-size:26px; color:var(--text-subtle); }
   .launch-explore-empty-copy { color:var(--text-muted); font-size:13px; padding:8px 2px 4px; }
@@ -338,7 +339,10 @@
     const paintLive = async () => { const { rows } = await api('/api/streams'); live.count.textContent = rows.length; fill(live.grid, rows, 'Nobody is live right now. Own a PONS coin? Connect and go live.'); };
     await paintLive();
     if (rec) { const { rows, stats } = await api('/api/recent'); rec.count.textContent = stats.tokens.toLocaleString('en-US'); fill(rec.grid, rows, ''); }
-    const onLaunch = (m) => { if (!rec) return; const li = el('li', {}, card(m.coin)); li.firstChild.classList.add('is-new'); rec.grid.prepend(li); if (rec.grid.children.length > 60) rec.grid.lastChild.remove(); };
+    let frozen = false; const queued = [];
+    const insert = (coin) => { const li = el('li', {}, card(coin)); li.firstChild.classList.add('is-new'); rec.grid.prepend(li); if (rec.grid.children.length > 60) rec.grid.lastChild.remove(); };
+    const onLaunch = (m) => { if (!rec) return; if (frozen) { queued.push(m.coin); return; } insert(m.coin); };
+    if (rec) { rec.grid.addEventListener('mouseenter', () => { frozen = true; rec.grid.classList.add('is-frozen'); }); rec.grid.addEventListener('mouseleave', () => { frozen = false; rec.grid.classList.remove('is-frozen'); while (queued.length) insert(queued.shift()); }); }
     const onLive = () => paintLive();
     on('launch', onLaunch); on('live', onLive);
     cleanup = () => { off('launch', onLaunch); off('live', onLive); };
@@ -539,12 +543,6 @@
 
     const market = el('section', { class: 'token-market-card float' }, stats, chart);
     wrap.append(el('div', { class: 'token-buy-layout stream-layout' }, el('div', { class: 'stream-col' }, el('section', { class: 'stream-card float' }, stage), metaRow, market), chatCard));
-    // activity
-    const tradesList = el('ul', { class: 'token-trades-list' });
-    const tradesCount = el('span', { class: 'token-activity-count' }, '0');
-    wrap.append(el('section', { class: 'token-activity-card float' },
-      el('header', { class: 'token-activity-header' }, el('div', { class: 'token-activity-tabs tabs-pill' }, el('div', { class: 'tabs-list' }, el('button', { class: 'tabs-tab is-active' }, 'Recent trades'))), tradesCount),
-      el('div', { class: 'token-activity-panel' }, tradesList)));
     page.append(wrap);
     // chat wiring
     wsRoom = c.address; wsSend({ t: 'sub', room: c.address });
@@ -564,13 +562,6 @@
       lastKey = key;
       drawChart(chartStage, d.candles, range);
       if (d.candles.length >= 2) { const a = d.candles[0].open || d.candles[0].close, b = d.candles[d.candles.length - 1].close; const ch = a ? (b - a) / a * 100 : 0; changeEl.className = 'noxa-chart-change ' + (ch >= 0 ? 'is-up' : 'is-down'); changeEl.firstChild.textContent = (ch >= 0 ? '+' : '') + ch.toFixed(2) + '%'; priceRoll.textContent = fmtUsd(b); }
-      tradesList.innerHTML = ''; tradesCount.textContent = d.trades.length;
-      d.trades.forEach(t => tradesList.append(el('li', { class: 'token-trades-row ' + (t.side === 'buy' ? 'is-buy' : 'is-sell') },
-        el('span', { class: 'token-trades-dir' }, svgIcon(t.side === 'buy' ? ICON.up : ICON.down, 'token-trades-dir-svg')),
-        el('span', { class: 'token-trades-main' }, el('span', { class: 'token-trades-amount' }, fmtAmt(t.tokens_units) + ' ' + c.symbol), el('span', { class: 'token-trades-wallet' }, fmtUsd(t.usd))),
-        el('span', { class: 'token-trades-quote' }, el('span', { class: 'token-trades-value' }, el('span', { class: 'token-trades-eth' }, t.quote_units.toFixed(6).replace(/\.?0+$/, '') + ' ' + d.quote), el('span', { class: 'token-trades-venue' }, 'pons curve'))),
-        el('time', { class: 'token-trades-time' }, ago(t.ago, '')))));
-      if (!d.trades.length) tradesList.append(el('li', {}, el('p', { class: 'token-trades-empty', style: 'color:var(--text-muted);font-size:13px;margin:0' }, 'No trades yet')));
     };
     RANGES.forEach(([lbl]) => ranges.append(el('button', { class: 'noxa-chart-range' + (lbl === range ? ' is-active' : ''), onclick: (e) => { range = lbl; [...ranges.children].forEach(b => b.classList.toggle('is-active', b === e.target)); changeEl.lastChild.textContent = lbl; paintChart(true).catch(() => {}); } }, lbl)));
     paintChart(true).catch(() => {}); timer = setInterval(() => paintChart().catch(() => {}), 3000);
