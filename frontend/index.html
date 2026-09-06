@@ -364,7 +364,8 @@
         const hls = hlsInst = new Hls({ lowLatencyMode: false, liveSyncDurationCount: 1.5, liveMaxLatencyDurationCount: 5, maxBufferLength: 20, backBufferLength: 10, liveDurationInfinity: true, manifestLoadingMaxRetry: 30, manifestLoadingRetryDelay: 2000, levelLoadingMaxRetry: 30, fragLoadingMaxRetry: 10 });
         hls.on(Hls.Events.ERROR, (_, data) => { if (!data.fatal) return; if (data.type === Hls.ErrorTypes.NETWORK_ERROR) setTimeout(() => { if (hlsInst === hls) hls.loadSource(c.hls_url); }, 2000); else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) hls.recoverMediaError(); else setTimeout(() => { if (hlsInst === hls && c.live) hlsPlay(video); }, 2000); });
         hls.loadSource(c.hls_url); hls.attachMedia(video); window.__hls = hls;
-        hls.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(() => {}));
+        const tryPlay = () => video.play().catch(() => { note.textContent = 'Tap to play'; note.style.pointerEvents = 'auto'; note.style.cursor = 'pointer'; note.onclick = () => { video.muted = true; video.play().then(() => note.remove()).catch(() => {}); }; });
+        hls.on(Hls.Events.MANIFEST_PARSED, tryPlay); hls.on(Hls.Events.FRAG_BUFFERED, () => { if (video.paused && !note.onclick) tryPlay(); });
       } else if (video.canPlayType('application/vnd.apple.mpegurl')) { video.src = c.hls_url; video.play().catch(() => {}); }
       else { const host = new URL(c.hls_url).origin; note.remove(); stage.prepend(el('iframe', { src: `${host}/${c.input_uid}/iframe?autoplay=true&muted=true`, allow: 'autoplay; fullscreen; picture-in-picture', allowfullscreen: '' })); video.remove(); }
     };
@@ -386,7 +387,7 @@
     const paintPlayer = () => {
       stage.innerHTML = ''; stopPlay(); stopHls();
       if (c.live && c.hls_url) {
-        const video = el('video', { autoplay: '', playsinline: '', muted: '', controls: '' });
+        const video = el('video', { playsinline: '', controls: '' }); video.muted = true; video.autoplay = true; video.playsInline = true;   // property, not attribute: Chrome ignores the attribute on dynamic elements → autoplay would be blocked
         stage.append(video, el('div', { class: 'stream-live' }, el('span', { class: 'launch-card-live-badge' }, 'LIVE'), el('span', { class: 'launch-card-viewers', id: 'viewers' }, `${c.viewers} watching`)));
         if (c.ingest === 'webrtc' && c.whep_url && window.RTCPeerConnection) whepPlay(video).catch(() => { video.srcObject = null; hlsPlay(video); });
         else hlsPlay(video);
