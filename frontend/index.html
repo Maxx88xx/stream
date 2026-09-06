@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/pons.css">
+<script src="/assets/hls.min.js"></script>
 <style>
   /* ---- pons.css carries PONS's own rules; below: page chrome + the stream/chat bits PONS doesn't have ---- */
   html { background:var(--bg-page); color-scheme:dark; }
@@ -71,6 +72,8 @@
   .stream-off { position:absolute; inset:0; display:grid; place-items:center; align-content:center; gap:10px; color:var(--text-muted); background:var(--chart-stage); font-size:13px; }
   .stream-off img { width:88px; height:88px; border-radius:18px; object-fit:cover; }
   .stream-live { position:absolute; top:12px; left:12px; display:flex; gap:6px; z-index:2; }
+  .stream-connecting { position:absolute; inset:0; display:grid; place-items:center; color:var(--text-muted); font-size:13px; background:#000; pointer-events:none; }
+  .stream-stage video { background:#000; }
   .token-market-chart .noxa-chart-stage { min-height:300px; }
   .noxa-chart-range { font-size:11px; }
   .token-trades-row { grid-template-columns:22px minmax(0,1fr) auto 3.5ch; }
@@ -350,8 +353,22 @@
     const stage = el('div', { class: 'stream-stage' });
     let playPc = null;
     const stopPlay = () => { if (playPc) { try { playPc.close(); } catch {} playPc = null; } };
-    const hlsFallback = () => { stage.querySelector('video')?.remove(); const host = new URL(c.hls_url).origin; stage.prepend(el('iframe', { src: `${host}/${c.input_uid}/iframe?autoplay=true&muted=true`, allow: 'autoplay; fullscreen; picture-in-picture', allowfullscreen: '' })); };
-    // WebRTC (WHEP) playback: sub-second latency instead of HLS's 20-60 s; HLS iframe only if WebRTC fails
+    let hlsInst = null;
+    const stopHls = () => { if (hlsInst) { try { hlsInst.destroy(); } catch {} hlsInst = null; } };
+    const overlay = (text) => el('div', { class: 'stream-connecting' }, text);
+    const hlsPlay = (video) => {
+      stopHls(); const note = overlay('Connecting to stream…'); stage.append(note);
+      const started = () => note.remove();
+      video.addEventListener('playing', started, { once: true });
+      if (window.Hls && Hls.isSupported()) {
+        const hls = hlsInst = new Hls({ lowLatencyMode: false, liveSyncDuration: 4, liveMaxLatencyDuration: 14, maxBufferLength: 12, backBufferLength: 10, liveDurationInfinity: true, manifestLoadingMaxRetry: 30, manifestLoadingRetryDelay: 2000, levelLoadingMaxRetry: 30, fragLoadingMaxRetry: 10 });
+        hls.on(Hls.Events.ERROR, (_, data) => { if (!data.fatal) return; if (data.type === Hls.ErrorTypes.NETWORK_ERROR) setTimeout(() => { if (hlsInst === hls) hls.loadSource(c.hls_url); }, 2000); else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) hls.recoverMediaError(); else setTimeout(() => { if (hlsInst === hls && c.live) hlsPlay(video); }, 2000); });
+        hls.loadSource(c.hls_url); hls.attachMedia(video);
+        hls.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(() => {}));
+      } else if (video.canPlayType('application/vnd.apple.mpegurl')) { video.src = c.hls_url; video.play().catch(() => {}); }
+      else { const host = new URL(c.hls_url).origin; note.remove(); stage.prepend(el('iframe', { src: `${host}/${c.input_uid}/iframe?autoplay=true&muted=true`, allow: 'autoplay; fullscreen; picture-in-picture', allowfullscreen: '' })); video.remove(); }
+    };
+    // WebRTC (WHEP) playback: sub-second, only possible when the creator publishes from the browser (Cloudflare can't WHEP an RTMP ingest)
     const whepPlay = async (video) => {
       stopPlay();
       const pc = playPc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.cloudflare.com:3478' }], bundlePolicy: 'max-bundle' });
@@ -364,15 +381,15 @@
       if (!r.ok) throw new Error('WHEP ' + r.status);
       await pc.setRemoteDescription({ type: 'answer', sdp: await r.text() });
       await new Promise((res, rej) => { const t = setTimeout(() => rej(new Error('no video')), 8000); const chk = () => { if (video.videoWidth > 0) { clearTimeout(t); res(); } else if (pc.connectionState === 'failed' || pc.connectionState === 'closed') { clearTimeout(t); rej(new Error('rtc ' + pc.connectionState)); } else setTimeout(chk, 200); }; chk(); });
-      pc.onconnectionstatechange = () => { if (pc === playPc && (pc.connectionState === 'failed' || pc.connectionState === 'disconnected')) setTimeout(() => { if (pc === playPc && c.live) whepPlay(video).catch(hlsFallback); }, 1500); };
+      pc.onconnectionstatechange = () => { if (pc === playPc && (pc.connectionState === 'failed' || pc.connectionState === 'disconnected')) setTimeout(() => { if (pc === playPc && c.live) whepPlay(video).catch(() => { video.srcObject = null; hlsPlay(video); }); }, 1500); };
     };
     const paintPlayer = () => {
-      stage.innerHTML = ''; stopPlay();
+      stage.innerHTML = ''; stopPlay(); stopHls();
       if (c.live && c.hls_url) {
         const video = el('video', { autoplay: '', playsinline: '', muted: '', controls: '' });
         stage.append(video, el('div', { class: 'stream-live' }, el('span', { class: 'launch-card-live-badge' }, 'LIVE'), el('span', { class: 'launch-card-viewers', id: 'viewers' }, `${c.viewers} watching`)));
-        if (c.whep_url && window.RTCPeerConnection) whepPlay(video).catch((e) => { console.warn('whep failed, hls fallback', e); hlsFallback(); });
-        else hlsFallback();
+        if (c.ingest === 'webrtc' && c.whep_url && window.RTCPeerConnection) whepPlay(video).catch(() => { video.srcObject = null; hlsPlay(video); });
+        else hlsPlay(video);
       } else stage.append(el('div', { class: 'stream-off' }, c.image && el('img', { src: c.image, alt: '' }), el('span', {}, isDev ? 'You are not live yet — press Go live' : 'There is no stream yet')));
     };
     paintPlayer();
@@ -422,7 +439,7 @@
     RANGES.forEach(([lbl]) => ranges.append(el('button', { class: 'noxa-chart-range' + (lbl === range ? ' is-active' : ''), onclick: (e) => { range = lbl; [...ranges.children].forEach(b => b.classList.toggle('is-active', b === e.target)); changeEl.lastChild.textContent = lbl; paintChart(true).catch(() => {}); } }, lbl)));
     paintChart(true).catch(() => {}); timer = setInterval(() => paintChart().catch(() => {}), 3000);
     const onResize = () => paintChart(true).catch(() => {}); addEventListener('resize', onResize);
-    cleanup = () => { clearInterval(timer); removeEventListener('resize', onResize); off('history', hHist); off('chat', hChat); off('viewers', hViewers); off('live', hLive); off('banned', hBan); wsRoom = null; stopPlay(); stopPublish(); };
+    cleanup = () => { clearInterval(timer); removeEventListener('resize', onResize); off('history', hHist); off('chat', hChat); off('viewers', hViewers); off('live', hLive); off('banned', hBan); wsRoom = null; stopPlay(); stopHls(); stopPublish(); };
   }
 
   // ---- go live: browser (WHIP) or OBS (RTMPS key) ----
@@ -465,12 +482,9 @@
         el('button', { class: 'pbtn', onclick: async () => { await stopPublish(); status.textContent = 'Not publishing'; } }, 'Stop')),
         el('p', { class: 'hint' }, 'Viewers see you within ~10 seconds. Keep this tab open while live.'));
       else body.append(
-        el('p', { class: 'hint', style: 'margin-top:0' }, el('b', { style: 'font-weight:500;color:var(--text-primary)' }, 'Option A — WHIP, delay under 1 second (OBS 31 or newer).'), ' Settings → Stream: Service ', el('b', { style: 'font-weight:500;color:var(--text-primary)' }, 'WHIP'), ', Server = the URL below, Bearer Token empty. Output: Audio encoder FFmpeg Opus, Video x264 or NVENC, CBR 3000–6000 Kbps, Keyframe Interval 1 s, B-frames 0.'),
-        el('div', { class: 'key' }, 'WHIP URL', el('code', {}, '•'.repeat(24)), el('button', { class: 'pbtn', onclick: () => { navigator.clipboard?.writeText(creds.whip_url); toast('WHIP URL copied'); } }, 'Copy')),
-        el('p', { class: 'hint' }, el('b', { style: 'font-weight:500;color:var(--text-primary)' }, 'Option B — RTMPS, delay 5–10 seconds, gets recorded.'), ' Service Custom, Server + Stream key below. Output → Advanced: Keyframe Interval 2 s, B-frames 0, CBR. Keyframe “0 (auto)” makes the delay 30+ seconds.'),
         el('div', { class: 'key' }, 'Server', el('code', {}, creds.rtmps_url), el('button', { class: 'pbtn', onclick: () => { navigator.clipboard?.writeText(creds.rtmps_url); toast('Copied'); } }, 'Copy')),
         el('div', { class: 'key' }, 'Stream key', el('code', {}, '•'.repeat(24)), el('button', { class: 'pbtn', onclick: () => { navigator.clipboard?.writeText(creds.stream_key); toast('Key copied'); } }, 'Copy')),
-        el('p', { class: 'hint' }, 'Start streaming in OBS; the page flips to LIVE on its own. These credentials are permanent — never share them.'));
+        el('p', { class: 'hint' }, 'OBS → Settings → Stream → Service: Custom. In Output set Keyframe Interval to 2 (“0 auto” means ~25 s delay).'));
     };
     paint();
     const tabs = el('div', { class: 'tabs-pill', style: 'margin-bottom:16px' }, el('div', { class: 'tabs-list', style: 'width:100%' },

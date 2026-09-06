@@ -191,7 +191,7 @@ async def h_token(request):
     s = _stream_row(addr)
     out = _pub(t, s)
     if s:
-        out["hls_url"], out["whep_url"], out["input_uid"] = s["hls_url"], s["whep_url"], s["input_uid"]
+        out["hls_url"], out["whep_url"], out["input_uid"], out["ingest"] = s["hls_url"], s["whep_url"], s["input_uid"], s["ingest"] if "ingest" in s.keys() else ""
     return web.json_response(out, headers=NO_CACHE)
 
 
@@ -281,7 +281,7 @@ async def h_stream_start(request):
     async with _start_locks.setdefault(addr, asyncio.Lock()):      # one live input per coin, even under a click storm
         s = _stream_row(addr)
         if not s:
-            li = await asyncio.to_thread(cf, "POST", "", {"meta": {"name": f"{t['symbol']} {addr}"}, "recording": {"mode": "automatic"}, "preferLowLatency": True})
+            li = await asyncio.to_thread(cf, "POST", "", {"meta": {"name": f"{t['symbol']} {addr}"}, "recording": {"mode": "automatic"}, "preferLowLatency": False})
             x("INSERT OR IGNORE INTO streams(address,input_uid,rtmps_url,stream_key,whip_url,hls_url,whep_url,title,wallet,created_ts) VALUES(?,?,?,?,?,?,?,?,?,?)",
               (addr, li["uid"], li["rtmps"]["url"], li["rtmps"]["streamKey"], li["webRTC"]["url"], li["playback"]["hls"],
                li["webRTCPlayback"]["url"], title, w, int(time.time())))
@@ -302,7 +302,7 @@ def _ensure_ll(uid: str) -> None:
     if uid in _ll_done:
         return
     try:
-        cf("PUT", f"/{uid}", {"recording": {"mode": "automatic"}, "preferLowLatency": True})
+        cf("PUT", f"/{uid}", {"recording": {"mode": "automatic"}, "preferLowLatency": False})   # LL-HLS beta stalls with stock OBS (B-frames, 8 s GOP)
         _ll_done.add(uid)
     except Exception as exc:  # noqa: BLE001
         print(f"[cf] preferLowLatency update failed for {uid}: {exc}")
@@ -339,6 +339,9 @@ async def track_head():
         await asyncio.sleep(3)
 
 
+_miss: dict = {}
+
+
 async def poll_stream_status(app):
     """Every 3 s: ask Cloudflare whether each started stream is actually
     receiving video; flip `live` and tell the pages."""
@@ -354,10 +357,16 @@ async def poll_stream_status(app):
                 except Exception as exc:  # noqa: BLE001
                     print(f"[cf] status failed for {s['address']}: {exc}")
                     continue
-                cur = ((st.get("status") or {}).get("current") or {}).get("state")
+                curst = ((st.get("status") or {}).get("current") or {})
+                cur = curst.get("state")
                 now_live = cur == "connected"
+                if not now_live and s["live"] and _miss.get(s["address"], 0) < 2:      # one blip is not an outage
+                    _miss[s["address"]] = _miss.get(s["address"], 0) + 1
+                    continue
+                if now_live:
+                    _miss.pop(s["address"], None)
                 if now_live != bool(s["live"]):
-                    x("UPDATE streams SET live=? WHERE address=?", (int(now_live), s["address"]))
+                    x("UPDATE streams SET live=?, ingest=? WHERE address=?", (int(now_live), curst.get("ingestProtocol") or "", s["address"]))
                     await broadcast_all({"t": "live", "token": s["address"], "live": now_live})
                     print(f"[cf] {s['address']} live={now_live}")
         except Exception as exc:  # noqa: BLE001
