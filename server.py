@@ -28,6 +28,7 @@ from aiohttp import WSMsgType, web
 from eth_account import Account
 from eth_account.messages import encode_defunct
 
+import livekit_api as lk
 from indexer import chain, db, images, live, market
 
 BASE = Path(__file__).resolve().parent
@@ -192,6 +193,7 @@ async def h_token(request):
     out = _pub(t, s)
     if s:
         out["hls_url"], out["whep_url"], out["input_uid"], out["ingest"] = s["hls_url"], s["whep_url"], s["input_uid"], s["ingest"] if "ingest" in s.keys() else ""
+        out["provider"] = _provider(s)
     return web.json_response(out, headers=NO_CACHE)
 
 
@@ -254,8 +256,12 @@ def cf(method: str, path: str, data=None):
     return body["result"]
 
 
+def _provider(s) -> str:
+    return "livekit" if ("ingress_id" in s.keys() and s["ingress_id"]) else "cf"
+
+
 def _creds(s: dict) -> dict:
-    return {"rtmps_url": s["rtmps_url"], "stream_key": s["stream_key"], "whip_url": s["whip_url"],
+    return {"provider": _provider(s), "rtmps_url": s["rtmps_url"], "stream_key": s["stream_key"], "whip_url": s["whip_url"],
             "hls_url": s["hls_url"], "whep_url": s["whep_url"], "title": s["title"], "live": bool(s["live"])}
 
 
@@ -280,6 +286,20 @@ async def h_stream_start(request):
     title = str(body.get("title") or "")[:80]
     async with _start_locks.setdefault(addr, asyncio.Lock()):      # one live input per coin, even under a click storm
         s = _stream_row(addr)
+        if lk.ENABLED and not (s and s["ingress_id"]):
+            try:
+                ing = await asyncio.to_thread(lk.create_ingress, addr, f"{t['symbol']} {t['name']}")
+            except Exception as exc:  # noqa: BLE001
+                print(f"[lk] create_ingress failed: {exc}")
+                return web.json_response({"error": "LiveKit refused the API key/secret — check LIVEKIT_* variables"}, status=503)
+            if s:
+                x("UPDATE streams SET ingress_id=?, rtmps_url=?, stream_key=? WHERE address=?", (ing["ingress_id"], ing["url"], ing["stream_key"], addr))
+            else:
+                x("INSERT OR IGNORE INTO streams(address,input_uid,rtmps_url,stream_key,whip_url,hls_url,whep_url,title,wallet,created_ts,ingress_id) VALUES(?,?,?,?,?,?,?,?,?,?,?)",
+                  (addr, "", ing["url"], ing["stream_key"], "", "", "", title, w, int(time.time()), ing["ingress_id"]))
+            s = _stream_row(addr)
+            if s["ingress_id"] != ing["ingress_id"]:
+                asyncio.create_task(asyncio.to_thread(lk.delete_ingress, ing["ingress_id"]))
         if not s:
             li = await asyncio.to_thread(cf, "POST", "", {"meta": {"name": f"{t['symbol']} {addr}"}, "recording": {"mode": "automatic"}, "preferLowLatency": False})
             x("INSERT OR IGNORE INTO streams(address,input_uid,rtmps_url,stream_key,whip_url,hls_url,whep_url,title,wallet,created_ts) VALUES(?,?,?,?,?,?,?,?,?,?)",
@@ -351,15 +371,23 @@ async def poll_stream_status(app):
         except Exception:  # noqa: BLE001
             pass
         try:
-            for s in q("SELECT address, input_uid, live, ingest FROM streams WHERE started_ts>0 AND ended_ts=0"):
-                try:
-                    st = await asyncio.to_thread(cf, "GET", f"/{s['input_uid']}")
-                except Exception as exc:  # noqa: BLE001
-                    print(f"[cf] status failed for {s['address']}: {exc}")
-                    continue
-                curst = ((st.get("status") or {}).get("current") or {})
-                cur = curst.get("state")
-                now_live = cur == "connected"
+            for s in q("SELECT address, input_uid, live, ingest, ingress_id FROM streams WHERE started_ts>0 AND ended_ts=0"):
+                curst = {}
+                if s["ingress_id"]:
+                    try:
+                        now_live, how = await asyncio.to_thread(lk.publishing, s["address"])
+                    except Exception as exc:  # noqa: BLE001
+                        print(f"[lk] status failed for {s['address']}: {str(exc)[:100]}")
+                        continue
+                    curst = {"ingestProtocol": how}
+                else:
+                    try:
+                        st = await asyncio.to_thread(cf, "GET", f"/{s['input_uid']}")
+                    except Exception as exc:  # noqa: BLE001
+                        print(f"[cf] status failed for {s['address']}: {exc}")
+                        continue
+                    curst = ((st.get("status") or {}).get("current") or {})
+                    now_live = curst.get("state") == "connected"
                 if not now_live and s["live"] and _miss.get(s["address"], 0) < 2:      # one blip is not an outage
                     _miss[s["address"]] = _miss.get(s["address"], 0) + 1
                     continue
@@ -373,7 +401,28 @@ async def poll_stream_status(app):
                     print(f"[cf] {s['address']} live={now_live}")
         except Exception as exc:  # noqa: BLE001
             print(f"[cf] poll error: {exc}")
-        await asyncio.sleep(3)
+        await asyncio.sleep(2)
+
+
+# ---- LiveKit: viewer / publisher tokens ----
+
+async def h_lk_viewer(request):
+    addr = _norm_addr(request.query.get("token"))
+    s = _stream_row(addr) if addr else None
+    if not s or not s["ingress_id"]:
+        return web.json_response({"error": "no livekit stream"}, status=404)
+    ident = "v-" + secrets.token_hex(6)
+    return web.json_response({"url": lk.URL, "token": lk.viewer_token(addr, ident), "room": addr}, headers=NO_CACHE)
+
+
+async def h_lk_publisher(request):
+    w = _wallet(request)
+    body = await request.json()
+    addr = _norm_addr(body.get("token"))
+    s = _stream_row(addr) if addr else None
+    if not w or not s or s["wallet"] != w or not s["ingress_id"]:
+        return web.json_response({"error": "not yours"}, status=403)
+    return web.json_response({"url": lk.URL, "token": lk.publisher_token(addr, "creator-web", "creator"), "room": addr}, headers=NO_CACHE)
 
 
 # ---- WebSocket: launch feed, chat rooms, viewer counts ----
@@ -559,6 +608,8 @@ def make_app() -> web.Application:
     r.add_get("/api/candles/{addr}", h_candles)
     r.add_post("/api/stream/start", h_stream_start)
     r.add_post("/api/stream/stop", h_stream_stop)
+    r.add_get("/api/lk/viewer", h_lk_viewer)
+    r.add_post("/api/lk/publisher", h_lk_publisher)
     r.add_get("/api/stream/creds", h_stream_creds)
     r.add_post("/api/admin", h_admin)
     r.add_get("/ws", h_ws)

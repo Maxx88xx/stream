@@ -190,7 +190,9 @@ def connect_web() -> sqlite3.Connection:
     """The web process's read-write handle: catalog read, streams/chat write."""
     c = connect()
     c.executescript(EXTRA_SCHEMA)
-    if "ingest" not in {r[1] for r in c.execute("PRAGMA table_info(streams)")}:
-        c.execute("ALTER TABLE streams ADD COLUMN ingest TEXT DEFAULT ''")
-        c.commit()
+    cols = {r[1] for r in c.execute("PRAGMA table_info(streams)")}
+    for col in ("ingest", "ingress_id"):
+        if col not in cols:
+            c.execute(f"ALTER TABLE streams ADD COLUMN {col} TEXT DEFAULT ''")
+    c.commit()
     return c
