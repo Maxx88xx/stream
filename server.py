@@ -337,6 +337,28 @@ async def h_stream_creds(request):
     return web.json_response(_creds(s), headers=NO_CACHE)
 
 
+async def h_stream_reset(request):
+    """New RTMP credentials for a coin (the old key stops working)."""
+    w = _wallet(request)
+    body = await request.json()
+    addr = _norm_addr(body.get("token"))
+    s = _stream_row(addr) if addr else None
+    if not w or not s or s["wallet"] != w:
+        return web.json_response({"error": "not yours"}, status=403)
+    if not (lk.ENABLED and s["ingress_id"]):
+        return web.json_response({"error": "not a LiveKit stream"}, status=400)
+    t = db.get_token(C, addr)
+    async with _start_locks.setdefault(addr, asyncio.Lock()):
+        try:
+            ing = await asyncio.to_thread(lk.create_ingress, addr, f"{t['symbol']} {t['name']}")
+        except Exception as exc:  # noqa: BLE001
+            return web.json_response({"error": f"LiveKit: {str(exc)[:100]}"}, status=503)
+        old = s["ingress_id"]
+        x("UPDATE streams SET ingress_id=?, rtmps_url=?, stream_key=? WHERE address=?", (ing["ingress_id"], ing["url"], ing["stream_key"], addr))
+        asyncio.create_task(asyncio.to_thread(lk.delete_ingress, old))
+    return web.json_response(_creds(_stream_row(addr)), headers=NO_CACHE)
+
+
 async def h_stream_stop(request):
     w = _wallet(request)
     body = await request.json()
@@ -608,6 +630,7 @@ def make_app() -> web.Application:
     r.add_get("/api/candles/{addr}", h_candles)
     r.add_post("/api/stream/start", h_stream_start)
     r.add_post("/api/stream/stop", h_stream_stop)
+    r.add_post("/api/stream/reset", h_stream_reset)
     r.add_get("/api/lk/viewer", h_lk_viewer)
     r.add_post("/api/lk/publisher", h_lk_publisher)
     r.add_get("/api/stream/creds", h_stream_creds)
