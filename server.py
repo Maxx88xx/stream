@@ -351,7 +351,7 @@ async def poll_stream_status(app):
         except Exception:  # noqa: BLE001
             pass
         try:
-            for s in q("SELECT address, input_uid, live FROM streams WHERE started_ts>0 AND ended_ts=0"):
+            for s in q("SELECT address, input_uid, live, ingest FROM streams WHERE started_ts>0 AND ended_ts=0"):
                 try:
                     st = await asyncio.to_thread(cf, "GET", f"/{s['input_uid']}")
                 except Exception as exc:  # noqa: BLE001
@@ -365,6 +365,8 @@ async def poll_stream_status(app):
                     continue
                 if now_live:
                     _miss.pop(s["address"], None)
+                    if not (s["ingest"] if "ingest" in s.keys() else ""):
+                        x("UPDATE streams SET ingest=? WHERE address=?", (curst.get("ingestProtocol") or "", s["address"]))
                 if now_live != bool(s["live"]):
                     x("UPDATE streams SET live=?, ingest=? WHERE address=?", (int(now_live), curst.get("ingestProtocol") or "", s["address"]))
                     await broadcast_all({"t": "live", "token": s["address"], "live": now_live})
