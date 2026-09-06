@@ -42,11 +42,7 @@
   @keyframes live-blink { 50% { opacity:.25; } }
   .launch-card-viewers { -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); color:#fff; background:#111111b8; border-radius:999px; padding:4px 8px; font-size:10px; line-height:1.2; }
   .launch-card.is-new { animation:card-pop 1.2s var(--ease-out); }
-  html[data-theme=dark] .launch-explore-grid .launch-card:hover, .launch-explore-grid .launch-card:hover { box-shadow:none !important; transform:none !important; background:var(--accent) !important; }
-  .launch-explore-grid .launch-card:hover .launch-card-logo { background:#0d0d0d; }
-  .launch-explore-grid .launch-card:hover .launch-card-body strong, .launch-explore-grid .launch-card:hover .launch-card-mcap-value { color:#111; }
-  .launch-explore-grid .launch-card:hover .launch-card-body > small, .launch-explore-grid .launch-card:hover .launch-card-mcap-label, .launch-explore-grid .launch-card:hover .launch-card-meta, .launch-explore-grid .launch-card:hover .launch-card-deployer { color:#11111199; }
-  @keyframes card-pop { from { background:var(--accent-soft); } to { background:var(--panel-blue); } }
+  html[data-theme=dark] .launch-explore-grid .launch-card:hover, .launch-explore-grid .launch-card:hover { box-shadow:none !important; transform:none !important; background:color-mix(in srgb, var(--accent) 18%, var(--panel-blue)) !important; }
   .launch-card-logo .ph { font-size:26px; color:var(--text-subtle); }
   .launch-explore-empty-copy { color:var(--text-muted); font-size:13px; padding:8px 2px 4px; }
 
