@@ -85,6 +85,42 @@
   .tabs-tab { background:none; border:0; cursor:pointer; padding:8px 14px; font-size:13px; border-radius:12px; min-width:0; }
   .tabs-tab.is-active { background:var(--bg-white); box-shadow:0 1px 3px #11111114; }
 
+  /* stream page layout: player 66% + chat 27% (pump.fun proportions), chat as tall as the player */
+  .stream-layout { grid-template-columns:minmax(0,2.45fr) minmax(300px,1fr); gap:24px; align-items:start; }
+  .stream-col { display:grid; gap:16px; min-width:0; }
+  .stream-col .stream-stage { border-radius:16px; }
+  .chat-card { display:flex; flex-direction:column; padding:18px 20px 20px; aspect-ratio:auto; height:100%; box-sizing:border-box; background:var(--bg-white); }
+  .stream-layout .chat-card { align-self:stretch; height:auto; max-height:none; }
+  .stream-layout { grid-template-rows:auto auto; }
+  .stream-layout .stream-col { grid-row:1 / span 2; }
+  .stream-layout .chat-card { grid-row:1; }
+  .chat-card .chat-head { display:flex; align-items:center; justify-content:space-between; padding:0 0 12px; }
+  .chat-card .chat-head h3 { margin:0; font-size:20px; font-weight:500; }
+  .chat-card .chat-head span { background:var(--panel-blue); border-radius:999px; padding:3px 10px; font-size:13px; color:var(--text-muted); font-variant-numeric:tabular-nums; }
+  .chat-card .chat-msgs { flex:1; min-height:0; overflow-y:auto; display:flex; flex-direction:column; gap:10px; padding:4px 2px; }
+  .chat-card .chat-msg { font-size:15px; line-height:1.45; }
+  .chat-card .chat-msg.is-sys { text-align:center; margin:auto 0; color:var(--text-subtle); font-size:15px; }
+  .chat-card .chat-form { display:flex; gap:10px; margin-top:14px; }
+  .chat-card .chat-form input { height:50px; border-radius:14px; padding:0 16px; font-size:15px; background:var(--panel-blue); border:1px solid var(--divider); }
+  .chat-card .chat-form button { width:50px; height:50px; flex:none; border-radius:50%; background:var(--accent); color:#111; border:0; display:grid; place-items:center; padding:0; cursor:pointer; }
+  .stream-meta { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:2px 6px; min-width:0; }
+  .stream-meta-left { display:flex; align-items:center; gap:12px; min-width:0; flex:1; }
+  .launch-card-live-badge.is-big { font-size:13px; padding:5px 10px; }
+  .stream-title { margin:0; font-size:22px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .stream-started { color:var(--text-muted); font-size:15px; white-space:nowrap; }
+  .stream-meta-right { display:flex; align-items:center; gap:12px; flex:none; }
+  .stream-coin { display:flex; align-items:center; gap:10px; }
+  .stream-coin img, .stream-coin-ph { width:40px; height:40px; border-radius:11px; object-fit:cover; background:var(--panel-blue); display:grid; place-items:center; font-size:11px; color:var(--text-subtle); }
+  .stream-coin > span { display:grid; gap:2px; }
+  .stream-coin b { font-weight:400; font-size:15px; white-space:nowrap; }
+  .stream-coin small { color:var(--text-muted); font-size:12px; display:inline-flex; align-items:center; gap:6px; }
+  .stream-action.ui-btn { width:auto; min-height:44px; padding:0 18px; border-radius:999px; border:0; font-size:15px; font-weight:500; cursor:pointer; }
+  .stream-stage .sc-btn { width:46px; height:44px; }
+  .stream-stage .sc-stop { width:44px; height:44px; }
+  .stream-stage .sc-vol { width:100px; }
+  .stream-live .launch-card-live-badge { font-size:13px; padding:5px 10px; }
+  .stream-live .launch-card-viewers { font-size:13px; padding:5px 10px; }
+  @media (max-width:900px) { .stream-layout { grid-template-columns:1fr; grid-template-rows:auto; } .stream-layout .stream-col { grid-row:auto; } .stream-layout .chat-card { grid-row:auto; height:60vh; } .stream-meta { flex-wrap:wrap; } }
   /* go-live flow + player controls */
   .golive { display:grid; gap:6px; }
   .golive-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
@@ -164,7 +200,7 @@
   const $ = (s, r = document) => r.querySelector(s);
   const el = (tag, attrs = {}, ...kids) => { const e = document.createElement(tag); for (const [k, v] of Object.entries(attrs)) { if (v == null || v === false) continue; if (k === 'class') e.className = v; else if (k.startsWith('on')) e.addEventListener(k.slice(2), v); else if (k === 'html') e.innerHTML = v; else e.setAttribute(k, v); } for (const k of kids.flat()) if (k != null && k !== false) e.append(k.nodeType ? k : document.createTextNode(String(k))); return e; };
   const svgIcon = (d, cls = '', vb = '0 0 24 24') => { const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); s.setAttribute('viewBox', vb); s.setAttribute('width', '18'); s.setAttribute('height', '18'); s.setAttribute('fill', 'none'); s.setAttribute('stroke', 'currentColor'); s.setAttribute('stroke-width', '1.8'); s.setAttribute('stroke-linecap', 'round'); s.setAttribute('stroke-linejoin', 'round'); s.style.fill = 'none'; if (cls) s.setAttribute('class', cls); s.innerHTML = d; return s; };
-  const ICON = { cam: '<path d="M15 10l4.5-2.5v9L15 14M4 6h11v12H4z"/>', mic: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>', share: '<path d="M12 16V5M7 10l5-5 5 5M5 19h14"/>', vol: '<path d="M4 10v4h4l5 4V6l-5 4H4zM16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/>', full: '<path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/>', key: '<circle cx="8" cy="14" r="4"/><path d="M11 11l9-9M16 6l3 3M14 8l2 2"/>', search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>', up: '<path d="M7 17 17 7M9 7h8v8"/>', down: '<path d="M17 7 7 17M7 9v8h8"/>', copy: '<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/>', globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>', back: '<path d="m15 18-6-6 6-6"/>', dot: '<circle cx="12" cy="12" r="5" fill="currentColor" stroke="none"/>' };
+  const ICON = { send: '<path d="M4 12 20 4l-4 16-5-6zM11 14l9-10"/>', cam: '<path d="M15 10l4.5-2.5v9L15 14M4 6h11v12H4z"/>', mic: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>', share: '<path d="M12 16V5M7 10l5-5 5 5M5 19h14"/>', vol: '<path d="M4 10v4h4l5 4V6l-5 4H4zM16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/>', full: '<path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/>', key: '<circle cx="8" cy="14" r="4"/><path d="M11 11l9-9M16 6l3 3M14 8l2 2"/>', search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>', up: '<path d="M7 17 17 7M9 7h8v8"/>', down: '<path d="M17 7 7 17M7 9v8h8"/>', copy: '<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/>', globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>', back: '<path d="m15 18-6-6 6-6"/>', dot: '<circle cx="12" cy="12" r="5" fill="currentColor" stroke="none"/>' };
   const fmtUsd = (v) => { v = Number(v || 0); return v >= 1e9 ? '$' + (v / 1e9).toFixed(2) + 'B' : v >= 1e6 ? '$' + (v / 1e6).toFixed(2) + 'M' : v >= 1e3 ? '$' + (v / 1e3).toFixed(2) + 'K' : '$' + v.toFixed(v < 10 ? 2 : 0); };
   const fmtFull = (v) => '$' + Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const fmtPrice = (v) => { v = Number(v || 0); if (!v) return '—'; return '$' + (v >= 1 ? v.toFixed(2) : v.toFixed(Math.min(10, 2 - Math.floor(Math.log10(v))))); };
@@ -380,15 +416,13 @@
     // left: identity + chat + action
     const msgs = el('div', { class: 'chat-msgs' });
     const chatCount = el('span', {}, c.viewers);
-    const input = el('input', { placeholder: session ? 'Say something…' : 'Connect wallet to chat', maxlength: 280 });
-    const form = el('form', { class: 'chat-form', onsubmit: (e) => { e.preventDefault(); if (!session) return walletModal(); if (input.value.trim()) { wsSend({ t: 'chat', text: input.value.trim() }); input.value = ''; } } }, input, el('button', {}, 'Send'));
+    const input = el('input', { placeholder: session ? 'Write a message…' : 'Connect wallet to chat', maxlength: 280 });
+    const form = el('form', { class: 'chat-form', onsubmit: (e) => { e.preventDefault(); if (!session) return walletModal(); if (input.value.trim()) { wsSend({ t: 'chat', text: input.value.trim() }); input.value = ''; } } }, input, el('button', { title: 'Send' }, svgIcon(ICON.send)));
     const addMsg = (m, sys) => { const n = el('div', { class: 'chat-msg' + (sys ? ' is-sys' : '') }, sys ? m.text : [el('b', { title: isDev ? 'click to ban' : m.wallet, onclick: () => { if (isDev && m.wallet !== session.address && confirm('Ban ' + m.who + ' from this chat?')) wsSend({ t: 'ban', wallet: m.wallet }); } }, m.who), ' ', m.text]); msgs.append(n); msgs.scrollTop = msgs.scrollHeight; while (msgs.children.length > 300) msgs.firstChild.remove(); };
-    const actionBtn = isDev ? el('button', { class: 'ui-btn ui-btn-primary', onclick: () => goLive(c) }, el('span', { class: 'ui-btn-label' }, c.live ? 'Stream settings' : 'Go live'))
-      : (session ? null : el('button', { class: 'ui-btn ui-btn-primary', onclick: walletModal }, el('span', { class: 'ui-btn-label' }, 'Connect wallet')));
-    const left = el('article', { class: 'convert-card token-buy-card float' },
-      el('header', { class: 'token-buy-header' }, c.image ? el('span', { class: 'token-buy-logo' }, el('img', { src: c.image, alt: '' })) : el('span', { class: 'token-buy-logo' }), el('span', { class: 'v2-token-identity' }, el('h1', {}, c.name), el('p', {}, el('span', {}, c.symbol), pairBadge()))),
-      el('div', { class: 'chat-wrap' }, el('div', { class: 'chat-head' }, 'Live chat', chatCount), msgs, form),
-      actionBtn);
+    const actionBtn = isDev ? el('button', { class: 'ui-btn ui-btn-primary stream-action', onclick: () => goLive(c) }, el('span', { class: 'ui-btn-label' }, c.live ? 'Stream settings' : 'Go live')) : null;
+    const chatCard = el('article', { class: 'chat-card float' },
+      el('div', { class: 'chat-head' }, el('h3', {}, 'Live chat'), chatCount),
+      msgs, form);
     // right: stream + stats + chart
     const stage = el('div', { class: 'stream-stage' });
     let playPc = null;
@@ -495,8 +529,15 @@
     const ranges = el('div', { class: 'noxa-chart-ranges' });
     const chartStage = el('div', { class: 'noxa-chart-stage' }, el('p', { class: 'noxa-chart-empty' }, 'Loading chart…'));
     const chart = el('div', { class: 'noxa-chart token-market-chart' }, el('div', { class: 'noxa-chart-head' }, el('div', { class: 'noxa-chart-price-block' }, priceRoll, changeEl), ranges), chartStage);
-    const right = el('section', { class: 'token-market-card float' }, stage, stats, chart);
-    wrap.append(el('div', { class: 'token-buy-layout' }, right, left));
+    const startedEl = el('span', { class: 'stream-started' }, c.started_ts && c.live ? 'Started ' + ago(Date.now() / 1000 - c.started_ts) : '');
+    const metaLeft = el('div', { class: 'stream-meta-left' }, c.live ? el('span', { class: 'launch-card-live-badge is-big' }, 'LIVE') : null, el('h2', { class: 'stream-title' }, c.title || c.name), startedEl);
+    const metaRow = el('div', { class: 'stream-meta' }, metaLeft,
+      el('div', { class: 'stream-meta-right' },
+        el('a', { class: 'stream-coin', href: 'https://www.ponsfamily.com/launchpad/' + c.address, target: '_blank', rel: 'noopener' }, c.image ? el('img', { src: c.image, alt: '' }) : el('span', { class: 'stream-coin-ph' }, (c.symbol || '?').slice(0, 3)), el('span', {}, el('b', {}, c.name), el('small', {}, c.symbol + ' · '), pairBadge())),
+        actionBtn));
+    const startedTimer = setInterval(() => { if (c.started_ts && c.live) startedEl.textContent = 'Started ' + ago(Date.now() / 1000 - c.started_ts); }, 30000);
+    const market = el('section', { class: 'token-market-card float' }, stats, chart);
+    wrap.append(el('div', { class: 'token-buy-layout stream-layout' }, el('div', { class: 'stream-col' }, stage, metaRow, market), chatCard));
     // activity
     const tradesList = el('ul', { class: 'token-trades-list' });
     const tradesCount = el('span', { class: 'token-activity-count' }, '0');
@@ -509,7 +550,7 @@
     const hHist = (m) => { msgs.innerHTML = ''; m.rows.forEach(r => addMsg(r)); if (!m.rows.length) addMsg({ text: 'No messages yet. Say hi.' }, true); };
     const hChat = (m) => addMsg(m);
     const hViewers = (m) => { if (m.token !== c.address) return; c.viewers = m.n; chatCount.textContent = m.n; const v = $('#viewers'); if (v) v.textContent = m.n + ' watching'; };
-    const hLive = async (m) => { if (m.token !== c.address) return; try { c = { ...c, ...(await api('/api/token/' + addr)) }; } catch {} paintPlayer(); };
+    const hLive = async (m) => { if (m.token !== c.address) return; try { c = { ...c, ...(await api('/api/token/' + addr)) }; } catch {} paintPlayer(); metaLeft.innerHTML = ''; metaLeft.append(c.live ? el('span', { class: 'launch-card-live-badge is-big' }, 'LIVE') : null, el('h2', { class: 'stream-title' }, c.title || c.name), startedEl); startedEl.textContent = c.started_ts && c.live ? 'Started ' + ago(Date.now() / 1000 - c.started_ts) : ''; actionBtn && (actionBtn.firstChild.textContent = c.live ? 'Stream settings' : 'Go live'); };
     const hBan = (m) => addMsg({ text: short(m.wallet) + ' was banned' }, true);
     on('history', hHist); on('chat', hChat); on('viewers', hViewers); on('live', hLive); on('banned', hBan);
     // chart + trades
@@ -533,7 +574,7 @@
     RANGES.forEach(([lbl]) => ranges.append(el('button', { class: 'noxa-chart-range' + (lbl === range ? ' is-active' : ''), onclick: (e) => { range = lbl; [...ranges.children].forEach(b => b.classList.toggle('is-active', b === e.target)); changeEl.lastChild.textContent = lbl; paintChart(true).catch(() => {}); } }, lbl)));
     paintChart(true).catch(() => {}); timer = setInterval(() => paintChart().catch(() => {}), 3000);
     const onResize = () => paintChart(true).catch(() => {}); addEventListener('resize', onResize);
-    cleanup = () => { clearInterval(timer); removeEventListener('resize', onResize); off('history', hHist); off('chat', hChat); off('viewers', hViewers); off('live', hLive); off('banned', hBan); wsRoom = null; stopPlay(); stopHls(); stopLk(); document.removeEventListener('publish-changed', onPub); };
+    cleanup = () => { clearInterval(timer); clearInterval(startedTimer); removeEventListener('resize', onResize); off('history', hHist); off('chat', hChat); off('viewers', hViewers); off('live', hLive); off('banned', hBan); wsRoom = null; stopPlay(); stopHls(); stopLk(); document.removeEventListener('publish-changed', onPub); };
   }
 
   // ---- go live: browser (WHIP) or OBS (RTMPS key) ----

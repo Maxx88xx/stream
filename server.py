@@ -194,6 +194,7 @@ async def h_token(request):
     if s:
         out["hls_url"], out["whep_url"], out["input_uid"], out["ingest"] = s["hls_url"], s["whep_url"], s["input_uid"], s["ingest"] if "ingest" in s.keys() else ""
         out["provider"] = _provider(s)
+        out["started_ts"] = s["started_ts"] or 0
     return web.json_response(out, headers=NO_CACHE)
 
 
