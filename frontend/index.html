@@ -90,10 +90,7 @@
   .stream-col { display:grid; gap:16px; min-width:0; }
   .stream-col .stream-stage { border-radius:16px; }
   .chat-card { display:flex; flex-direction:column; padding:18px 20px 20px; aspect-ratio:auto; height:100%; box-sizing:border-box; background:var(--bg-white); }
-  .stream-layout .chat-card { align-self:stretch; height:auto; max-height:none; }
-  .stream-layout { grid-template-rows:auto auto; }
-  .stream-layout .stream-col { grid-row:1 / span 2; }
-  .stream-layout .chat-card { grid-row:1; }
+  .stream-layout .chat-card { align-self:start; max-height:none; }
   .chat-card .chat-head { display:flex; align-items:center; justify-content:space-between; padding:0 0 12px; }
   .chat-card .chat-head h3 { margin:0; font-size:20px; font-weight:500; }
   .chat-card .chat-head span { background:var(--panel-blue); border-radius:999px; padding:3px 10px; font-size:13px; color:var(--text-muted); font-variant-numeric:tabular-nums; }
@@ -120,7 +117,7 @@
   .stream-stage .sc-vol { width:100px; }
   .stream-live .launch-card-live-badge { font-size:13px; padding:5px 10px; }
   .stream-live .launch-card-viewers { font-size:13px; padding:5px 10px; }
-  @media (max-width:900px) { .stream-layout { grid-template-columns:1fr; grid-template-rows:auto; } .stream-layout .stream-col { grid-row:auto; } .stream-layout .chat-card { grid-row:auto; height:60vh; } .stream-meta { flex-wrap:wrap; } }
+  @media (max-width:900px) { .stream-layout { grid-template-columns:1fr; } .stream-layout .chat-card { height:60vh; } .stream-meta { flex-wrap:wrap; } }
   /* go-live flow + player controls */
   .golive { display:grid; gap:6px; }
   .golive-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
@@ -533,9 +530,12 @@
     const metaLeft = el('div', { class: 'stream-meta-left' }, c.live ? el('span', { class: 'launch-card-live-badge is-big' }, 'LIVE') : null, el('h2', { class: 'stream-title' }, c.title || c.name), startedEl);
     const metaRow = el('div', { class: 'stream-meta' }, metaLeft,
       el('div', { class: 'stream-meta-right' },
-        el('a', { class: 'stream-coin', href: 'https://www.ponsfamily.com/launchpad/' + c.address, target: '_blank', rel: 'noopener' }, c.image ? el('img', { src: c.image, alt: '' }) : el('span', { class: 'stream-coin-ph' }, (c.symbol || '?').slice(0, 3)), el('span', {}, el('b', {}, c.name), el('small', {}, c.symbol + ' · '), pairBadge())),
+        el('a', { class: 'stream-coin', href: 'https://www.ponsfamily.com/launchpad/' + c.address, target: '_blank', rel: 'noopener' }, c.image ? el('img', { src: c.image, alt: '' }) : el('span', { class: 'stream-coin-ph' }, (c.symbol || '?').slice(0, 3)), el('span', {}, el('b', {}, c.name), el('small', {}, '$' + c.symbol))),
         actionBtn));
     const startedTimer = setInterval(() => { if (c.started_ts && c.live) startedEl.textContent = 'Started ' + ago(Date.now() / 1000 - c.started_ts); }, 30000);
+    // chat panel is exactly as tall as the player (pump.fun layout); the player's height follows its 16:9 width
+    const fitChat = () => { if (window.innerWidth > 900) chatCard.style.height = stage.getBoundingClientRect().height + 'px'; else chatCard.style.height = ''; };
+    const ro = new ResizeObserver(fitChat); ro.observe(stage); requestAnimationFrame(fitChat);
     const market = el('section', { class: 'token-market-card float' }, stats, chart);
     wrap.append(el('div', { class: 'token-buy-layout stream-layout' }, el('div', { class: 'stream-col' }, stage, metaRow, market), chatCard));
     // activity
@@ -547,7 +547,7 @@
     page.append(wrap);
     // chat wiring
     wsRoom = c.address; wsSend({ t: 'sub', room: c.address });
-    const hHist = (m) => { msgs.innerHTML = ''; m.rows.forEach(r => addMsg(r)); if (!m.rows.length) addMsg({ text: 'No messages yet. Say hi.' }, true); };
+    const hHist = (m) => { msgs.innerHTML = ''; m.rows.forEach(r => addMsg(r)); if (!m.rows.length) addMsg({ text: 'New messages will appear here' }, true); };
     const hChat = (m) => addMsg(m);
     const hViewers = (m) => { if (m.token !== c.address) return; c.viewers = m.n; chatCount.textContent = m.n; const v = $('#viewers'); if (v) v.textContent = m.n + ' watching'; };
     const hLive = async (m) => { if (m.token !== c.address) return; try { c = { ...c, ...(await api('/api/token/' + addr)) }; } catch {} paintPlayer(); metaLeft.innerHTML = ''; metaLeft.append(c.live ? el('span', { class: 'launch-card-live-badge is-big' }, 'LIVE') : null, el('h2', { class: 'stream-title' }, c.title || c.name), startedEl); startedEl.textContent = c.started_ts && c.live ? 'Started ' + ago(Date.now() / 1000 - c.started_ts) : ''; actionBtn && (actionBtn.firstChild.textContent = c.live ? 'Stream settings' : 'Go live'); };
@@ -574,7 +574,7 @@
     RANGES.forEach(([lbl]) => ranges.append(el('button', { class: 'noxa-chart-range' + (lbl === range ? ' is-active' : ''), onclick: (e) => { range = lbl; [...ranges.children].forEach(b => b.classList.toggle('is-active', b === e.target)); changeEl.lastChild.textContent = lbl; paintChart(true).catch(() => {}); } }, lbl)));
     paintChart(true).catch(() => {}); timer = setInterval(() => paintChart().catch(() => {}), 3000);
     const onResize = () => paintChart(true).catch(() => {}); addEventListener('resize', onResize);
-    cleanup = () => { clearInterval(timer); clearInterval(startedTimer); removeEventListener('resize', onResize); off('history', hHist); off('chat', hChat); off('viewers', hViewers); off('live', hLive); off('banned', hBan); wsRoom = null; stopPlay(); stopHls(); stopLk(); document.removeEventListener('publish-changed', onPub); };
+    cleanup = () => { clearInterval(timer); clearInterval(startedTimer); ro.disconnect(); removeEventListener('resize', onResize); off('history', hHist); off('chat', hChat); off('viewers', hViewers); off('live', hLive); off('banned', hBan); wsRoom = null; stopPlay(); stopHls(); stopLk(); document.removeEventListener('publish-changed', onPub); };
   }
 
   // ---- go live: browser (WHIP) or OBS (RTMPS key) ----
