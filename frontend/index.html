@@ -361,7 +361,7 @@
       const started = () => note.remove();
       video.addEventListener('playing', started, { once: true });
       if (window.Hls && Hls.isSupported()) {
-        const hls = hlsInst = new Hls({ lowLatencyMode: false, liveSyncDuration: 4, liveMaxLatencyDuration: 14, maxBufferLength: 12, backBufferLength: 10, liveDurationInfinity: true, manifestLoadingMaxRetry: 30, manifestLoadingRetryDelay: 2000, levelLoadingMaxRetry: 30, fragLoadingMaxRetry: 10 });
+        const hls = hlsInst = new Hls({ lowLatencyMode: false, liveSyncDurationCount: 1.5, liveMaxLatencyDurationCount: 5, maxBufferLength: 20, backBufferLength: 10, liveDurationInfinity: true, manifestLoadingMaxRetry: 30, manifestLoadingRetryDelay: 2000, levelLoadingMaxRetry: 30, fragLoadingMaxRetry: 10 });
         hls.on(Hls.Events.ERROR, (_, data) => { if (!data.fatal) return; if (data.type === Hls.ErrorTypes.NETWORK_ERROR) setTimeout(() => { if (hlsInst === hls) hls.loadSource(c.hls_url); }, 2000); else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) hls.recoverMediaError(); else setTimeout(() => { if (hlsInst === hls && c.live) hlsPlay(video); }, 2000); });
         hls.loadSource(c.hls_url); hls.attachMedia(video); window.__hls = hls;
         hls.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(() => {}));
