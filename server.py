@@ -584,6 +584,20 @@ async def h_admin(request):
         return web.json_response({"error": "unauthorized"}, status=401)
     body = await request.json()
     act = body.get("action")
+    if act == "disk":
+        def du(path):
+            total, n = 0, 0
+            for root, _, files in os.walk(path):
+                for f in files:
+                    try:
+                        total += os.path.getsize(os.path.join(root, f)); n += 1
+                    except OSError:
+                        pass
+            return {"mb": round(total / 1048576, 1), "files": n}
+        st = os.statvfs(db.DATA_DIR)
+        return web.json_response({"db_mb": round(sum(os.path.getsize(f) for f in (db.DB_PATH, db.DB_PATH + "-wal", db.DB_PATH + "-shm") if os.path.exists(f)) / 1048576, 1),
+                                  "img": du(images.IMG_DIR) if os.path.isdir(images.IMG_DIR) else {"mb": 0, "files": 0},
+                                  "free_mb": round(st.f_bavail * st.f_frsize / 1048576, 1), "total_mb": round(st.f_blocks * st.f_frsize / 1048576, 1)})
     if act == "ban":
         w = _norm_addr(body.get("wallet"))
         x("INSERT OR REPLACE INTO bans(wallet,room,by_wallet,ts) VALUES(?,'*','admin',?)", (w, int(time.time())))
