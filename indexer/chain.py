@@ -178,11 +178,18 @@ def decimals(token: str) -> int:
     return int(r, 16) if r and r != "0x" else 18
 
 
+_state_cache: dict = {}
+STATE_TTL = 4.0
+
+
 def curve_states(curves: list) -> dict:
-    """{curve: (quote_reserve, token_reserve, graduated)} via multicall."""
-    out = {}
-    for i in range(0, len(curves), 400):
-        chunk = curves[i:i + 400]
+    """{curve: (quote_reserve, token_reserve, graduated)} via multicall; a
+    4 s cache so page hops and polls do not repeat the same RPC round-trip."""
+    now = time.time()
+    out = {c: _state_cache[c][0] for c in curves if c in _state_cache and now - _state_cache[c][1] < STATE_TTL}
+    todo = [c for c in curves if c not in out]
+    for i in range(0, len(todo), 400):
+        chunk = todo[i:i + 400]
         res = multicall([(c, SEL_RESERVES) for c in chunk] + [(c, SEL_GRADUATED) for c in chunk])
         n = len(chunk)
         for k, c in enumerate(chunk):
@@ -192,6 +199,7 @@ def curve_states(curves: list) -> dict:
                 q, t = int.from_bytes(b[:32], "big"), int.from_bytes(b[32:64], "big")
                 grad = bool(int.from_bytes(gb[-32:], "big")) if gok and gb else False
                 out[c] = (q, t, grad)
+                _state_cache[c] = (out[c], now)
     return out
 
 

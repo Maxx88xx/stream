@@ -199,6 +199,11 @@
   .search-name { flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .search-name small { color:var(--text-muted); margin-left:6px; }
   .search-mc { color:var(--text-muted); font-size:13px; font-variant-numeric:tabular-nums; }
+  button:active, .pbtn:active, .ui-btn:active:not(:disabled), .launch-card:active, .nav-product-link:active, .nav-connect:active, .launch-explore-create-btn:active, .token-info-links a:active, .land-btn:active, .search-row:active, .noxa-chart-range:active, .sc-btn:active { transform:scale(.97) !important; transition:transform .05s !important; }
+  .launch-card.is-skeleton { pointer-events:none; }
+  .launch-card.is-skeleton .launch-card-logo { background:linear-gradient(90deg, #0d0d0d 25%, #1a1a1a 50%, #0d0d0d 75%); background-size:200% 100%; animation:shimmer 1.2s infinite; }
+  .launch-card.is-skeleton strong, .launch-card.is-skeleton small { background:#1a1a1a; border-radius:6px; display:block; height:12px; width:60%; }
+  @keyframes shimmer { from { background-position:200% 0; } to { background-position:-200% 0; } }
   /* go-live flow + player controls */
   .golive { display:grid; gap:6px; }
   .golive-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
@@ -294,7 +299,21 @@
   const short = (a) => a ? a.slice(0, 6) + '…' + a.slice(-4) : '';
   const ago = (s, suffix = ' ago') => { s = Math.max(0, Math.round(s)); return (s < 60 ? s + 's' : s < 3600 ? Math.floor(s / 60) + 'm' : s < 86400 ? Math.floor(s / 3600) + 'h' : Math.floor(s / 86400) + 'd') + suffix; };
   const toast = (m) => { const t = el('div', { class: 'toast' }, m); document.body.append(t); setTimeout(() => t.remove(), 2200); };
-  const api = async (p, opt = {}) => { const h = { 'Content-Type': 'application/json', ...(session ? { Authorization: 'Bearer ' + session.token } : {}) }; const r = await fetch(p, { ...opt, headers: h, body: opt.body ? JSON.stringify(opt.body) : undefined }); const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || r.statusText); return j; };
+  // GET cache: paint what we already have instantly, refresh in the background (stale-while-revalidate)
+  const CACHE = new Map();
+  const TTL = { '/api/streams': 4000, '/api/recent': 8000, '/api/search': 30000, '/api/token/': 15000, '/api/candles/': 10000 };
+  const ttlFor = (p) => { for (const k in TTL) if (p.startsWith(k)) return TTL[k]; return 5000; };
+  const cacheGet = (p) => CACHE.get(p);
+  const cacheSet = (p, data) => { CACHE.set(p, { data, ts: Date.now() }); if (CACHE.size > 300) CACHE.delete(CACHE.keys().next().value); };
+  // swr(path, onData): onData fires at once with cached data (if any) and again when fresh data differs
+  const swr = async (p, onData) => {
+    const hit = cacheGet(p);
+    if (hit) { onData(hit.data, true); if (Date.now() - hit.ts < ttlFor(p)) return hit.data; }
+    const data = await apiRaw(p); const same = hit && JSON.stringify(hit.data) === JSON.stringify(data); cacheSet(p, data); if (!same) onData(data, false); return data;
+  };
+  const prefetch = (p) => { const hit = cacheGet(p); if (hit && Date.now() - hit.ts < ttlFor(p)) return; apiRaw(p).then(d => cacheSet(p, d)).catch(() => {}); };
+  const apiRaw = async (p, opt = {}) => { const h = { 'Content-Type': 'application/json', ...(session ? { Authorization: 'Bearer ' + session.token } : {}) }; const r = await fetch(p, { ...opt, headers: h, body: opt.body ? JSON.stringify(opt.body) : undefined }); const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || r.statusText); return j; };
+  const api = (p, opt = {}) => { if (opt.body || opt.method) return apiRaw(p, opt); const hit = cacheGet(p); if (hit && Date.now() - hit.ts < ttlFor(p)) return Promise.resolve(hit.data); return apiRaw(p).then(d => { cacheSet(p, d); return d; }); };
 
   // ---- wallet (EIP-6963 + window.ethereum) → nonce → personal_sign → session ----
   let session = null; try { session = JSON.parse(localStorage.getItem('pl_session') || 'null'); } catch {}
@@ -330,7 +349,7 @@
     const appId = (window.CFG || {}).privyAppId;
     if (!appId) return walletModalFallback();
     if (privyState === 'ready') return window.PrivyLogin.open();
-    if (privyState === 'loading') return;
+    if (privyState === 'loading') { toast('Loading wallet…'); document.addEventListener('privy:ready', () => window.PrivyLogin.open(), { once: true }); return; }
     privyState = 'loading'; toast('Loading wallet…');
     document.addEventListener('privy:ready', () => { if (privyState !== 'ready') { privyState = 'ready'; window.PrivyLogin.open(); } }, { once: true });
     document.addEventListener('privy:wallet', async (e) => { const d = e.detail; if (session && session.address === d.address) return; await signIn({ info: { name: d.name }, provider: d.provider }); });
@@ -341,6 +360,8 @@
     document.head.append(s);
   }
   function walletModal() { privyOpen(); }
+  const privyWarm = () => { if (privyState || !(window.CFG || {}).privyAppId || session) return; privyState = 'loading'; document.addEventListener('privy:ready', () => { privyState = 'ready'; }, { once: true }); document.addEventListener('privy:wallet', async (e) => { const d = e.detail; if (session && session.address === d.address) return; await signIn({ info: { name: d.name }, provider: d.provider }); }); const s = document.createElement('script'); s.src = '/assets/privy.js'; s.onload = () => window.PrivyMount((window.CFG || {}).privyAppId, { chain: ROBINHOOD_CHAIN, accent: '#d4fc50', theme: '#161616', logo: location.origin + '/assets/logo.svg', header: 'Connect wallet', message: 'Sign in with the wallet that launched your coin' }); s.onerror = () => { privyState = null; }; document.head.append(s); };
+  (window.requestIdleCallback || ((f) => setTimeout(f, 2500)))(() => setTimeout(privyWarm, 1500));
   function walletModalFallback() {
     const list = providers.length ? providers : (window.ethereum ? [{ info: { name: 'Browser wallet', uuid: 'legacy' }, provider: window.ethereum }] : []);
     openModal(el('div', {}, el('h3', {}, 'Connect wallet'),
@@ -431,7 +452,8 @@
     let tries = 0;
     const img = c.image ? el('img', { src: c.image, loading: 'lazy', class: 'is-loaded', alt: '', onerror: (e) => { if (tries++ < 3 && document.body.contains(e.target)) { const im = e.target; im.style.visibility = 'hidden'; setTimeout(() => { im.style.visibility = ''; im.src = c.image + '?r=' + tries; }, 30000 * tries); } else e.target.replaceWith(ph()); } }) : ph();
     const quote = c.quote_symbol && !['ETH', 'USDG'].includes(c.quote_symbol) ? c.quote_symbol : null;
-    return el('a', { class: 'launch-card', href: '/coin/' + c.address, 'data-link': '' },
+    let pf = null;
+    return el('a', { class: 'launch-card', href: '/coin/' + c.address, 'data-link': '', onmouseenter: () => { pf = setTimeout(() => { prefetch('/api/token/' + c.address); prefetch('/api/candles/' + c.address + '?tf=60&limit=60'); }, 120); }, onmouseleave: () => clearTimeout(pf), onclick: () => { if (!cacheGet('/api/token/' + c.address)) CACHE.set('/api/token/' + c.address, { data: c, ts: 0 }); } },
       el('span', { class: 'launch-card-media' },
         el('span', { class: 'launch-card-logo is-loaded', 'aria-hidden': 'true' }, img),
         el('span', { class: 'launch-card-badges' }, c.live && el('span', { class: 'launch-card-live-badge' }, 'LIVE'), c.graduated && el('span', { class: 'launch-card-grad-badge' }, 'Graduated'), quote && el('span', { class: 'launch-card-version-badge' }, quote)),
@@ -450,6 +472,7 @@
       grid);
     return { sec, grid, count };
   };
+  const skeletons = (grid, n) => { grid.innerHTML = ''; for (let i = 0; i < n; i++) grid.append(el('li', {}, el('div', { class: 'launch-card is-skeleton' }, el('span', { class: 'launch-card-media' }, el('span', { class: 'launch-card-logo' })), el('span', { class: 'launch-card-body' }, el('strong', {}, '\u00a0'), el('small', {}, '\u00a0'))))); };
   const fill = (grid, rows, emptyText) => { grid.innerHTML = ''; if (!rows.length) grid.append(el('li', { style: 'grid-column:1/-1' }, el('p', { class: 'launch-explore-empty-copy' }, emptyText))); rows.forEach(r => grid.append(el('li', {}, card(r)))); };
 
   async function explorePage(liveOnly, qs) {
@@ -458,21 +481,22 @@
     if (qs) {
       const s = section({ title: `Results for “${qs}”`, h1: true, copy: 'Name, ticker or contract address across every PONS launch.' });
       page.append(s.sec);
-      const { rows } = await api('/api/search?q=' + encodeURIComponent(qs));
-      s.count.textContent = rows.length; fill(s.grid, rows, 'Nothing found.');
+      skeletons(s.grid, 8);
+      await swr('/api/search?q=' + encodeURIComponent(qs), ({ rows }) => { s.count.textContent = rows.length; fill(s.grid, rows, 'Nothing found.'); });
       return;
     }
     const live = section({ title: 'Live now', h1: true, hot: true, copy: 'Creators streaming on their coins right now.' });
     page.append(live.sec);
     let rec;
     if (!liveOnly) { rec = section({ title: 'New launches', copy: 'Every token launched on PONS, the moment it hits the chain.' }); page.append(rec.sec); }
-    const paintLive = async () => { const { rows } = await api('/api/streams'); live.count.textContent = rows.length; fill(live.grid, rows, 'Nobody is live right now. Own a PONS coin? Connect and go live.'); };
-    await paintLive();
+    const paintLive = () => swr('/api/streams', ({ rows }) => { live.count.textContent = rows.length; fill(live.grid, rows, 'Nobody is live right now. Own a PONS coin? Connect and go live.'); });
+    if (rec) skeletons(rec.grid, 12);
+    paintLive();
     const PAGE = 24; let shown = 0;
     let more = null;
     if (rec) {
-      const { rows, stats } = await api('/api/recent?limit=' + PAGE); rec.count.textContent = stats.tokens.toLocaleString('en-US'); fill(rec.grid, rows, ''); shown = rows.length;
-      more = el('button', { class: 'launch-explore-create-btn load-more', onclick: async () => { more.disabled = true; try { const { rows } = await api('/api/recent?limit=' + PAGE + '&offset=' + rec.grid.children.length); rows.forEach(r => rec.grid.append(el('li', {}, card(r)))); shown += rows.length; if (!rows.length) more.style.display = 'none'; } catch {} more.disabled = false; } }, 'Show more');
+      await swr('/api/recent?limit=' + PAGE, ({ rows, stats }) => { rec.count.textContent = stats.tokens.toLocaleString('en-US'); if (!shown) { fill(rec.grid, rows, ''); shown = rows.length; } });
+      more = el('button', { class: 'launch-explore-create-btn load-more', onclick: async () => { more.disabled = true; const off = rec.grid.children.length; const ph = []; for (let i = 0; i < PAGE; i++) { const li = el('li', {}, el('div', { class: 'launch-card is-skeleton' }, el('span', { class: 'launch-card-media' }, el('span', { class: 'launch-card-logo' })))); ph.push(li); rec.grid.append(li); } try { const { rows } = await apiRaw('/api/recent?limit=' + PAGE + '&offset=' + off); ph.forEach(p => p.remove()); rows.forEach(r => rec.grid.append(el('li', {}, card(r)))); shown += rows.length; if (!rows.length) more.style.display = 'none'; } catch { ph.forEach(p => p.remove()); } more.disabled = false; } }, 'Show more');
       rec.sec.append(el('div', { class: 'load-more-row' }, more));
     }
     let frozen = false; const queued = [];
@@ -600,7 +624,8 @@
   // ---- coin page ----
   async function coinPage(addr) {
     const page = $('#page'); page.innerHTML = '';
-    let c; try { c = await api('/api/token/' + addr); } catch (e) { page.append(el('section', { class: 'token-about-card float' }, el('p', { class: 'token-about-empty' }, 'Unknown coin'))); return; }
+    let c; const cached = cacheGet('/api/token/' + addr); if (cached) { c = cached.data; if (Date.now() - cached.ts > ttlFor('/api/token/')) apiRaw('/api/token/' + addr).then(d => { cacheSet('/api/token/' + addr, d); if (location.pathname.endsWith(addr)) { Object.assign(c, d); document.dispatchEvent(new CustomEvent('coin-refreshed')); } }).catch(() => {}); }
+    else try { c = await api('/api/token/' + addr); } catch (e) { page.append(el('section', { class: 'token-about-card float' }, el('p', { class: 'token-about-empty' }, 'Unknown coin'))); return; }
     const isDev = session && session.address === c.deployer;
     const wrap = el('div', { class: 'token-buy-page' });
     wrap.append(el('a', { class: 'token-buy-back', href: '/explore', 'data-link': '' }, svgIcon(ICON.back), 'Back to explore'));
@@ -786,7 +811,8 @@
     let range = '1H', timer, lastKey = '';
     const paintChart = async (force) => {
       const [, tf, limit] = RANGES.find(r => r[0] === range);
-      const d = await api(`/api/candles/${c.address}?tf=${tf}&limit=${limit}`);
+      const path = `/api/candles/${c.address}?tf=${tf}&limit=${limit}`;
+      const d = force ? (await swr(path, () => {})) : await apiRaw(path).then(x => { cacheSet(path, x); return x; });
       const key = range + ':' + d.candles.length + ':' + (d.candles.length ? d.candles[d.candles.length - 1].time + ':' + d.candles[d.candles.length - 1].close : '') + ':' + (d.trades[0] ? d.trades[0].block : '');
       if (!force && key === lastKey) return;            // nothing new: keep the chart still
       lastKey = key;
