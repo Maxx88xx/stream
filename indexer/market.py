@@ -82,6 +82,10 @@ def quote_info(pair_token: str) -> tuple[int, float, str]:
 def enrich_market(rows: list) -> list:
     """Attach price_quote, mcap_usd, graduated to catalog rows (multicall)."""
     curves = [r["curve"] for r in rows]
+    pairs = {(r.get("pair_token") or "").lower() for r in rows}
+    import concurrent.futures as cf
+    with cf.ThreadPoolExecutor(max(1, min(8, len(pairs)))) as ex:      # warm the quote cache for every distinct pair at once
+        list(ex.map(quote_info, pairs))
     states = chain.curve_states(curves)
     for r in rows:
         q, t, grad = states.get(r["curve"], (0, 0, False))
