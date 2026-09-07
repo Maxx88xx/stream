@@ -560,7 +560,19 @@ async def on_launch(t: dict) -> None:
     await asyncio.to_thread(market.enrich_market, [t])
     await broadcast_all({"t": "launch", "coin": _pub(t)})
     if t.get("image"):
-        asyncio.create_task(asyncio.to_thread(images.ensure, t["address"], t["image"]))
+        asyncio.create_task(_prefetch_image(t["address"], t["image"]))
+
+
+async def _prefetch_image(addr: str, url: str) -> None:
+    """Fresh launches: the logo often is not on the IPFS gateways yet, so try
+    now and again after 20 s, 60 s and 3 min before giving up."""
+    for delay in (0, 20, 60, 180):
+        if delay:
+            await asyncio.sleep(delay)
+        if await asyncio.to_thread(images.ensure, addr, url):
+            _img_failed.pop(addr, None)
+            return
+    print(f"[img] gave up on {addr} {url[:60]}")
 
 
 # ---- coin images: fetched once server-side, served as static thumbnails ----
@@ -577,7 +589,7 @@ async def h_img(request):
         return web.Response(status=404)
     p = images.path_for(addr)
     if not os.path.exists(p):
-        if time.time() - _img_failed.get(addr, 0) < 600:
+        if time.time() - _img_failed.get(addr, 0) < 45:          # short negative cache: gateways catch up within a minute or two
             return web.Response(status=404)
         async with _img_sem:
             p = await asyncio.to_thread(images.ensure, addr, t["image"])

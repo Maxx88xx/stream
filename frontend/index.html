@@ -298,7 +298,8 @@
   // ---- cards ----
   function card(c) {
     const ph = () => el('span', { class: 'ph' }, (c.symbol || '?').slice(0, 5));
-    const img = c.image ? el('img', { src: c.image, loading: 'lazy', class: 'is-loaded', alt: '', onerror: (e) => e.target.replaceWith(ph()) }) : ph();
+    let tries = 0;
+    const img = c.image ? el('img', { src: c.image, loading: 'lazy', class: 'is-loaded', alt: '', onerror: (e) => { if (tries++ < 3 && document.body.contains(e.target)) { const im = e.target; im.style.visibility = 'hidden'; setTimeout(() => { im.style.visibility = ''; im.src = c.image + '?r=' + tries; }, 30000 * tries); } else e.target.replaceWith(ph()); } }) : ph();
     const quote = c.quote_symbol && !['ETH', 'USDG'].includes(c.quote_symbol) ? c.quote_symbol : null;
     return el('a', { class: 'launch-card', href: '/coin/' + c.address, 'data-link': '' },
       el('span', { class: 'launch-card-media' },
