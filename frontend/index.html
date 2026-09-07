@@ -171,6 +171,9 @@
   .sc-menu button { background:none; border:0; color:var(--text-primary); text-align:left; padding:8px 10px; border-radius:8px; cursor:pointer; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .sc-menu button:hover { background:var(--panel-blue); }
   .stream-stage:fullscreen video { width:100%; height:100%; object-fit:contain; }
+  /* Privy modal in the site's skin */
+  #privy-root, #privy-dialog, #privy-modal-content, [id^=privy] { font-family:var(--font-sans) !important; --privy-color-background:#161616; --privy-color-background-2:#1f1f1f; --privy-color-background-3:#262626; --privy-color-foreground:#f2f2f2; --privy-color-foreground-2:#f2f2f294; --privy-color-foreground-3:#f2f2f266; --privy-color-foreground-4:#ffffff1f; --privy-color-accent:#d4fc50; --privy-color-accent-light:#e5f99a; --privy-color-accent-dark:#c4ef3c; --privy-color-accent-lightest:#1c2610; --privy-color-success:#30d158; --privy-color-error:#ff453a; --privy-border-radius-sm:12px; --privy-border-radius-md:16px; --privy-border-radius-mdlg:20px; --privy-border-radius-lg:24px; --privy-border-radius-full:999px; }
+  #privy-dialog > div, #privy-modal-content { border:1px solid var(--float-border) !important; box-shadow:var(--float-shadow) !important; }
   /* modals (wallet, go live) */
   .modal { position:fixed; inset:0; background:#00000099; -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px); display:grid; place-items:center; z-index:80; padding:16px; }
   .modal .float { width:min(560px,100%); max-height:92vh; overflow:auto; padding:24px; background:var(--bg-white); }
@@ -262,7 +265,7 @@
     document.addEventListener('privy:wallet', async (e) => { const d = e.detail; if (session && session.address === d.address) return; await signIn({ info: { name: d.name }, provider: d.provider }); });
     document.addEventListener('privy:error', (e) => { console.warn('privy', e.detail); toast('Wallet login failed'); });
     const s = document.createElement('script'); s.src = '/assets/privy.js';
-    s.onload = () => window.PrivyMount(appId, { chain: ROBINHOOD_CHAIN, accent: '#d4fc50', logo: location.origin + '/assets/logo.svg' });
+    s.onload = () => window.PrivyMount(appId, { chain: ROBINHOOD_CHAIN, accent: '#d4fc50', theme: '#161616', logo: location.origin + '/assets/logo.svg', header: 'Connect wallet', message: 'Sign in with the wallet that launched your coin' });
     s.onerror = () => { privyState = null; toast('Could not load wallet module'); walletModalFallback(); };
     document.head.append(s);
   }
