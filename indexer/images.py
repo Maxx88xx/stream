@@ -58,25 +58,39 @@ def _get(url: str, timeout: float) -> tuple[bytes, str] | None:
 
 
 def fetch(url: str, depth: int = 0) -> bytes | None:
-    """Raw image bytes for a logo URI (gateway fallback, JSON metadata hop)."""
-    for cand in _candidates(url):
-        got = _get(cand, 6 if depth == 0 else 8)
-        if not got:
-            continue
-        data, ctype = got
-        if len(data) > MAX_BYTES or not data:
-            continue
-        if "json" in ctype or data[:1] in (b"{", b"["):
-            if depth:
-                continue
-            try:
-                meta = json.loads(data.decode("utf-8", "replace"))
-                inner = meta.get("image") or meta.get("image_url") or meta.get("logo") if isinstance(meta, dict) else ""
-            except Exception:  # noqa: BLE001
-                inner = ""
-            return fetch(inner, depth + 1) if inner else None
-        return data
-    return None
+    """Raw image bytes for a logo URI. IPFS candidates are raced in parallel
+    (the first gateway that answers wins), one JSON metadata hop allowed."""
+    cands = _candidates(url)
+    if not cands:
+        return None
+    timeout = 8 if depth == 0 else 10
+    got = None
+    if len(cands) == 1:
+        got = _get(cands[0], timeout)
+    else:
+        import concurrent.futures as cf
+        with cf.ThreadPoolExecutor(len(cands)) as ex:
+            futs = [ex.submit(_get, c, timeout) for c in cands]
+            for f in cf.as_completed(futs):
+                r = f.result()
+                if r and r[0] and len(r[0]) <= MAX_BYTES:
+                    got = r
+                    for o in futs:
+                        o.cancel()
+                    break
+    if not got:
+        return None
+    data, ctype = got
+    if "json" in ctype or data[:1] in (b"{", b"["):
+        if depth:
+            return None
+        try:
+            meta = json.loads(data.decode("utf-8", "replace"))
+            inner = meta.get("image") or meta.get("image_url") or meta.get("logo") if isinstance(meta, dict) else ""
+        except Exception:  # noqa: BLE001
+            inner = ""
+        return fetch(inner, depth + 1) if inner else None
+    return data
 
 
 def thumb(data: bytes) -> bytes:
