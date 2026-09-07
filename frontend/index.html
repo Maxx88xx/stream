@@ -120,6 +120,31 @@
   .stream-live .launch-card-live-badge { font-size:13px; padding:5px 10px; }
   .stream-live .launch-card-viewers { font-size:13px; padding:5px 10px; }
   @media (max-width:900px) { .stream-layout { grid-template-columns:1fr; } .stream-layout .chat-card { position:static; height:60vh; } .stream-meta { flex-wrap:wrap; } }
+  /* landing + legal + footer */
+  .land-hero { padding:34px 32px 32px; }
+  .land-kicker { display:inline-block; background:var(--lime-soft, #1c2610); color:var(--accent); border-radius:999px; padding:5px 12px; font-size:12px; margin-bottom:16px; }
+  .land-hero h1 { margin:0 0 12px; font-size:44px; line-height:1.05; font-weight:500; letter-spacing:-.02em; }
+  .land-lead { color:var(--text-muted); font-size:17px; line-height:1.55; max-width:62ch; margin:0 0 24px; }
+  .land-cta { display:flex; gap:10px; flex-wrap:wrap; }
+  .land-btn.ui-btn { width:auto; min-height:50px; padding:0 22px; border-radius:999px; border:0; cursor:pointer; font-size:16px; font-weight:500; text-decoration:none; display:inline-flex; align-items:center; }
+  .land-btn-ghost { background:var(--panel-blue); color:var(--text-primary); }
+  .land-feats { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:14px; }
+  .land-feat { background:var(--panel-blue); border-radius:20px; padding:18px 20px; }
+  .land-feat h3 { margin:0 0 6px; font-size:17px; font-weight:500; }
+  .land-feat p { margin:0; color:var(--text-muted); font-size:14px; line-height:1.55; }
+  .land-trust h2 { margin-bottom:10px; }
+  .legal h1 { margin:0 0 4px; font-size:28px; font-weight:500; }
+  .legal-date { color:var(--text-subtle); font-size:13px; margin:0 0 18px; }
+  .legal-intro { color:var(--text-primary); font-size:15px; line-height:1.6; background:var(--panel-blue); border-radius:16px; padding:14px 16px; margin:0 0 20px; }
+  .legal-sec { margin:0 0 20px; }
+  .legal-sec h2 { margin:0 0 6px; font-size:13px; font-weight:500; letter-spacing:.06em; text-transform:uppercase; color:var(--text-muted); }
+  .legal-sec p { margin:0 0 8px; font-size:15px; line-height:1.6; color:var(--text-primary); max-width:80ch; }
+  .site-foot { max-width:1080px; margin:0 auto; padding:10px 24px 40px; color:var(--text-subtle); font-size:13px; }
+  .site-foot-links { display:flex; gap:18px; flex-wrap:wrap; margin-bottom:8px; }
+  .site-foot-links a { color:var(--text-muted); }
+  .site-foot-links a:hover { color:var(--text-primary); }
+  .site-foot p { margin:0; }
+  @media (max-width:720px) { .land-feats { grid-template-columns:1fr; } .land-hero h1 { font-size:32px; } }
   /* about page */
   .about-hero h1 { margin:0 0 10px; font-size:30px; font-weight:400; }
   .about-lead { color:var(--text-muted); font-size:15px; line-height:1.6; max-width:70ch; margin:0 0 22px; }
@@ -198,9 +223,9 @@
     <div class="nav-left">
       <a class="nav-brand" href="/" data-link><span class="nav-logo-mark">P</span></a>
       <nav class="nav-product-links">
-        <a class="nav-product-link" href="/" data-link id="nav-home">Explore</a>
+        <a class="nav-product-link" href="/" data-link id="nav-about">pons.live</a>
+        <a class="nav-product-link" href="/explore" data-link id="nav-home">Explore</a>
         <a class="nav-product-link" href="/live" data-link id="nav-live"><i class="live-dot"></i>Live</a>
-        <a class="nav-product-link" href="/about" data-link id="nav-about">How it works</a>
       </nav>
     </div>
     <div class="nav-right">
@@ -209,6 +234,10 @@
   </div></div></div>
 </header>
 <main class="bridge-shell launchpad-explore-shell" id="page"></main>
+<footer class="site-foot">
+  <div class="site-foot-links"><a href="/privacy" data-link>Privacy</a><a href="/terms" data-link>Terms</a><a href="https://www.ponsfamily.com/launchpad" target="_blank" rel="noopener">PONS</a><a href="https://explorer.robinhood.com" target="_blank" rel="noopener">Robinhood Chain</a></div>
+  <p>Wallets by Privy. pons.live never holds keys or funds. Streams are live only, trading stays on PONS.</p>
+</footer>
 <div id="modal"></div>
 <script>
 (() => {
@@ -314,18 +343,20 @@
     if (cleanup) { cleanup(); cleanup = null; }
     const p = location.pathname;
     $('#nav-live').classList.toggle('is-active', p === '/live');
-    $('#nav-home').classList.toggle('is-active', p === '/' || p === '/search');
-    $('#nav-about').classList.toggle('is-active', p === '/about');
+    $('#nav-home').classList.toggle('is-active', p === '/explore' || p === '/search');
+    $('#nav-about').classList.toggle('is-active', p === '/');
     const main = $('#page'); main.className = p.startsWith('/coin/') ? 'bridge-shell token-buy-shell' : 'bridge-shell launchpad-explore-shell';
     if (p.startsWith('/coin/')) return coinPage(p.split('/')[2]);
     if (p === '/search') return explorePage(false, new URLSearchParams(location.search).get('q') || '');
-    if (p === '/about') return aboutPage();
-    return explorePage(p === '/live', '');
+    if (p === '/privacy') return legalPage('privacy');
+    if (p === '/terms') return legalPage('terms');
+    if (p === '/explore' || p === '/live') return explorePage(p === '/live', '');
+    return landingPage();
   }
 
   // ---- toolbar (search + go live) ----
   function toolbar(qs) {
-    const input = el('input', { placeholder: 'Search tokens', value: qs || '', onkeydown: (e) => { if (e.key === 'Enter') go(e.target.value.trim() ? '/search?q=' + encodeURIComponent(e.target.value.trim()) : '/'); } });
+    const input = el('input', { placeholder: 'Search tokens', value: qs || '', onkeydown: (e) => { if (e.key === 'Enter') go(e.target.value.trim() ? '/search?q=' + encodeURIComponent(e.target.value.trim()) : '/explore'); } });
     return el('div', { class: 'launch-explore-toolbar' },
       el('label', { class: 'launch-explore-search float' }, svgIcon(ICON.search), el('span', { class: 'launch-explore-search-copy', style: 'display:flex' }, input), el('kbd', { class: 'launch-explore-kbd' }, '↵')),
       el('button', { class: 'launch-explore-create-btn', onclick: goLiveEntry }, svgIcon(ICON.dot, '', '0 0 24 24'), 'Go live'));
@@ -384,48 +415,70 @@
     cleanup = () => { off('launch', onLaunch); off('live', onLive); };
   }
 
-  // ---- About / How it works ----
-  function aboutPage() {
+  // ---- Landing ----
+  async function landingPage() {
     const page = $('#page'); page.innerHTML = '';
     const step = (n, title, text) => el('div', { class: 'about-step' }, el('span', { class: 'about-num' }, n), el('h3', {}, title), el('p', {}, text));
-    const card = (title, ...kids) => el('section', { class: 'launch-explore float about-card' }, el('h2', {}, title), ...kids);
-    const li = (t) => el('li', {}, t);
+    const feat = (title, text) => el('div', { class: 'land-feat' }, el('h3', {}, title), el('p', {}, text));
+    const liveGrid = el('ul', { class: 'launch-explore-grid' });
+    const liveSec = el('section', { class: 'launch-explore float', style: 'display:none' }, el('header', { class: 'launch-explore-section-head' }, el('div', { class: 'launch-explore-head-main' }, el('div', { class: 'launch-explore-title-row' }, el('h2', {}, 'Live now'), el('a', { class: 'launch-explore-count', href: '/live', 'data-link': '', style: 'padding:0 10px' }, 'all')))), liveGrid);
     page.append(
-      el('section', { class: 'launch-explore launch-explore-graduated float about-hero' },
-        el('h1', {}, 'Livestreams for PONS coins'),
-        el('p', { class: 'about-lead' }, 'pons.live is where a PONS coin gets a face. The wallet that launched a coin goes live on it — from a webcam or OBS — and everyone watching gets the stream, a live chat and the market cap chart on one page. Nothing is launched or traded here: the coin lives on PONS, the stream lives here.'),
+      el('section', { class: 'launch-explore launch-explore-graduated float land-hero' },
+        el('span', { class: 'land-kicker' }, 'Livestreams for PONS coins'),
+        el('h1', {}, 'Go live on your coin.'),
+        el('p', { class: 'land-lead' }, 'Every coin launched on PONS gets a stage here. Show your face, share your screen, talk to holders in real time — and let everyone watch the chart move while you do.'),
+        el('div', { class: 'land-cta' }, el('button', { class: 'ui-btn ui-btn-primary land-btn', onclick: goLiveEntry }, el('span', { class: 'ui-btn-label' }, 'Go live')), el('a', { class: 'ui-btn land-btn land-btn-ghost', href: '/explore', 'data-link': '' }, el('span', { class: 'ui-btn-label' }, 'Explore coins')))),
+      el('section', { class: 'launch-explore float' },
+        el('h2', {}, 'Three steps'),
         el('div', { class: 'about-steps' },
-          step('1', 'Find your coin', 'Every token ever launched on PONS is in the catalog, searchable by name, ticker or contract address. New launches appear the moment they hit the chain.'),
-          step('2', 'Connect the deploy wallet', 'Sign a message with the wallet that launched the coin. No transaction, no gas, no custody — the signature only proves it is you.'),
-          step('3', 'Go live', 'Webcam straight from the browser, or OBS with a server URL and stream key. Viewers see you within a couple of seconds.'))),
-      card('Streaming',
+          step('1', 'Find your coin', 'Search by name, ticker or address. Every PONS coin is here, new ones show up the moment they launch.'),
+          step('2', 'Connect the deploy wallet', 'Sign a message with the wallet that launched the coin. No transaction, no gas, no custody.'),
+          step('3', 'Go live', 'Webcam straight from the browser, or OBS with a stream key. Viewers see you within seconds.'))),
+      el('section', { class: 'launch-explore float' },
+        el('h2', {}, 'What viewers get'),
+        el('div', { class: 'land-feats' },
+          feat('Stream and chart, one screen', 'The market cap chart sits right under the stream, so the story and the numbers move together.'),
+          feat('Live chat', 'Wallet-signed messages. The streamer moderates their own room.'),
+          feat('No lag', 'The picture arrives in under a second, whichever way you broadcast.'),
+          feat('Everything on PONS', 'The full catalog, searchable, with a Live section for whoever is on air right now.'))),
+      liveSec,
+      el('section', { class: 'launch-explore float land-trust' },
+        el('h2', {}, 'What we never touch'),
         el('ul', { class: 'about-list' },
-          li('Only the deployer wallet of a coin can stream on it. One stream per coin.'),
-          li('Webcam mode: pick your camera and microphone, give the stream a title, press Next. The stream runs in the browser tab; mute, switch devices or share your screen from the player controls.'),
-          li('OBS mode: after the title you get an RTMP server URL and a stream key. Service “Custom” in OBS, paste both, start streaming. Keys are issued per stream; End stream revokes them, the next Go live mints new ones.'),
-          li('Delivery is WebRTC end to end (LiveKit), so viewers are under a second behind you regardless of encoder settings.'),
-          li('The page flips to LIVE on its own, and the coin moves into “Live now” on the front page.'))),
-      card('Chat and viewers',
-        el('ul', { class: 'about-list' },
-          li('Chat is open to anyone with a connected wallet; messages are signed by the wallet address that sent them.'),
-          li('The streamer can ban a wallet from their chat by clicking its name.'),
-          li('The viewer count is the number of open pages on the coin, not a LiveKit metric.'))),
-      card('Market data',
-        el('ul', { class: 'about-list' },
-          li('Price and market cap are read from the PONS bonding curve reserves on chain, every time the page loads.'),
-          li('The chart is built from the curve’s own buy and sell events. Coins paired with tokenized stocks (NVDA, SPCX, SPY…) are priced through the stock token’s DexScreener quote.'),
-          li('There is no PONS API. The catalog is indexed directly from Robinhood Chain: launch events, launch calldata (name, logo, description, links) and an Alchemy WebSocket subscription for new coins.'))),
-      card('What we never touch',
-        el('ul', { class: 'about-list' },
-          li('No private keys, no token approvals, no transactions from this site. Trading stays on PONS — every coin page links there.'),
-          li('Stream keys are stored per coin and shown only to the deployer wallet.'),
-          li('Logos are cached as small thumbnails so IPFS gateways cannot slow the catalog down.'))),
-      card('Contracts and links',
-        el('div', { class: 'token-info-links' },
-          el('a', { href: 'https://explorer.robinhood.com/address/0x7eD598BcEf8bd9Edd8C97A195C6d13f40801EC7e', target: '_blank', rel: 'noopener' }, 'PONS v2 core'),
-          el('a', { href: 'https://explorer.robinhood.com/address/0xe33e9e479df8802cb0866d5d05258bec4cf62948', target: '_blank', rel: 'noopener' }, 'PONS launcher'),
-          el('a', { href: 'https://www.ponsfamily.com/launchpad', target: '_blank', rel: 'noopener' }, 'ponsfamily.com'),
-          el('a', { href: 'https://github.com/Maxx88xx/stream', target: '_blank', rel: 'noopener' }, 'Source on GitHub'))));
+          el('li', {}, 'No private keys, no token approvals, no transactions from this site.'),
+          el('li', {}, 'Trading stays on PONS — every coin page links straight there.'),
+          el('li', {}, 'Only the wallet that launched a coin can stream on it.'))));
+    try { const { rows } = await api('/api/streams'); if (rows.length) { liveSec.style.display = ''; rows.slice(0, 4).forEach(r => liveGrid.append(el('li', {}, card(r)))); } } catch {}
+    const onLive = async () => { try { const { rows } = await api('/api/streams'); liveGrid.innerHTML = ''; liveSec.style.display = rows.length ? '' : 'none'; rows.slice(0, 4).forEach(r => liveGrid.append(el('li', {}, card(r)))); } catch {} };
+    on('live', onLive); cleanup = () => off('live', onLive);
+  }
+
+  // ---- Privacy / Terms ----
+  const LEGAL = {
+    privacy: { title: 'Privacy policy', date: 'Effective 7 September 2026 · pons.live', intro: 'Short version: pons.live works with wallet addresses and public blockchain data. Sign-in is handled by Privy, we keep the minimum needed to run streams and chat, and we never sell or share your data for advertising.', sections: [
+      ['Who we are', ['pons.live is a livestreaming service for coins launched on PONS. It lets the wallet that launched a coin broadcast on it, and lets anyone watch, chat and follow the chart. Questions about this policy: use the contact on the coin page of $PONS or the site footer.']],
+      ['What we collect', ['Wallet address. When you connect, Privy verifies your wallet and we store the address to know which coins you can stream on and to sign your chat messages. We never see your private key.', 'Stream details. The title you give a stream, when it started and ended, and the stream credentials issued to you. Credentials are shown only to the wallet that owns the coin.', 'Chat messages. Messages you send are stored with your wallet address and shown publicly in that coin’s chat.', 'Coin data. Names, tickers, images and links come from the launch on PONS and are public by nature. Prices and market caps are read from Robinhood Chain.', 'Operational logs. Our host keeps short-lived request logs (IP address, browser type, requested page) for security and debugging. They are not used to profile you and expire automatically.']],
+      ['Video', ['Streams are delivered live and are not recorded by us. If a streamer records on their side, that is between them and their viewers.']],
+      ['Cookies and storage', ['We keep your sign-in session in your browser’s local storage; it ends when you sign out. Privy sets its own cookies and local storage to keep your wallet session working; see Privy’s privacy policy for details. We do not run advertising trackers or third-party analytics.']],
+      ['Who else sees data', ['Privy runs wallet sign-in. LiveKit carries the live video and audio between the streamer and viewers. Railway hosts the service. Robinhood Chain serves blockchain data. PONS runs the launchpad where coins trade.', 'We share data with these providers only as needed to run the service. We do not sell personal data and do not share it for advertising.']],
+      ['Your choices', ['Sign out to end your session; revoke Privy access from Privy. Ask us to remove your chat messages or stream titles by contacting us; blockchain data cannot be deleted by anyone, including us.']],
+      ['Age', ['pons.live is not intended for anyone under 18. We do not knowingly collect data from children.']],
+      ['Changes', ['If this policy changes, the new version is published here with a new effective date.']]] },
+    terms: { title: 'Terms of service', date: 'Effective 7 September 2026 · pons.live', intro: '', sections: [
+      ['What pons.live is', ['pons.live is a livestreaming interface for coins launched on PONS, a separate service with its own terms. It shows public blockchain data, lets the wallet that launched a coin stream on it, and lets viewers watch and chat. Coins are launched and traded on PONS, not here.']],
+      ['Wallets and keys', ['Sign-in is run by Privy. pons.live never holds private keys or funds and never asks you to sign a transaction. The only thing you sign is a message proving the wallet is yours.']],
+      ['Streaming', ['Only the wallet that launched a coin can stream on it. You are responsible for everything you broadcast and say in chat. Do not stream content that is illegal, that infringes someone’s rights, or that impersonates another person or project. We may end a stream or block a wallet that does.', 'Stream credentials are personal. Anyone with your stream key can broadcast as you; reset them if they leak.']],
+      ['Who can use it', ['You must be at least 18 and allowed to use crypto services where you live. You are responsible for any taxes and for complying with your local laws.']],
+      ['Don’t', ['Impersonate someone, or use the service to promote fraud, market manipulation or scams.', 'Attack, overload or reverse-engineer the service, or harass other users in chat.', 'We may block access for anyone who does.']],
+      ['No promises', ['pons.live is provided as is. Coins are volatile and can go to zero. Nothing here is financial, legal or tax advice, and nothing said on a stream is endorsed by us. We do not guarantee that any stream stays up, that any coin will trade, or that the service is always available. To the fullest extent the law allows, pons.live and its contributors are not liable for any loss arising from your use of the service, including losses caused by blockchains, wallets, third-party services, streamers or your own mistakes.']],
+      ['Changes', ['We can update these terms; the current version is always published here. Using pons.live after a change means you accept it.']]] },
+  };
+  function legalPage(kind) {
+    const page = $('#page'); page.innerHTML = '';
+    const d = LEGAL[kind];
+    page.append(el('section', { class: 'launch-explore float legal' },
+      el('h1', {}, d.title), el('p', { class: 'legal-date' }, d.date), d.intro ? el('p', { class: 'legal-intro' }, d.intro) : null,
+      ...d.sections.map(([t, ps]) => el('div', { class: 'legal-sec' }, el('h2', {}, t), ...ps.map(p => el('p', {}, p))))));
   }
 
   // ---- PONS-style SVG chart (line + gradient area + dashed grid) ----
@@ -481,7 +534,7 @@
     let c; try { c = await api('/api/token/' + addr); } catch (e) { page.append(el('section', { class: 'token-about-card float' }, el('p', { class: 'token-about-empty' }, 'Unknown coin'))); return; }
     const isDev = session && session.address === c.deployer;
     const wrap = el('div', { class: 'token-buy-page' });
-    wrap.append(el('a', { class: 'token-buy-back', href: '/', 'data-link': '' }, svgIcon(ICON.back), 'Back to explore'));
+    wrap.append(el('a', { class: 'token-buy-back', href: '/explore', 'data-link': '' }, svgIcon(ICON.back), 'Back to explore'));
     const pairBadge = () => el('span', { class: 'pair-badge' }, el('span', { class: 'pair-badge-label' }, 'Paired'), el('span', { class: 'pair-badge-symbol' }, c.quote_symbol || '?'));
     // About
     wrap.append(el('section', { class: 'token-about-card float' },
