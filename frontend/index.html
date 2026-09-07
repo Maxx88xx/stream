@@ -292,7 +292,7 @@
       </nav>
     </div>
     <div class="nav-right">
-      <button class="nav-connect" id="wallet">Connect</button>
+      <button class="nav-connect" id="wallet">connect</button>
     </div>
   </div></div></div>
 </header>
@@ -385,7 +385,7 @@
         : el('p', { class: 'hint' }, 'no wallet found. install MetaMask, Rabby or the Robinhood wallet.'),
       el('p', { class: 'hint' }, 'one signature proves the wallet is yours. no transaction, no gas.')));
   }
-  function paintWallet() { $('#wallet').textContent = session ? short(session.address) : 'Connect'; }
+  function paintWallet() { $('#wallet').textContent = session ? short(session.address) : 'connect'; }
   $('#wallet').onclick = () => { if (session) { if (confirm('Sign out?')) { session = null; localStorage.removeItem('pl_session'); paintWallet(); render(); if (window.PrivyLogin) window.PrivyLogin.logout().catch(() => {}); } } else walletModal(); };
   paintWallet();
   async function goLiveEntry() {
@@ -641,16 +641,16 @@
   async function coinPage(addr) {
     const page = $('#page'); page.innerHTML = '';
     let c; const cached = cacheGet('/api/token/' + addr); if (cached) { c = cached.data; if (Date.now() - cached.ts > ttlFor('/api/token/')) apiRaw('/api/token/' + addr).then(d => { cacheSet('/api/token/' + addr, d); if (location.pathname.endsWith(addr)) { Object.assign(c, d); document.dispatchEvent(new CustomEvent('coin-refreshed')); } }).catch(() => {}); }
-    else try { c = await api('/api/token/' + addr); } catch (e) { page.append(el('section', { class: 'token-about-card float' }, el('p', { class: 'token-about-empty' }, 'Unknown coin'))); return; }
+    else try { c = await api('/api/token/' + addr); } catch (e) { page.append(el('section', { class: 'token-about-card float' }, el('p', { class: 'token-about-empty' }, 'unknown coin'))); return; }
     const isDev = session && session.address === c.deployer;
     const wrap = el('div', { class: 'token-buy-page' });
     wrap.append(el('a', { class: 'token-buy-back', href: '/explore', 'data-link': '' }, svgIcon(ICON.back), 'back to explore'));
     const pairBadge = () => el('span', { class: 'pair-badge' }, el('span', { class: 'pair-badge-label' }, 'Paired'), el('span', { class: 'pair-badge-symbol' }, c.quote_symbol || '?'));
     // About
     wrap.append(el('section', { class: 'token-about-card float' },
-      el('div', { class: 'token-about-head' }, el('h2', {}, 'About'), pairBadge()),
+      el('div', { class: 'token-about-head' }, el('h2', {}, 'about'), pairBadge()),
       el('div', { class: 'token-about-meta' },
-        el('div', { class: 'v2-about-body' }, el('p', {}, c.description || 'no description yet.'), el('p', { class: 'v2-about-terms' }, 'Creator ' + short(c.deployer), el('span', {}, '·'), el('span', {}, c.graduated ? 'graduated' : 'on the curve'))),
+        el('div', { class: 'v2-about-body' }, el('p', {}, c.description || 'no description yet.'), el('p', { class: 'v2-about-terms' }, 'creator ' + short(c.deployer), el('span', {}, '·'), el('span', {}, c.graduated ? 'graduated' : 'on the curve'))),
         el('div', { class: 'token-about-burn' }, el('span', { class: 'token-about-burn-label' }, 'Supply'), el('div', { class: 'token-about-burn-value' }, el('span', {}, '1,000,000,000'), el('span', {}, c.symbol)), el('small', { class: 'token-about-burn-meta' }, 'Fixed at launch'))),
       el('div', { class: 'token-info-links' },
         el('button', { onclick: () => { navigator.clipboard?.writeText(c.address); toast('address copied'); } }, svgIcon(ICON.copy, 'ui-icon'), short(c.address)),
@@ -663,7 +663,7 @@
     const msgs = el('div', { class: 'chat-msgs' });
     const chatCount = el('span', {}, c.viewers);
     const input = el('input', { placeholder: session ? 'say something…' : 'connect wallet to chat', maxlength: 280 });
-    const form = el('form', { class: 'chat-form', onsubmit: (e) => { e.preventDefault(); if (!session) return walletModal(); if (input.value.trim()) { wsSend({ t: 'chat', text: input.value.trim() }); input.value = ''; } } }, input, el('button', { title: 'Send' }, svgIcon(ICON.send)));
+    const form = el('form', { class: 'chat-form', onsubmit: (e) => { e.preventDefault(); if (!session) return walletModal(); if (input.value.trim()) { wsSend({ t: 'chat', text: input.value.trim() }); input.value = ''; } } }, input, el('button', { title: 'send' }, svgIcon(ICON.send)));
     let roomState = { holders_only: false, mods: [], dev: c.deployer, you: '', can_chat: true, banned: [] };
     const myRole = () => roomState.you || (session && session.address === c.deployer ? 'dev' : '');
     const roleOf = (w) => w === roomState.dev ? 'dev' : (roomState.mods.includes(w) ? 'mod' : '');
@@ -681,8 +681,8 @@
       setTimeout(() => document.addEventListener('click', (e) => { if (!menu.contains(e.target)) menu.remove(); }, { once: true }), 0);
     };
     const canMod = (m) => { const me = myRole(); if (!me || !session || m.wallet === session.address) return false; const them = roleOf(m.wallet); return !(them === 'dev' || (me === 'mod' && them === 'mod')); };
-    const addMsg = (m, sys) => { const n = el('div', { class: 'chat-msg' + (sys ? ' is-sys' : ''), 'data-wallet': sys ? null : m.wallet }, sys ? m.text : [el('span', { class: 'chat-body' }, el('b', {}, m.who), roleBadge(m.role || roleOf(m.wallet)), ' ', m.text), el('button', { class: 'chat-dots', title: 'Moderate', onclick: (e) => { e.stopPropagation(); modMenu(m, e.currentTarget); } }, '⋯')]); if (!sys) n.classList.toggle('can-mod', canMod(m)); msgs.append(n); msgs.scrollTop = msgs.scrollHeight; while (msgs.children.length > 300) msgs.firstChild.remove(); };
-    const holdersBtn = el('button', { class: 'chat-lock', title: 'Holders-only chat', onclick: () => { if (myRole() !== 'dev') return; wsSend({ t: 'holders', on: !roomState.holders_only }); } }, svgIcon(ICON.lock));
+    const addMsg = (m, sys) => { const n = el('div', { class: 'chat-msg' + (sys ? ' is-sys' : ''), 'data-wallet': sys ? null : m.wallet }, sys ? m.text : [el('span', { class: 'chat-body' }, el('b', {}, m.who), roleBadge(m.role || roleOf(m.wallet)), ' ', m.text), el('button', { class: 'chat-dots', title: 'moderate', onclick: (e) => { e.stopPropagation(); modMenu(m, e.currentTarget); } }, '⋯')]); if (!sys) n.classList.toggle('can-mod', canMod(m)); msgs.append(n); msgs.scrollTop = msgs.scrollHeight; while (msgs.children.length > 300) msgs.firstChild.remove(); };
+    const holdersBtn = el('button', { class: 'chat-lock', title: 'holders-only chat', onclick: () => { if (myRole() !== 'dev') return; wsSend({ t: 'holders', on: !roomState.holders_only }); } }, svgIcon(ICON.lock));
     const paintRoom = () => {
       holdersBtn.classList.toggle('is-on', !!roomState.holders_only); holdersBtn.style.display = (myRole() === 'dev' || roomState.holders_only) ? '' : 'none'; holdersBtn.style.cursor = myRole() === 'dev' ? 'pointer' : 'default';
       input.disabled = !!(session && !roomState.can_chat);
@@ -747,7 +747,7 @@
       const bar = el('div', { class: 'stream-controls' });
       const left = el('div', { class: 'sc-group' }), right = el('div', { class: 'sc-group' });
       if (opts.host) {
-        left.append(el('button', { class: 'sc-btn sc-stop', title: 'End stream', onclick: async () => { if (!confirm('end the stream?')) return; await stopPublish(); await api('/api/stream/stop', { method: 'POST', body: { token: c.address } }).catch(() => {}); toast('stream ended'); } }, el('i', {})));
+        left.append(el('button', { class: 'sc-btn sc-stop', title: 'end stream', onclick: async () => { if (!confirm('end the stream?')) return; await stopPublish(); await api('/api/stream/stop', { method: 'POST', body: { token: c.address } }).catch(() => {}); toast('stream ended'); } }, el('i', {})));
         if (opts.publishing) {
           const lp = pubRoom.localParticipant;
           const micBtn = el('button', { class: 'sc-btn', title: 'Microphone', onclick: async () => { const on = !lp.isMicrophoneEnabled; await lp.setMicrophoneEnabled(on); micBtn.classList.toggle('is-off', !on); } }, svgIcon(ICON.mic)); micBtn.classList.toggle('is-off', !lp.isMicrophoneEnabled);
