@@ -157,6 +157,39 @@
   .about-list { margin:0; padding-left:18px; color:var(--text-muted); font-size:14px; line-height:1.6; display:grid; gap:6px; }
   .about-list li::marker { color:var(--accent); }
   @media (max-width:720px) { .about-steps { grid-template-columns:1fr; } }
+  /* chat moderation, holders-only, search suggestions */
+  .chat-role { display:inline-block; margin-left:6px; font-size:9px; letter-spacing:.06em; border-radius:999px; padding:2px 6px; vertical-align:middle; }
+  .chat-role.is-dev { background:var(--accent); color:#111; }
+  .chat-role.is-mod { background:#2563ebd9; color:#fff; }
+  .chat-menu { position:absolute; left:0; top:100%; margin-top:4px; background:#1c1c1c; border:1px solid var(--divider); border-radius:12px; padding:6px; display:grid; gap:2px; min-width:180px; z-index:6; box-shadow:0 12px 30px #00000066; }
+  .chat-menu-who { font-size:11px; color:var(--text-subtle); padding:4px 8px 6px; }
+  .chat-menu button { background:none; border:0; color:var(--text-primary); text-align:left; padding:8px 10px; border-radius:8px; cursor:pointer; font-size:13px; }
+  .chat-menu button:hover { background:var(--panel-blue); }
+  .chat-menu button.is-danger { color:var(--accent-red); }
+  .chat-msg { position:relative; }
+  .chat-head-right { display:flex; align-items:center; gap:8px; }
+  .chat-lock { background:var(--panel-blue); border:0; color:var(--text-muted); width:30px; height:26px; border-radius:999px; display:grid; place-items:center; padding:0; }
+  .chat-lock svg { width:14px; height:14px; }
+  .chat-lock.is-on { background:var(--accent); color:#111; }
+  .chat-card .chat-form input:disabled { opacity:.6; }
+  .toggle-row { display:flex; align-items:center; gap:12px; margin:12px 0 4px; cursor:pointer; font-size:15px; }
+  .toggle-row input { display:none; }
+  .toggle-row small { display:block; color:var(--text-muted); font-size:12px; }
+  .toggle-ui { width:44px; height:26px; border-radius:999px; background:var(--panel-blue); position:relative; flex:none; transition:background .15s; }
+  .toggle-ui::after { content:""; position:absolute; top:3px; left:3px; width:20px; height:20px; border-radius:50%; background:#fff; transition:transform .15s; }
+  .toggle-row input:checked + .toggle-ui { background:var(--accent); }
+  .toggle-row input:checked + .toggle-ui::after { transform:translateX(18px); background:#111; }
+  .search-wrap { position:relative; }
+  .search-drop { position:absolute; left:0; right:0; top:calc(100% + 8px); background:var(--bg-white); border:1px solid var(--float-border); border-radius:20px; padding:8px; box-shadow:var(--float-shadow); z-index:30; max-height:420px; overflow:auto; }
+  .search-title { display:flex; justify-content:space-between; align-items:center; font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--text-subtle); padding:6px 10px 4px; }
+  .search-title button { background:none; border:0; color:var(--text-muted); font-size:11px; cursor:pointer; text-transform:none; letter-spacing:0; }
+  .search-row { display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:12px; cursor:pointer; color:var(--text-primary); font-size:14px; }
+  .search-row:hover, .search-row.is-sel { background:var(--panel-blue); }
+  .search-row img, .search-ph { width:30px; height:30px; border-radius:8px; object-fit:cover; background:var(--panel-blue); display:grid; place-items:center; font-size:10px; color:var(--text-subtle); flex:none; }
+  .search-row.is-query svg { width:18px; height:18px; color:var(--text-muted); margin:0 6px; }
+  .search-name { flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .search-name small { color:var(--text-muted); margin-left:6px; }
+  .search-mc { color:var(--text-muted); font-size:13px; font-variant-numeric:tabular-nums; }
   /* go-live flow + player controls */
   .golive { display:grid; gap:6px; }
   .golive-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
@@ -244,7 +277,7 @@
   const $ = (s, r = document) => r.querySelector(s);
   const el = (tag, attrs = {}, ...kids) => { const e = document.createElement(tag); for (const [k, v] of Object.entries(attrs)) { if (v == null || v === false) continue; if (k === 'class') e.className = v; else if (k.startsWith('on')) e.addEventListener(k.slice(2), v); else if (k === 'html') e.innerHTML = v; else e.setAttribute(k, v); } for (const k of kids.flat()) if (k != null && k !== false) e.append(k.nodeType ? k : document.createTextNode(String(k))); return e; };
   const svgIcon = (d, cls = '', vb = '0 0 24 24') => { const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); s.setAttribute('viewBox', vb); s.setAttribute('width', '18'); s.setAttribute('height', '18'); s.setAttribute('fill', 'none'); s.setAttribute('stroke', 'currentColor'); s.setAttribute('stroke-width', '1.8'); s.setAttribute('stroke-linecap', 'round'); s.setAttribute('stroke-linejoin', 'round'); s.style.fill = 'none'; if (cls) s.setAttribute('class', cls); s.innerHTML = d; return s; };
-  const ICON = { send: '<path d="M4 12 20 4l-4 16-5-6zM11 14l9-10"/>', cam: '<path d="M15 10l4.5-2.5v9L15 14M4 6h11v12H4z"/>', mic: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>', share: '<path d="M12 16V5M7 10l5-5 5 5M5 19h14"/>', vol: '<path d="M4 10v4h4l5 4V6l-5 4H4zM16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/>', full: '<path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/>', key: '<circle cx="8" cy="14" r="4"/><path d="M11 11l9-9M16 6l3 3M14 8l2 2"/>', search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>', up: '<path d="M7 17 17 7M9 7h8v8"/>', down: '<path d="M17 7 7 17M7 9v8h8"/>', copy: '<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/>', globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>', back: '<path d="m15 18-6-6 6-6"/>', dot: '<circle cx="12" cy="12" r="5" fill="currentColor" stroke="none"/>' };
+  const ICON = { lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>', send: '<path d="M4 12 20 4l-4 16-5-6zM11 14l9-10"/>', cam: '<path d="M15 10l4.5-2.5v9L15 14M4 6h11v12H4z"/>', mic: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>', share: '<path d="M12 16V5M7 10l5-5 5 5M5 19h14"/>', vol: '<path d="M4 10v4h4l5 4V6l-5 4H4zM16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/>', full: '<path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/>', key: '<circle cx="8" cy="14" r="4"/><path d="M11 11l9-9M16 6l3 3M14 8l2 2"/>', search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>', up: '<path d="M7 17 17 7M9 7h8v8"/>', down: '<path d="M17 7 7 17M7 9v8h8"/>', copy: '<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/>', globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>', back: '<path d="m15 18-6-6 6-6"/>', dot: '<circle cx="12" cy="12" r="5" fill="currentColor" stroke="none"/>' };
   const fmtUsd = (v) => { v = Number(v || 0); return v >= 1e9 ? '$' + (v / 1e9).toFixed(2) + 'B' : v >= 1e6 ? '$' + (v / 1e6).toFixed(2) + 'M' : v >= 1e3 ? '$' + (v / 1e3).toFixed(2) + 'K' : '$' + v.toFixed(v < 10 ? 2 : 0); };
   const fmtFull = (v) => '$' + Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const fmtPrice = (v) => { v = Number(v || 0); if (!v) return '—'; return '$' + (v >= 1 ? v.toFixed(2) : v.toFixed(Math.min(10, 2 - Math.floor(Math.log10(v))))); };
@@ -322,7 +355,7 @@
   function closeModal() { $('#modal').innerHTML = ''; }
 
   // ---- websocket: launches, live flags, chat ----
-  let ws, wsRoom = null; const handlers = { launch: [], live: [], chat: [], history: [], viewers: [], banned: [], auth: [] };
+  let ws, wsRoom = null; const handlers = { launch: [], live: [], chat: [], history: [], viewers: [], banned: [], unbanned: [], room: [], notice: [], auth: [] };
   function connectWs() {
     ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws');
     ws.onopen = () => { if (session) ws.send(JSON.stringify({ t: 'auth', token: session.token })); if (wsRoom) ws.send(JSON.stringify({ t: 'sub', room: wsRoom })); };
@@ -355,11 +388,32 @@
   }
 
   // ---- toolbar (search + go live) ----
+  const HIST_KEY = 'pl_search_hist';
+  const histGet = () => { try { return JSON.parse(localStorage.getItem(HIST_KEY) || '[]'); } catch { return []; } };
+  const histAdd = (item) => { const list = histGet().filter(x => x.key !== item.key); list.unshift(item); localStorage.setItem(HIST_KEY, JSON.stringify(list.slice(0, 8))); };
   function toolbar(qs) {
-    const input = el('input', { placeholder: 'Search tokens', value: qs || '', onkeydown: (e) => { if (e.key === 'Enter') go(e.target.value.trim() ? '/search?q=' + encodeURIComponent(e.target.value.trim()) : '/explore'); } });
-    return el('div', { class: 'launch-explore-toolbar' },
-      el('label', { class: 'launch-explore-search float' }, svgIcon(ICON.search), el('span', { class: 'launch-explore-search-copy', style: 'display:flex' }, input), el('kbd', { class: 'launch-explore-kbd' }, '↵')),
-      el('button', { class: 'launch-explore-create-btn', onclick: goLiveEntry }, svgIcon(ICON.dot, '', '0 0 24 24'), 'Go live'));
+    let timer = null, sel = -1, items = [];
+    const input = el('input', { placeholder: 'Search tokens', value: qs || '', autocomplete: 'off' });
+    const drop = el('div', { class: 'search-drop', style: 'display:none' });
+    const wrap = el('label', { class: 'launch-explore-search float search-wrap' }, svgIcon(ICON.search), el('span', { class: 'launch-explore-search-copy', style: 'display:flex' }, input), el('kbd', { class: 'launch-explore-kbd' }, '↵'), drop);
+    const hide = () => { drop.style.display = 'none'; sel = -1; };
+    const rowCoin = (r) => el('div', { class: 'search-row', onmousedown: (e) => { e.preventDefault(); histAdd({ key: r.address, type: 'coin', address: r.address, name: r.name, symbol: r.symbol, image: r.image }); hide(); go('/coin/' + r.address); } },
+      r.image ? el('img', { src: r.image, alt: '' }) : el('span', { class: 'search-ph' }, (r.symbol || '?').slice(0, 3)), el('span', { class: 'search-name' }, r.name || short(r.address), el('small', {}, r.symbol ? '$' + r.symbol : '')), r.mcap_usd != null ? el('span', { class: 'search-mc' }, fmtUsd(r.mcap_usd)) : null, r.live ? el('span', { class: 'launch-card-live-badge' }, 'LIVE') : null);
+    const rowQuery = (r) => el('div', { class: 'search-row is-query', onmousedown: (e) => { e.preventDefault(); hide(); input.value = r.q; go('/search?q=' + encodeURIComponent(r.q)); } }, svgIcon(ICON.search), el('span', { class: 'search-name' }, r.q));
+    const paint = (list, title) => { drop.innerHTML = ''; items = list; if (!list.length) return hide(); if (title) drop.append(el('div', { class: 'search-title' }, title, title === 'Recent' ? el('button', { onmousedown: (e) => { e.preventDefault(); localStorage.removeItem(HIST_KEY); hide(); } }, 'Clear') : null)); list.forEach(r => drop.append(r.type === 'query' ? rowQuery(r) : rowCoin(r))); drop.style.display = ''; sel = -1; };
+    const showHistory = () => { const hist = histGet(); if (hist.length) paint(hist, 'Recent'); else hide(); };
+    const suggest = async () => { const q = input.value.trim(); if (!q) return showHistory(); try { const { rows } = await api('/api/search?q=' + encodeURIComponent(q) + '&limit=10'); if (input.value.trim() !== q) return; paint(rows, null); } catch { hide(); } };
+    input.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(suggest, 150); });
+    input.addEventListener('focus', () => { if (input.value.trim()) suggest(); else showHistory(); });
+    input.addEventListener('blur', () => setTimeout(hide, 120));
+    input.addEventListener('keydown', (e) => {
+      const rows = [...drop.querySelectorAll('.search-row')];
+      if (e.key === 'ArrowDown' && rows.length) { e.preventDefault(); sel = (sel + 1) % rows.length; rows.forEach((r, i) => r.classList.toggle('is-sel', i === sel)); }
+      else if (e.key === 'ArrowUp' && rows.length) { e.preventDefault(); sel = (sel - 1 + rows.length) % rows.length; rows.forEach((r, i) => r.classList.toggle('is-sel', i === sel)); }
+      else if (e.key === 'Escape') hide();
+      else if (e.key === 'Enter') { e.preventDefault(); if (sel >= 0 && rows[sel]) return rows[sel].dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true })); const q = input.value.trim(); hide(); if (q) { histAdd({ key: 'q:' + q.toLowerCase(), type: 'query', q }); go('/search?q=' + encodeURIComponent(q)); } else go('/explore'); }
+    });
+    return el('div', { class: 'launch-explore-toolbar' }, wrap, el('button', { class: 'launch-explore-create-btn', onclick: goLiveEntry }, svgIcon(ICON.dot, '', '0 0 24 24'), 'Go live'));
   }
 
   // ---- cards ----
@@ -554,10 +608,32 @@
     const chatCount = el('span', {}, c.viewers);
     const input = el('input', { placeholder: session ? 'Write a message…' : 'Connect wallet to chat', maxlength: 280 });
     const form = el('form', { class: 'chat-form', onsubmit: (e) => { e.preventDefault(); if (!session) return walletModal(); if (input.value.trim()) { wsSend({ t: 'chat', text: input.value.trim() }); input.value = ''; } } }, input, el('button', { title: 'Send' }, svgIcon(ICON.send)));
-    const addMsg = (m, sys) => { const n = el('div', { class: 'chat-msg' + (sys ? ' is-sys' : '') }, sys ? m.text : [el('b', { title: isDev ? 'click to ban' : m.wallet, onclick: () => { if (isDev && m.wallet !== session.address && confirm('Ban ' + m.who + ' from this chat?')) wsSend({ t: 'ban', wallet: m.wallet }); } }, m.who), ' ', m.text]); msgs.append(n); msgs.scrollTop = msgs.scrollHeight; while (msgs.children.length > 300) msgs.firstChild.remove(); };
+    let roomState = { holders_only: false, mods: [], dev: c.deployer, you: '', can_chat: true, banned: [] };
+    const myRole = () => roomState.you || (session && session.address === c.deployer ? 'dev' : '');
+    const roleOf = (w) => w === roomState.dev ? 'dev' : (roomState.mods.includes(w) ? 'mod' : '');
+    const roleBadge = (r) => r ? el('span', { class: 'chat-role is-' + r }, r === 'dev' ? 'DEV' : 'MOD') : null;
+    const modMenu = (m, anchor) => {
+      document.querySelectorAll('.chat-menu').forEach(x => x.remove());
+      const me = myRole(); if (!me || m.wallet === session.address) return;
+      const them = roleOf(m.wallet); if (them === 'dev' || (me === 'mod' && them === 'mod')) return;
+      const banned = roomState.banned.includes(m.wallet);
+      const menu = el('div', { class: 'chat-menu' }, el('div', { class: 'chat-menu-who' }, m.who),
+        banned ? el('button', { onclick: () => { wsSend({ t: 'unban', wallet: m.wallet }); menu.remove(); } }, 'Unban') : el('button', { class: 'is-danger', onclick: () => { wsSend({ t: 'ban', wallet: m.wallet }); menu.remove(); } }, 'Ban from chat'),
+        me === 'dev' ? (them === 'mod' ? el('button', { onclick: () => { wsSend({ t: 'mod', wallet: m.wallet, on: false }); menu.remove(); } }, 'Remove moderator') : el('button', { onclick: () => { wsSend({ t: 'mod', wallet: m.wallet, on: true }); menu.remove(); } }, 'Make moderator')) : null);
+      anchor.parentNode.style.position = 'relative'; anchor.parentNode.append(menu);
+      setTimeout(() => document.addEventListener('click', (e) => { if (!menu.contains(e.target)) menu.remove(); }, { once: true }), 0);
+    };
+    const addMsg = (m, sys) => { const name = sys ? null : el('b', { onclick: (e) => modMenu(m, e.target) }, m.who); const n = el('div', { class: 'chat-msg' + (sys ? ' is-sys' : ''), 'data-wallet': sys ? null : m.wallet }, sys ? m.text : [name, roleBadge(m.role || roleOf(m.wallet)), ' ', m.text]); msgs.append(n); msgs.scrollTop = msgs.scrollHeight; while (msgs.children.length > 300) msgs.firstChild.remove(); };
+    const holdersBtn = el('button', { class: 'chat-lock', title: 'Holders-only chat', onclick: () => { if (myRole() !== 'dev') return; wsSend({ t: 'holders', on: !roomState.holders_only }); } }, svgIcon(ICON.lock));
+    const paintRoom = () => {
+      holdersBtn.classList.toggle('is-on', !!roomState.holders_only); holdersBtn.style.display = (myRole() === 'dev' || roomState.holders_only) ? '' : 'none'; holdersBtn.style.cursor = myRole() === 'dev' ? 'pointer' : 'default';
+      input.disabled = !!(session && !roomState.can_chat);
+      input.placeholder = !session ? 'Connect wallet to chat' : (!roomState.can_chat ? (roomState.banned.includes(session.address) ? 'You are banned from this chat' : 'Holders only — hold $' + c.symbol + ' to chat') : 'Write a message…');
+      msgs.querySelectorAll('.chat-msg[data-wallet]').forEach(n => { const w = n.dataset.wallet; const b = n.querySelector('.chat-role'); const r = roleOf(w); if (b) b.remove(); const nb = roleBadge(r); if (nb) n.querySelector('b').after(nb); });
+    };
     const actionBtn = isDev ? el('button', { class: 'ui-btn ui-btn-primary stream-action', onclick: () => goLive(c) }, el('span', { class: 'ui-btn-label' }, c.live ? 'Stream settings' : 'Go live')) : null;
     const chatCard = el('article', { class: 'chat-card float' },
-      el('div', { class: 'chat-head' }, el('h3', {}, 'Live chat'), chatCount),
+      el('div', { class: 'chat-head' }, el('h3', {}, 'Live chat'), el('span', { class: 'chat-head-right' }, holdersBtn, chatCount)),
       msgs, form);
     // right: stream + stats + chart
     const stage = el('div', { class: 'stream-stage' });
@@ -683,8 +759,12 @@
     const hChat = (m) => addMsg(m);
     const hViewers = (m) => { if (m.token !== c.address) return; c.viewers = m.n; chatCount.textContent = m.n; const v = $('#viewers'); if (v) v.textContent = m.n + ' watching'; };
     const hLive = async (m) => { if (m.token !== c.address) return; try { c = { ...c, ...(await api('/api/token/' + addr)) }; } catch {} paintPlayer(); metaLeft.innerHTML = ''; metaLeft.append(c.live ? el('span', { class: 'launch-card-live-badge is-big' }, 'LIVE') : null, el('h2', { class: 'stream-title' }, c.title || c.name), startedEl); startedEl.textContent = c.started_ts && c.live ? 'Started ' + ago(Date.now() / 1000 - c.started_ts) : ''; actionBtn && (actionBtn.firstChild.textContent = c.live ? 'Stream settings' : 'Go live'); };
-    const hBan = (m) => addMsg({ text: short(m.wallet) + ' was banned' }, true);
-    on('history', hHist); on('chat', hChat); on('viewers', hViewers); on('live', hLive); on('banned', hBan);
+    const hBan = (m) => { msgs.querySelectorAll('.chat-msg[data-wallet="' + m.wallet + '"]').forEach(n => n.remove()); addMsg({ text: (m.who || short(m.wallet)) + ' was banned' }, true); };
+    const hUnban = (m) => addMsg({ text: (m.who || short(m.wallet)) + ' was unbanned' }, true);
+    const hRoom = (m) => { if (m.token !== c.address) return; roomState = m; paintRoom(); };
+    const hNotice = (m) => addMsg({ text: m.text }, true);
+    on('history', hHist); on('chat', hChat); on('viewers', hViewers); on('live', hLive); on('banned', hBan); on('unbanned', hUnban); on('room', hRoom); on('notice', hNotice);
+    paintRoom();
     // chart + trades
     let range = '1H', timer, lastKey = '';
     const paintChart = async (force) => {
@@ -699,7 +779,7 @@
     RANGES.forEach(([lbl]) => ranges.append(el('button', { class: 'noxa-chart-range' + (lbl === range ? ' is-active' : ''), onclick: (e) => { range = lbl; [...ranges.children].forEach(b => b.classList.toggle('is-active', b === e.target)); changeEl.lastChild.textContent = lbl; paintChart(true).catch(() => {}); } }, lbl)));
     paintChart(true).catch(() => {}); timer = setInterval(() => paintChart().catch(() => {}), 3000);
     const onResize = () => paintChart(true).catch(() => {}); addEventListener('resize', onResize);
-    cleanup = () => { clearInterval(timer); clearInterval(startedTimer); removeEventListener('resize', onResize); off('history', hHist); off('chat', hChat); off('viewers', hViewers); off('live', hLive); off('banned', hBan); wsRoom = null; stopPlay(); stopHls(); stopLk(); document.removeEventListener('publish-changed', onPub); };
+    cleanup = () => { clearInterval(timer); clearInterval(startedTimer); removeEventListener('resize', onResize); off('history', hHist); off('chat', hChat); off('viewers', hViewers); off('live', hLive); off('banned', hBan); off('unbanned', hUnban); off('room', hRoom); off('notice', hNotice); wsRoom = null; stopPlay(); stopHls(); stopLk(); document.removeEventListener('publish-changed', onPub); };
   }
 
   // ---- go live: browser (WHIP) or OBS (RTMPS key) ----
@@ -751,12 +831,13 @@
       el('div', { class: 'field-label' }, 'Broadcast mode'), modeSel, el('p', { class: 'hint', style: 'margin:6px 0 14px' }, 'Choose a broadcast type for your stream'),
       body,
       el('div', { class: 'field-label' }, 'Stream title (required)'), title,
+      el('label', { class: 'toggle-row' }, el('input', { type: 'checkbox', id: 'ho-toggle' }), el('span', { class: 'toggle-ui' }), el('span', {}, 'Holders-only chat', el('small', {}, 'Only wallets holding $' + c.symbol + ' can write'))),
       next);
     next.onclick = async () => {
       const t = title.value.trim(); if (!t) return;
       goingLive = true; next.disabled = true; next.firstChild.textContent = 'Starting…';
       try {
-        const creds = await api('/api/stream/start', { method: 'POST', body: { token: c.address, title: t, mode } });
+        const creds = await api('/api/stream/start', { method: 'POST', body: { token: c.address, title: t, mode, holders_only: !!document.querySelector('#ho-toggle')?.checked } });
         if (mode === 'rtmp') { stopPreview(); credsModal(c, creds); }
         else { const s = previewStream; previewStream = null; closeModal(); await lkPublish(c, { stream: s, cam, mic }); toast('You are live'); }
       } catch (e) { toast(e.message || 'failed'); next.disabled = false; next.firstChild.textContent = 'Next'; }

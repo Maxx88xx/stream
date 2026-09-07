@@ -178,7 +178,7 @@ async def h_recent(request):
 
 
 async def h_search(request):
-    rows = db.search(C, request.query.get("q", ""), 30)
+    rows = db.search(C, request.query.get("q", ""), max(1, min(30, int(request.query.get("limit") or 30))))
     await asyncio.to_thread(market.enrich_market, rows)
     return web.json_response({"rows": [_pub(t) for t in rows]}, headers=NO_CACHE)
 
@@ -315,6 +315,9 @@ async def h_stream_start(request):
         else:                                                        # older inputs: switch them to Low-Latency HLS too
             asyncio.create_task(asyncio.to_thread(_ensure_ll, s["input_uid"]))
         x("UPDATE streams SET title=?, started_ts=?, ended_ts=0 WHERE address=?", (title, int(time.time()), addr))
+        if "holders_only" in body:
+            x("INSERT INTO room_settings(room,holders_only) VALUES(?,?) ON CONFLICT(room) DO UPDATE SET holders_only=excluded.holders_only", (addr, 1 if body.get("holders_only") else 0))
+            asyncio.create_task(_broadcast_room_state(addr))
         s = _stream_row(addr)
     return web.json_response(_creds(s), headers=NO_CACHE)
 
@@ -502,6 +505,61 @@ async def _viewers(room: str) -> None:
     await broadcast_room(room, {"t": "viewers", "token": room, "n": len(ROOMS.get(room, set()))})
 
 
+def _roles(room: str) -> dict:
+    """wallet -> 'dev' | 'mod' for a coin's chat. The deployer is dev even before the first stream."""
+    out = {}
+    t = db.get_token(C, room)
+    if t:
+        out[t["deployer"]] = "dev"
+    for r in q("SELECT wallet FROM mods WHERE room=?", (room,)):
+        out.setdefault(r["wallet"], "mod")
+    return out
+
+
+def _holders_only(room: str) -> bool:
+    r = q("SELECT holders_only FROM room_settings WHERE room=?", (room,))
+    return bool(r and r[0]["holders_only"])
+
+
+_holder_cache: dict = {}
+
+
+async def _is_holder(room: str, wallet: str) -> bool:
+    key = (room, wallet)
+    hit = _holder_cache.get(key)
+    if hit and time.time() - hit[1] < 60:
+        return hit[0]
+    try:
+        data = "0x70a08231" + wallet[2:].rjust(64, "0")
+        r = await asyncio.to_thread(chain.rpc, chain.ALCHEMY_HTTP, "eth_call", [{"to": room, "data": data}, "latest"])
+        ok = int(r, 16) > 0 if r and r != "0x" else False
+    except Exception:  # noqa: BLE001
+        ok = False
+    _holder_cache[key] = (ok, time.time())
+    return ok
+
+
+async def _room_state(room: str, wallet: str | None) -> dict:
+    roles = _roles(room)
+    ho = _holders_only(room)
+    you = roles.get(wallet or "", "")
+    can = True
+    if wallet and ho and not you:
+        can = await _is_holder(room, wallet)
+    if wallet and (q("SELECT 1 FROM room_bans WHERE room=? AND wallet=?", (room, wallet)) or q("SELECT 1 FROM bans WHERE wallet=? AND room='*'", (wallet,))):
+        can = False
+    return {"t": "room", "token": room, "holders_only": ho, "mods": [w for w, r in roles.items() if r == "mod"], "dev": next((w for w, r in roles.items() if r == "dev"), ""),
+            "you": you, "can_chat": can, "banned": [r["wallet"] for r in q("SELECT wallet FROM room_bans WHERE room=?", (room,))] if you else []}
+
+
+async def _broadcast_room_state(room: str) -> None:
+    for ws in list(ROOMS.get(room, set())):
+        await _send(ws, await _room_state(room, SOCK_WALLET.get(ws)))
+
+
+SOCK_WALLET: dict = {}
+
+
 def _short(w: str) -> str:
     return w[:4] + ".." + w[-4:]
 
@@ -523,7 +581,10 @@ async def h_ws(request):
             t = m.get("t")
             if t == "auth":
                 wallet = _check_token(str(m.get("token") or ""))
+                SOCK_WALLET[ws] = wallet
                 await _send(ws, {"t": "auth", "address": wallet})
+                if room:
+                    await _send(ws, await _room_state(room, wallet))
             elif t == "sub":
                 new = _norm_addr(m.get("room"))
                 if room and room != new:
@@ -532,24 +593,57 @@ async def h_ws(request):
                 room = new
                 if room:
                     ROOMS.setdefault(room, set()).add(ws)
+                    roles = _roles(room)
                     hist = q("SELECT wallet, text, ts FROM chat WHERE room=? ORDER BY id DESC LIMIT 100", (room,))
-                    await _send(ws, {"t": "history", "rows": [{"who": _short(h["wallet"]), "wallet": h["wallet"], "text": h["text"], "ts": h["ts"]} for h in reversed(hist)]})
+                    await _send(ws, {"t": "history", "rows": [{"who": _short(h["wallet"]), "wallet": h["wallet"], "text": h["text"], "ts": h["ts"], "role": roles.get(h["wallet"], "")} for h in reversed(hist)]})
+                    await _send(ws, await _room_state(room, wallet))
                     await _viewers(room)
             elif t == "chat" and room and wallet:
                 text = str(m.get("text") or "").strip()[:280]
-                if not text or q("SELECT 1 FROM bans WHERE wallet=? AND room IN ('*', ?)", (wallet, room)):
+                if not text:
+                    continue
+                if q("SELECT 1 FROM bans WHERE wallet=? AND room='*'", (wallet,)) or q("SELECT 1 FROM room_bans WHERE room=? AND wallet=?", (room, wallet)):
+                    await _send(ws, {"t": "notice", "text": "You are banned from this chat"})
+                    continue
+                role = _roles(room).get(wallet, "")
+                if not role and _holders_only(room) and not await _is_holder(room, wallet):
+                    await _send(ws, {"t": "notice", "text": "Holders only — you need to hold this coin to chat"})
                     continue
                 ts = int(time.time())
                 x("INSERT INTO chat(room,wallet,text,ts) VALUES(?,?,?,?)", (room, wallet, text, ts))
-                await broadcast_room(room, {"t": "chat", "who": _short(wallet), "wallet": wallet, "text": text, "ts": ts})
-            elif t == "ban" and room and wallet:
+                await broadcast_room(room, {"t": "chat", "who": _short(wallet), "wallet": wallet, "text": text, "ts": ts, "role": role})
+            elif t in ("ban", "unban") and room and wallet:
                 target = _norm_addr(m.get("wallet"))
-                s = _stream_row(room)
-                if target and s and s["wallet"] == wallet and target != wallet:
-                    x("INSERT OR REPLACE INTO bans(wallet,room,by_wallet,ts) VALUES(?,?,?,?)", (target, room, wallet, int(time.time())))
-                    await broadcast_room(room, {"t": "banned", "wallet": target})
+                roles = _roles(room)
+                me, them = roles.get(wallet, ""), roles.get(target or "", "")
+                if not target or target == wallet or me not in ("dev", "mod") or them == "dev" or (me == "mod" and them == "mod"):
+                    continue
+                if t == "ban":
+                    x("INSERT OR REPLACE INTO room_bans(room,wallet,by_wallet,ts) VALUES(?,?,?,?)", (room, target, wallet, int(time.time())))
+                    x("DELETE FROM chat WHERE room=? AND wallet=?", (room, target))
+                    await broadcast_room(room, {"t": "banned", "wallet": target, "who": _short(target)})
+                else:
+                    x("DELETE FROM room_bans WHERE room=? AND wallet=?", (room, target))
+                    await broadcast_room(room, {"t": "unbanned", "wallet": target, "who": _short(target)})
+                await _broadcast_room_state(room)
+            elif t == "mod" and room and wallet:
+                target = _norm_addr(m.get("wallet"))
+                if not target or _roles(room).get(wallet) != "dev" or target == wallet:
+                    continue
+                if m.get("on"):
+                    x("INSERT OR REPLACE INTO mods(room,wallet,by_wallet,ts) VALUES(?,?,?,?)", (room, target, wallet, int(time.time())))
+                    x("DELETE FROM room_bans WHERE room=? AND wallet=?", (room, target))
+                else:
+                    x("DELETE FROM mods WHERE room=? AND wallet=?", (room, target))
+                await _broadcast_room_state(room)
+            elif t == "holders" and room and wallet:
+                if _roles(room).get(wallet) != "dev":
+                    continue
+                x("INSERT INTO room_settings(room,holders_only) VALUES(?,?) ON CONFLICT(room) DO UPDATE SET holders_only=excluded.holders_only", (room, 1 if m.get("on") else 0))
+                await _broadcast_room_state(room)
     finally:
         SOCKETS.discard(ws)
+        SOCK_WALLET.pop(ws, None)
         if room:
             ROOMS.get(room, set()).discard(ws)
             await _viewers(room)
