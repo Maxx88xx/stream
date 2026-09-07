@@ -172,14 +172,15 @@ def _stream_row(addr: str):
 
 async def h_recent(request):
     offset = max(0, int(request.query.get("offset") or 0))
-    rows = db.recent(C, 48, offset)
+    rows = db.recent(C, max(1, min(48, int(request.query.get("limit") or 48))), offset)
     await asyncio.to_thread(market.enrich_market, rows)
     return web.json_response({"rows": [_pub(t) for t in rows], "stats": db.stats(C)}, headers=NO_CACHE)
 
 
 async def h_search(request):
     rows = db.search(C, request.query.get("q", ""), max(1, min(30, int(request.query.get("limit") or 30))))
-    await asyncio.to_thread(market.enrich_market, rows)
+    if not request.query.get("fast"):                      # suggestions skip the on-chain market read
+        await asyncio.to_thread(market.enrich_market, rows)
     return web.json_response({"rows": [_pub(t) for t in rows]}, headers=NO_CACHE)
 
 

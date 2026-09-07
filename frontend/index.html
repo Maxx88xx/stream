@@ -161,7 +161,16 @@
   .chat-role { display:inline-block; margin-left:6px; font-size:9px; letter-spacing:.06em; border-radius:999px; padding:2px 6px; vertical-align:middle; }
   .chat-role.is-dev { background:var(--accent); color:#111; }
   .chat-role.is-mod { background:#2563ebd9; color:#fff; }
-  .chat-menu { position:absolute; left:0; top:100%; margin-top:4px; background:#1c1c1c; border:1px solid var(--divider); border-radius:12px; padding:6px; display:grid; gap:2px; min-width:180px; z-index:6; box-shadow:0 12px 30px #00000066; }
+  .chat-msg { display:flex; align-items:flex-start; gap:6px; }
+  .chat-body { flex:1; min-width:0; }
+  .chat-dots { display:none; flex:none; background:none; border:0; color:var(--text-muted); font-size:16px; line-height:1; padding:0 4px; border-radius:6px; cursor:pointer; }
+  .chat-msg.can-mod:hover .chat-dots, .chat-msg.can-mod .chat-dots:focus { display:inline-block; }
+  .chat-dots:hover { background:var(--panel-blue); color:var(--text-primary); }
+  .chat-menu button svg { width:16px; height:16px; margin-right:8px; vertical-align:-3px; }
+  .trade-btn.pbtn, .token-info-links a.trade-btn { background:var(--accent) !important; color:#111 !important; font-size:14px !important; padding:11px 18px !important; font-weight:500; }
+  .load-more-row { display:flex; justify-content:center; padding-top:6px; }
+  .load-more { margin:0 !important; }
+  .chat-menu { position:absolute; right:0; top:100%; margin-top:4px; background:#1c1c1c; border:1px solid var(--divider); border-radius:12px; padding:6px; display:grid; gap:2px; min-width:180px; z-index:6; box-shadow:0 12px 30px #00000066; }
   .chat-menu-who { font-size:11px; color:var(--text-subtle); padding:4px 8px 6px; }
   .chat-menu button { background:none; border:0; color:var(--text-primary); text-align:left; padding:8px 10px; border-radius:8px; cursor:pointer; font-size:13px; }
   .chat-menu button:hover { background:var(--panel-blue); }
@@ -268,7 +277,7 @@
 </header>
 <main class="bridge-shell launchpad-explore-shell" id="page"></main>
 <footer class="site-foot">
-  <div class="site-foot-links"><a href="/privacy" data-link>Privacy</a><a href="/terms" data-link>Terms</a><a href="https://www.ponsfamily.com/launchpad" target="_blank" rel="noopener">PONS</a><a href="https://explorer.robinhood.com" target="_blank" rel="noopener">Robinhood Chain</a></div>
+  <div class="site-foot-links"><a href="/privacy" data-link>Privacy</a><a href="/terms" data-link>Terms</a><a href="https://www.ponsfamily.com/launchpad" target="_blank" rel="noopener">PONS</a><a href="https://robinhoodchain.blockscout.com" target="_blank" rel="noopener">Robinhood Chain</a></div>
   <p>Wallets by Privy. pons.live never holds keys or funds. Streams are live only, trading stays on PONS.</p>
 </footer>
 <div id="modal"></div>
@@ -277,7 +286,7 @@
   const $ = (s, r = document) => r.querySelector(s);
   const el = (tag, attrs = {}, ...kids) => { const e = document.createElement(tag); for (const [k, v] of Object.entries(attrs)) { if (v == null || v === false) continue; if (k === 'class') e.className = v; else if (k.startsWith('on')) e.addEventListener(k.slice(2), v); else if (k === 'html') e.innerHTML = v; else e.setAttribute(k, v); } for (const k of kids.flat()) if (k != null && k !== false) e.append(k.nodeType ? k : document.createTextNode(String(k))); return e; };
   const svgIcon = (d, cls = '', vb = '0 0 24 24') => { const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); s.setAttribute('viewBox', vb); s.setAttribute('width', '18'); s.setAttribute('height', '18'); s.setAttribute('fill', 'none'); s.setAttribute('stroke', 'currentColor'); s.setAttribute('stroke-width', '1.8'); s.setAttribute('stroke-linecap', 'round'); s.setAttribute('stroke-linejoin', 'round'); s.style.fill = 'none'; if (cls) s.setAttribute('class', cls); s.innerHTML = d; return s; };
-  const ICON = { lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>', send: '<path d="M4 12 20 4l-4 16-5-6zM11 14l9-10"/>', cam: '<path d="M15 10l4.5-2.5v9L15 14M4 6h11v12H4z"/>', mic: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>', share: '<path d="M12 16V5M7 10l5-5 5 5M5 19h14"/>', vol: '<path d="M4 10v4h4l5 4V6l-5 4H4zM16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/>', full: '<path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/>', key: '<circle cx="8" cy="14" r="4"/><path d="M11 11l9-9M16 6l3 3M14 8l2 2"/>', search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>', up: '<path d="M7 17 17 7M9 7h8v8"/>', down: '<path d="M17 7 7 17M7 9v8h8"/>', copy: '<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/>', globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>', back: '<path d="m15 18-6-6 6-6"/>', dot: '<circle cx="12" cy="12" r="5" fill="currentColor" stroke="none"/>' };
+  const ICON = { shield: '<path d="M12 3l7 3v5c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6z"/>', trash: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>', lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>', send: '<path d="M4 12 20 4l-4 16-5-6zM11 14l9-10"/>', cam: '<path d="M15 10l4.5-2.5v9L15 14M4 6h11v12H4z"/>', mic: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>', share: '<path d="M12 16V5M7 10l5-5 5 5M5 19h14"/>', vol: '<path d="M4 10v4h4l5 4V6l-5 4H4zM16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/>', full: '<path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/>', key: '<circle cx="8" cy="14" r="4"/><path d="M11 11l9-9M16 6l3 3M14 8l2 2"/>', search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>', up: '<path d="M7 17 17 7M9 7h8v8"/>', down: '<path d="M17 7 7 17M7 9v8h8"/>', copy: '<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/>', globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>', back: '<path d="m15 18-6-6 6-6"/>', dot: '<circle cx="12" cy="12" r="5" fill="currentColor" stroke="none"/>' };
   const fmtUsd = (v) => { v = Number(v || 0); return v >= 1e9 ? '$' + (v / 1e9).toFixed(2) + 'B' : v >= 1e6 ? '$' + (v / 1e6).toFixed(2) + 'M' : v >= 1e3 ? '$' + (v / 1e3).toFixed(2) + 'K' : '$' + v.toFixed(v < 10 ? 2 : 0); };
   const fmtFull = (v) => '$' + Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const fmtPrice = (v) => { v = Number(v || 0); if (!v) return '—'; return '$' + (v >= 1 ? v.toFixed(2) : v.toFixed(Math.min(10, 2 - Math.floor(Math.log10(v))))); };
@@ -316,7 +325,7 @@
   }
   // Privy: the real wallet modal ("Protected by Privy"). The 5 MB SDK loads on first click only.
   let privyState = null;   // null | 'loading' | 'ready'
-  const ROBINHOOD_CHAIN = { id: 4663, name: 'Robinhood Chain', nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 }, rpcUrls: { default: { http: ['https://rpc.mainnet.chain.robinhood.com'] } }, blockExplorers: { default: { name: 'Explorer', url: 'https://explorer.robinhood.com' } } };
+  const ROBINHOOD_CHAIN = { id: 4663, name: 'Robinhood Chain', nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 }, rpcUrls: { default: { http: ['https://rpc.mainnet.chain.robinhood.com'] } }, blockExplorers: { default: { name: 'Explorer', url: 'https://robinhoodchain.blockscout.com' } } };
   function privyOpen() {
     const appId = (window.CFG || {}).privyAppId;
     if (!appId) return walletModalFallback();
@@ -402,8 +411,8 @@
     const rowQuery = (r) => el('div', { class: 'search-row is-query', onmousedown: (e) => { e.preventDefault(); hide(); input.value = r.q; go('/search?q=' + encodeURIComponent(r.q)); } }, svgIcon(ICON.search), el('span', { class: 'search-name' }, r.q));
     const paint = (list, title) => { drop.innerHTML = ''; items = list; if (!list.length) return hide(); if (title) drop.append(el('div', { class: 'search-title' }, title, title === 'Recent' ? el('button', { onmousedown: (e) => { e.preventDefault(); localStorage.removeItem(HIST_KEY); hide(); } }, 'Clear') : null)); list.forEach(r => drop.append(r.type === 'query' ? rowQuery(r) : rowCoin(r))); drop.style.display = ''; sel = -1; };
     const showHistory = () => { const hist = histGet(); if (hist.length) paint(hist, 'Recent'); else hide(); };
-    const suggest = async () => { const q = input.value.trim(); if (!q) return showHistory(); try { const { rows } = await api('/api/search?q=' + encodeURIComponent(q) + '&limit=10'); if (input.value.trim() !== q) return; paint(rows, null); } catch { hide(); } };
-    input.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(suggest, 150); });
+    const suggest = async () => { const q = input.value.trim(); if (!q) return showHistory(); try { const { rows } = await api('/api/search?q=' + encodeURIComponent(q) + '&limit=10&fast=1'); if (input.value.trim() !== q) return; paint(rows, null); } catch { hide(); } };
+    input.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(suggest, 80); });
     input.addEventListener('focus', () => { if (input.value.trim()) suggest(); else showHistory(); });
     input.addEventListener('blur', () => setTimeout(hide, 120));
     input.addEventListener('keydown', (e) => {
@@ -459,9 +468,15 @@
     if (!liveOnly) { rec = section({ title: 'New launches', copy: 'Every token launched on PONS, the moment it hits the chain.' }); page.append(rec.sec); }
     const paintLive = async () => { const { rows } = await api('/api/streams'); live.count.textContent = rows.length; fill(live.grid, rows, 'Nobody is live right now. Own a PONS coin? Connect and go live.'); };
     await paintLive();
-    if (rec) { const { rows, stats } = await api('/api/recent'); rec.count.textContent = stats.tokens.toLocaleString('en-US'); fill(rec.grid, rows, ''); }
+    const PAGE = 24; let shown = 0;
+    let more = null;
+    if (rec) {
+      const { rows, stats } = await api('/api/recent?limit=' + PAGE); rec.count.textContent = stats.tokens.toLocaleString('en-US'); fill(rec.grid, rows, ''); shown = rows.length;
+      more = el('button', { class: 'launch-explore-create-btn load-more', onclick: async () => { more.disabled = true; try { const { rows } = await api('/api/recent?limit=' + PAGE + '&offset=' + rec.grid.children.length); rows.forEach(r => rec.grid.append(el('li', {}, card(r)))); shown += rows.length; if (!rows.length) more.style.display = 'none'; } catch {} more.disabled = false; } }, 'Show more');
+      rec.sec.append(el('div', { class: 'load-more-row' }, more));
+    }
     let frozen = false; const queued = [];
-    const insert = (coin) => { const li = el('li', {}, card(coin)); li.firstChild.classList.add('is-new'); rec.grid.prepend(li); if (rec.grid.children.length > 60) rec.grid.lastChild.remove(); };
+    const insert = (coin) => { const li = el('li', {}, card(coin)); li.firstChild.classList.add('is-new'); rec.grid.prepend(li); while (rec.grid.children.length > shown) rec.grid.lastChild.remove(); };
     const onLaunch = (m) => { if (!rec) return; if (frozen) { queued.push(m.coin); return; } insert(m.coin); };
     if (rec) { rec.grid.addEventListener('mouseenter', () => { frozen = true; rec.grid.classList.add('is-frozen'); }); rec.grid.addEventListener('mouseleave', () => { frozen = false; rec.grid.classList.remove('is-frozen'); while (queued.length) insert(queued.shift()); }); }
     const onLive = () => paintLive();
@@ -598,11 +613,11 @@
         el('div', { class: 'token-about-burn' }, el('span', { class: 'token-about-burn-label' }, 'Supply'), el('div', { class: 'token-about-burn-value' }, el('span', {}, '1,000,000,000'), el('span', {}, c.symbol)), el('small', { class: 'token-about-burn-meta' }, 'Fixed at launch'))),
       el('div', { class: 'token-info-links' },
         el('button', { onclick: () => { navigator.clipboard?.writeText(c.address); toast('Address copied'); } }, svgIcon(ICON.copy, 'ui-icon'), short(c.address)),
-        el('a', { href: 'https://explorer.robinhood.com/address/' + c.address, target: '_blank', rel: 'noopener' }, svgIcon(ICON.globe, 'ui-icon'), 'Explorer'),
+        el('a', { href: 'https://robinhoodchain.blockscout.com/address/' + c.address, target: '_blank', rel: 'noopener' }, svgIcon(ICON.globe, 'ui-icon'), 'Explorer'),
         c.twitter && el('a', { href: c.twitter, target: '_blank', rel: 'noopener' }, 'X'),
         c.telegram && el('a', { href: c.telegram, target: '_blank', rel: 'noopener' }, 'Telegram'),
         c.website && el('a', { href: c.website, target: '_blank', rel: 'noopener' }, 'Website'),
-        el('a', { href: 'https://www.ponsfamily.com/launchpad/' + c.address, target: '_blank', rel: 'noopener' }, 'Trade on pons'))));
+        el('a', { class: 'trade-btn', href: 'https://www.ponsfamily.com/launchpad/' + c.address, target: '_blank', rel: 'noopener' }, 'Trade on pons ↗'))));
     // left: identity + chat + action
     const msgs = el('div', { class: 'chat-msgs' });
     const chatCount = el('span', {}, c.viewers);
@@ -617,19 +632,21 @@
       const me = myRole(); if (!me || m.wallet === session.address) return;
       const them = roleOf(m.wallet); if (them === 'dev' || (me === 'mod' && them === 'mod')) return;
       const banned = roomState.banned.includes(m.wallet);
-      const menu = el('div', { class: 'chat-menu' }, el('div', { class: 'chat-menu-who' }, m.who),
-        banned ? el('button', { onclick: () => { wsSend({ t: 'unban', wallet: m.wallet }); menu.remove(); } }, 'Unban') : el('button', { class: 'is-danger', onclick: () => { wsSend({ t: 'ban', wallet: m.wallet }); menu.remove(); } }, 'Ban from chat'),
-        me === 'dev' ? (them === 'mod' ? el('button', { onclick: () => { wsSend({ t: 'mod', wallet: m.wallet, on: false }); menu.remove(); } }, 'Remove moderator') : el('button', { onclick: () => { wsSend({ t: 'mod', wallet: m.wallet, on: true }); menu.remove(); } }, 'Make moderator')) : null);
-      anchor.parentNode.style.position = 'relative'; anchor.parentNode.append(menu);
+      const item = (icon, label, cls, fn) => el('button', { class: cls || '', onclick: () => { fn(); menu.remove(); } }, svgIcon(icon), label);
+      const menu = el('div', { class: 'chat-menu' },
+        me === 'dev' ? (them === 'mod' ? item(ICON.shield, 'Remove moderator', '', () => wsSend({ t: 'mod', wallet: m.wallet, on: false })) : item(ICON.shield, 'Make moderator', '', () => wsSend({ t: 'mod', wallet: m.wallet, on: true }))) : null,
+        banned ? item(ICON.trash, 'Unban', '', () => wsSend({ t: 'unban', wallet: m.wallet })) : item(ICON.trash, 'Ban and delete messages', 'is-danger', () => wsSend({ t: 'ban', wallet: m.wallet })));
+      anchor.closest('.chat-msg').append(menu);
       setTimeout(() => document.addEventListener('click', (e) => { if (!menu.contains(e.target)) menu.remove(); }, { once: true }), 0);
     };
-    const addMsg = (m, sys) => { const name = sys ? null : el('b', { onclick: (e) => modMenu(m, e.target) }, m.who); const n = el('div', { class: 'chat-msg' + (sys ? ' is-sys' : ''), 'data-wallet': sys ? null : m.wallet }, sys ? m.text : [name, roleBadge(m.role || roleOf(m.wallet)), ' ', m.text]); msgs.append(n); msgs.scrollTop = msgs.scrollHeight; while (msgs.children.length > 300) msgs.firstChild.remove(); };
+    const canMod = (m) => { const me = myRole(); if (!me || !session || m.wallet === session.address) return false; const them = roleOf(m.wallet); return !(them === 'dev' || (me === 'mod' && them === 'mod')); };
+    const addMsg = (m, sys) => { const n = el('div', { class: 'chat-msg' + (sys ? ' is-sys' : ''), 'data-wallet': sys ? null : m.wallet }, sys ? m.text : [el('span', { class: 'chat-body' }, el('b', {}, m.who), roleBadge(m.role || roleOf(m.wallet)), ' ', m.text), el('button', { class: 'chat-dots', title: 'Moderate', onclick: (e) => { e.stopPropagation(); modMenu(m, e.currentTarget); } }, '⋯')]); if (!sys) n.classList.toggle('can-mod', canMod(m)); msgs.append(n); msgs.scrollTop = msgs.scrollHeight; while (msgs.children.length > 300) msgs.firstChild.remove(); };
     const holdersBtn = el('button', { class: 'chat-lock', title: 'Holders-only chat', onclick: () => { if (myRole() !== 'dev') return; wsSend({ t: 'holders', on: !roomState.holders_only }); } }, svgIcon(ICON.lock));
     const paintRoom = () => {
       holdersBtn.classList.toggle('is-on', !!roomState.holders_only); holdersBtn.style.display = (myRole() === 'dev' || roomState.holders_only) ? '' : 'none'; holdersBtn.style.cursor = myRole() === 'dev' ? 'pointer' : 'default';
       input.disabled = !!(session && !roomState.can_chat);
       input.placeholder = !session ? 'Connect wallet to chat' : (!roomState.can_chat ? (roomState.banned.includes(session.address) ? 'You are banned from this chat' : 'Holders only — hold $' + c.symbol + ' to chat') : 'Write a message…');
-      msgs.querySelectorAll('.chat-msg[data-wallet]').forEach(n => { const w = n.dataset.wallet; const b = n.querySelector('.chat-role'); const r = roleOf(w); if (b) b.remove(); const nb = roleBadge(r); if (nb) n.querySelector('b').after(nb); });
+      msgs.querySelectorAll('.chat-msg[data-wallet]').forEach(n => { const w = n.dataset.wallet; const b = n.querySelector('.chat-role'); const r = roleOf(w); if (b) b.remove(); const nb = roleBadge(r); if (nb) n.querySelector('b').after(nb); n.classList.toggle('can-mod', canMod({ wallet: w })); });
     };
     const actionBtn = isDev ? el('button', { class: 'ui-btn ui-btn-primary stream-action', onclick: () => goLive(c) }, el('span', { class: 'ui-btn-label' }, c.live ? 'Stream settings' : 'Go live')) : null;
     const chatCard = el('article', { class: 'chat-card float' },
