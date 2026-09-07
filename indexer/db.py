@@ -46,11 +46,14 @@ def connect(readonly: bool = False) -> sqlite3.Connection:
     os.makedirs(DATA_DIR, exist_ok=True)
     if readonly:
         c = sqlite3.connect(f"file:{DB_PATH}?mode=ro", uri=True, timeout=10, check_same_thread=False)
+        c.execute("PRAGMA cache_size=-131072")
     else:
         c = sqlite3.connect(DB_PATH, timeout=30, check_same_thread=False)
         c.execute("PRAGMA journal_mode=WAL")
         c.execute("PRAGMA synchronous=NORMAL")
         c.execute("PRAGMA journal_size_limit=67108864")      # WAL never lingers above 64 MB after a checkpoint
+        c.execute("PRAGMA cache_size=-262144")               # 256 MB page cache: the FTS index stays hot on the (network) volume
+        c.execute("PRAGMA mmap_size=536870912")
         c.executescript(SCHEMA)
         _migrate(c)
     c.row_factory = sqlite3.Row
@@ -116,12 +119,19 @@ def search(c, q: str, limit: int = 30) -> list:
     if not q:
         return []
     if q.lower().startswith("0x") and len(q) >= 6:
-        return [dict(r) for r in c.execute("SELECT * FROM tokens WHERE address LIKE ? ORDER BY block DESC LIMIT ?", (q.lower() + "%", limit))]
-    # prefix match on every term, newest first among the matches
+        lo = q.lower()
+        hi = lo[:-1] + chr(ord(lo[-1]) + 1)                      # range scan on the PK instead of LIKE (which ignores the index)
+        return [dict(r) for r in c.execute("SELECT * FROM tokens WHERE address >= ? AND address < ? ORDER BY block DESC LIMIT ?", (lo, hi, limit))]
+    # prefix match on every term; FTS rowid == tokens.rowid == launch order, so ORDER BY rowid DESC
+    # walks the newest matches first and stops at LIMIT instead of materialising every match
     terms = " ".join(f'"{t}"*' for t in q.replace('"', " ").split() if t)
-    rows = c.execute(
-        "SELECT t.* FROM tokens_fts f JOIN tokens t ON t.address=f.address WHERE tokens_fts MATCH ? ORDER BY t.block DESC LIMIT ?",
-        (terms, limit)).fetchall()
+    if not terms:
+        return []
+    ids = [r[0] for r in c.execute("SELECT rowid FROM tokens_fts WHERE tokens_fts MATCH ? ORDER BY rowid DESC LIMIT ?", (terms, limit))]
+    if not ids:
+        return []
+    marks = ",".join("?" * len(ids))
+    rows = c.execute(f"SELECT * FROM tokens WHERE rowid IN ({marks}) ORDER BY block DESC", ids).fetchall()
     return [dict(r) for r in rows]
 
 
