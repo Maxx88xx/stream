@@ -388,6 +388,20 @@ def _release_ingress(addr: str, ingress_id: str) -> None:
     x("UPDATE streams SET ingress_id='', rtmps_url='', stream_key='' WHERE address=? AND ingress_id=?", (addr, ingress_id))
 
 
+async def checkpoint_wal():
+    """Every 2 min fold the WAL back into the main file and truncate it; with
+    long-lived connections SQLite otherwise lets the WAL grow without bound."""
+    while True:
+        await asyncio.sleep(120)
+        try:
+            with _lock:
+                r = C.execute("PRAGMA wal_checkpoint(TRUNCATE)").fetchone()
+            if r and r[0]:
+                print(f"[db] checkpoint busy: {tuple(r)}")
+        except Exception as exc:  # noqa: BLE001
+            print(f"[db] checkpoint failed: {exc}")
+
+
 async def track_head():
     """Latest block every 3 s: card ages and the candles endpoint read it instead of calling the RPC per request."""
     while True:
@@ -671,7 +685,7 @@ def make_app() -> web.Application:
     r.add_static("/assets", FRONTEND / "assets")
 
     async def on_start(app):
-        app["tasks"] = [asyncio.create_task(live.run(on_launch)), asyncio.create_task(poll_stream_status(app)), asyncio.create_task(track_head())]
+        app["tasks"] = [asyncio.create_task(live.run(on_launch)), asyncio.create_task(poll_stream_status(app)), asyncio.create_task(track_head()), asyncio.create_task(checkpoint_wal())]
         if (os.environ.get("BACKFILL") or "1") == "1":
             threading.Thread(target=_backfill_thread, daemon=True).start()
 

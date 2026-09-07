@@ -50,6 +50,7 @@ def connect(readonly: bool = False) -> sqlite3.Connection:
         c = sqlite3.connect(DB_PATH, timeout=30, check_same_thread=False)
         c.execute("PRAGMA journal_mode=WAL")
         c.execute("PRAGMA synchronous=NORMAL")
+        c.execute("PRAGMA journal_size_limit=67108864")      # WAL never lingers above 64 MB after a checkpoint
         c.executescript(SCHEMA)
         _migrate(c)
     c.row_factory = sqlite3.Row
