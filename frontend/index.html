@@ -120,6 +120,18 @@
   .stream-live .launch-card-live-badge { font-size:13px; padding:5px 10px; }
   .stream-live .launch-card-viewers { font-size:13px; padding:5px 10px; }
   @media (max-width:900px) { .stream-layout { grid-template-columns:1fr; } .stream-layout .chat-card { position:static; height:60vh; } .stream-meta { flex-wrap:wrap; } }
+  /* about page */
+  .about-hero h1 { margin:0 0 10px; font-size:30px; font-weight:400; }
+  .about-lead { color:var(--text-muted); font-size:15px; line-height:1.6; max-width:70ch; margin:0 0 22px; }
+  .about-steps { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:14px; }
+  .about-step { background:var(--panel-blue); border-radius:20px; padding:18px 18px 20px; }
+  .about-num { display:inline-grid; place-items:center; width:30px; height:30px; border-radius:999px; background:var(--accent); color:#111; font-size:14px; font-weight:500; margin-bottom:12px; }
+  .about-step h3 { margin:0 0 6px; font-size:17px; font-weight:500; }
+  .about-step p { margin:0; color:var(--text-muted); font-size:14px; line-height:1.5; }
+  .about-card h2 { margin:0 0 6px; font-size:20px; font-weight:400; }
+  .about-list { margin:0; padding-left:18px; color:var(--text-muted); font-size:14px; line-height:1.6; display:grid; gap:6px; }
+  .about-list li::marker { color:var(--accent); }
+  @media (max-width:720px) { .about-steps { grid-template-columns:1fr; } }
   /* go-live flow + player controls */
   .golive { display:grid; gap:6px; }
   .golive-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
@@ -185,6 +197,7 @@
       <nav class="nav-product-links">
         <a class="nav-product-link" href="/" data-link id="nav-home">Explore</a>
         <a class="nav-product-link" href="/live" data-link id="nav-live"><i class="live-dot"></i>Live</a>
+        <a class="nav-product-link" href="/about" data-link id="nav-about">How it works</a>
       </nav>
     </div>
     <div class="nav-right">
@@ -236,7 +249,25 @@
     localStorage.setItem('pl_session', JSON.stringify(session));
     paintWallet(); wsSend({ t: 'auth', token: session.token }); render();
   }
-  function walletModal() {
+  // Privy: the real wallet modal ("Protected by Privy"). The 5 MB SDK loads on first click only.
+  let privyState = null;   // null | 'loading' | 'ready'
+  const ROBINHOOD_CHAIN = { id: 4663, name: 'Robinhood Chain', nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 }, rpcUrls: { default: { http: ['https://rpc.mainnet.chain.robinhood.com'] } }, blockExplorers: { default: { name: 'Explorer', url: 'https://explorer.robinhood.com' } } };
+  function privyOpen() {
+    const appId = (window.CFG || {}).privyAppId;
+    if (!appId) return walletModalFallback();
+    if (privyState === 'ready') return window.PrivyLogin.open();
+    if (privyState === 'loading') return;
+    privyState = 'loading'; toast('Loading wallet…');
+    document.addEventListener('privy:ready', () => { if (privyState !== 'ready') { privyState = 'ready'; window.PrivyLogin.open(); } }, { once: true });
+    document.addEventListener('privy:wallet', async (e) => { const d = e.detail; if (session && session.address === d.address) return; await signIn({ info: { name: d.name }, provider: d.provider }); });
+    document.addEventListener('privy:error', (e) => { console.warn('privy', e.detail); toast('Wallet login failed'); });
+    const s = document.createElement('script'); s.src = '/assets/privy.js';
+    s.onload = () => window.PrivyMount(appId, { chain: ROBINHOOD_CHAIN, accent: '#d4fc50', logo: location.origin + '/assets/logo.svg' });
+    s.onerror = () => { privyState = null; toast('Could not load wallet module'); walletModalFallback(); };
+    document.head.append(s);
+  }
+  function walletModal() { privyOpen(); }
+  function walletModalFallback() {
     const list = providers.length ? providers : (window.ethereum ? [{ info: { name: 'Browser wallet', uuid: 'legacy' }, provider: window.ethereum }] : []);
     openModal(el('div', {}, el('h3', {}, 'Connect wallet'),
       list.length ? el('div', {}, ...list.map(p => el('button', { class: 'pbtn wide', onclick: async () => { closeModal(); await signIn(p); } }, p.info.icon ? el('img', { src: p.info.icon, width: 22, height: 22, style: 'border-radius:6px' }) : null, p.info.name)))
@@ -244,7 +275,7 @@
       el('p', { class: 'hint' }, 'You sign a message to prove the wallet is yours. No transaction, no gas.')));
   }
   function paintWallet() { $('#wallet').textContent = session ? short(session.address) : 'Connect'; }
-  $('#wallet').onclick = () => { if (session) { if (confirm('Sign out?')) { session = null; localStorage.removeItem('pl_session'); paintWallet(); render(); } } else walletModal(); };
+  $('#wallet').onclick = () => { if (session) { if (confirm('Sign out?')) { session = null; localStorage.removeItem('pl_session'); paintWallet(); render(); if (window.PrivyLogin) window.PrivyLogin.logout().catch(() => {}); } } else walletModal(); };
   paintWallet();
   async function goLiveEntry() {
     if (!session) return walletModal();
@@ -281,9 +312,11 @@
     const p = location.pathname;
     $('#nav-live').classList.toggle('is-active', p === '/live');
     $('#nav-home').classList.toggle('is-active', p === '/' || p === '/search');
+    $('#nav-about').classList.toggle('is-active', p === '/about');
     const main = $('#page'); main.className = p.startsWith('/coin/') ? 'bridge-shell token-buy-shell' : 'bridge-shell launchpad-explore-shell';
     if (p.startsWith('/coin/')) return coinPage(p.split('/')[2]);
     if (p === '/search') return explorePage(false, new URLSearchParams(location.search).get('q') || '');
+    if (p === '/about') return aboutPage();
     return explorePage(p === '/live', '');
   }
 
@@ -346,6 +379,50 @@
     const onLive = () => paintLive();
     on('launch', onLaunch); on('live', onLive);
     cleanup = () => { off('launch', onLaunch); off('live', onLive); };
+  }
+
+  // ---- About / How it works ----
+  function aboutPage() {
+    const page = $('#page'); page.innerHTML = '';
+    const step = (n, title, text) => el('div', { class: 'about-step' }, el('span', { class: 'about-num' }, n), el('h3', {}, title), el('p', {}, text));
+    const card = (title, ...kids) => el('section', { class: 'launch-explore float about-card' }, el('h2', {}, title), ...kids);
+    const li = (t) => el('li', {}, t);
+    page.append(
+      el('section', { class: 'launch-explore launch-explore-graduated float about-hero' },
+        el('h1', {}, 'Livestreams for PONS coins'),
+        el('p', { class: 'about-lead' }, 'pons.live is where a PONS coin gets a face. The wallet that launched a coin goes live on it — from a webcam or OBS — and everyone watching gets the stream, a live chat and the market cap chart on one page. Nothing is launched or traded here: the coin lives on PONS, the stream lives here.'),
+        el('div', { class: 'about-steps' },
+          step('1', 'Find your coin', 'Every token ever launched on PONS is in the catalog, searchable by name, ticker or contract address. New launches appear the moment they hit the chain.'),
+          step('2', 'Connect the deploy wallet', 'Sign a message with the wallet that launched the coin. No transaction, no gas, no custody — the signature only proves it is you.'),
+          step('3', 'Go live', 'Webcam straight from the browser, or OBS with a server URL and stream key. Viewers see you within a couple of seconds.'))),
+      card('Streaming',
+        el('ul', { class: 'about-list' },
+          li('Only the deployer wallet of a coin can stream on it. One stream per coin.'),
+          li('Webcam mode: pick your camera and microphone, give the stream a title, press Next. The stream runs in the browser tab; mute, switch devices or share your screen from the player controls.'),
+          li('OBS mode: after the title you get an RTMP server URL and a stream key. Service “Custom” in OBS, paste both, start streaming. Keys are issued per stream; End stream revokes them, the next Go live mints new ones.'),
+          li('Delivery is WebRTC end to end (LiveKit), so viewers are under a second behind you regardless of encoder settings.'),
+          li('The page flips to LIVE on its own, and the coin moves into “Live now” on the front page.'))),
+      card('Chat and viewers',
+        el('ul', { class: 'about-list' },
+          li('Chat is open to anyone with a connected wallet; messages are signed by the wallet address that sent them.'),
+          li('The streamer can ban a wallet from their chat by clicking its name.'),
+          li('The viewer count is the number of open pages on the coin, not a LiveKit metric.'))),
+      card('Market data',
+        el('ul', { class: 'about-list' },
+          li('Price and market cap are read from the PONS bonding curve reserves on chain, every time the page loads.'),
+          li('The chart is built from the curve’s own buy and sell events. Coins paired with tokenized stocks (NVDA, SPCX, SPY…) are priced through the stock token’s DexScreener quote.'),
+          li('There is no PONS API. The catalog is indexed directly from Robinhood Chain: launch events, launch calldata (name, logo, description, links) and an Alchemy WebSocket subscription for new coins.'))),
+      card('What we never touch',
+        el('ul', { class: 'about-list' },
+          li('No private keys, no token approvals, no transactions from this site. Trading stays on PONS — every coin page links there.'),
+          li('Stream keys are stored per coin and shown only to the deployer wallet.'),
+          li('Logos are cached as small thumbnails so IPFS gateways cannot slow the catalog down.'))),
+      card('Contracts and links',
+        el('div', { class: 'token-info-links' },
+          el('a', { href: 'https://explorer.robinhood.com/address/0x7eD598BcEf8bd9Edd8C97A195C6d13f40801EC7e', target: '_blank', rel: 'noopener' }, 'PONS v2 core'),
+          el('a', { href: 'https://explorer.robinhood.com/address/0xe33e9e479df8802cb0866d5d05258bec4cf62948', target: '_blank', rel: 'noopener' }, 'PONS launcher'),
+          el('a', { href: 'https://www.ponsfamily.com/launchpad', target: '_blank', rel: 'noopener' }, 'ponsfamily.com'),
+          el('a', { href: 'https://github.com/Maxx88xx/stream', target: '_blank', rel: 'noopener' }, 'Source on GitHub'))));
   }
 
   // ---- PONS-style SVG chart (line + gradient area + dashed grid) ----
