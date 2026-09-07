@@ -204,22 +204,22 @@
   .launch-card.is-skeleton .launch-card-logo { background:linear-gradient(90deg, #0d0d0d 25%, #1a1a1a 50%, #0d0d0d 75%); background-size:200% 100%; animation:shimmer 1.2s infinite; }
   .launch-card.is-skeleton strong, .launch-card.is-skeleton small { background:#1a1a1a; border-radius:6px; display:block; height:12px; width:60%; }
   @keyframes shimmer { from { background-position:200% 0; } to { background-position:-200% 0; } }
-  /* liquid-glass treatment for every lime element */
-  .nav-connect, .ui-btn-primary, .pbtn.primary, .trade-btn.pbtn, .token-info-links a.trade-btn, .launch-card-live-badge, .stream-action.ui-btn, .chat-card .chat-form button, .chat-lock.is-on, .about-num, .nav-logo-mark, .land-btn.ui-btn-primary, .cred-copy.is-lime {
-    background:linear-gradient(180deg, rgba(222,255,110,.95) 0%, rgba(212,252,80,.86) 55%, rgba(190,236,52,.88) 100%) !important;
+  /* liquid-glass treatment for every lime element — PONS's own glass recipe, tinted lime: flat, hairline rim, no gloss */
+  .nav-connect, .ui-btn-primary, .pbtn.primary, .trade-btn.pbtn, .token-info-links a.trade-btn, .launch-card-live-badge, .stream-action.ui-btn, .chat-card .chat-form button, .chat-lock.is-on, .about-num, .nav-logo-mark, .land-btn.ui-btn-primary {
+    background:rgba(212,252,80,.78) !important;
     color:#111 !important;
-    border:1px solid rgba(255,255,255,.42) !important;
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.6), inset 0 -1px 0 rgba(0,0,0,.14), 0 6px 20px rgba(212,252,80,.16) !important;
-    -webkit-backdrop-filter:blur(14px) saturate(160%); backdrop-filter:blur(14px) saturate(160%);
-    position:relative; overflow:hidden; isolation:isolate;
+    border:1px solid rgba(255,255,255,.28) !important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.32), inset 0 -1px 0 rgba(255,255,255,.08), inset 1px 0 2px -1px rgba(255,255,255,.2), inset -1px 0 2px -1px rgba(255,255,255,.2) !important;
+    -webkit-backdrop-filter:blur(10px) saturate(140%); backdrop-filter:blur(10px) saturate(140%);
+    position:relative; isolation:isolate; text-shadow:none;
   }
   .nav-connect::after, .ui-btn-primary::after, .pbtn.primary::after, .trade-btn::after, .launch-card-live-badge::after, .stream-action.ui-btn::after, .chat-card .chat-form button::after, .chat-lock.is-on::after, .about-num::after, .nav-logo-mark::after {
     content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none; z-index:0;
-    background:linear-gradient(to bottom, rgba(255,255,255,.38) 0%, rgba(255,255,255,.08) 42%, transparent 60%);
+    background:linear-gradient(rgba(255,255,255,.07) 0%, transparent 55%);
   }
   .nav-connect > *, .ui-btn-primary > *, .pbtn.primary > *, .launch-card-live-badge > * { position:relative; z-index:1; }
   .launch-card-live-badge::before { z-index:1; position:relative; }
-  .nav-connect:hover:not(:disabled), .ui-btn-primary:hover:not(:disabled), .pbtn.primary:hover, .trade-btn:hover { background:linear-gradient(180deg, rgba(232,255,140,.98) 0%, rgba(220,255,95,.9) 55%, rgba(200,244,64,.92) 100%) !important; }
+  .nav-connect:hover:not(:disabled), .ui-btn-primary:hover:not(:disabled), .pbtn.primary:hover, .trade-btn:hover { background:rgba(212,252,80,.9) !important; }
   /* go-live flow + player controls */
   .golive { display:grid; gap:6px; }
   .golive-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
