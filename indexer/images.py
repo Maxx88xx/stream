@@ -13,6 +13,8 @@ import json
 import os
 import re
 import threading
+import time
+import urllib.error
 import urllib.request
 
 from PIL import Image
@@ -49,17 +51,28 @@ def _candidates(url: str) -> list[str]:
     return [url] if url.startswith(("http://", "https://")) else []
 
 
+_backoff: dict = {}          # gateway host → time until which we skip it (after a 429)
+
+
 def _get(url: str, timeout: float) -> tuple[bytes, str] | None:
+    host = url.split("/")[2].split(".ipfs.")[-1]
+    if _backoff.get(host, 0) > time.time():
+        return None
     try:
         with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=timeout) as r:
             return r.read(MAX_BYTES + 1), (r.headers.get("Content-Type") or "").lower()
+    except urllib.error.HTTPError as e:
+        if e.code == 429:
+            _backoff[host] = time.time() + 60
+        return None
     except Exception:  # noqa: BLE001
         return None
 
 
 def fetch(url: str, depth: int = 0) -> bytes | None:
-    """Raw image bytes for a logo URI. IPFS candidates are raced in parallel
-    (the first gateway that answers wins), one JSON metadata hop allowed."""
+    """Raw image bytes for a logo URI. IPFS gateways are tried as hedged
+    requests: the next gateway starts only if the previous one has not
+    answered within 2.5 s, the first success wins. One JSON metadata hop."""
     cands = _candidates(url)
     if not cands:
         return None
@@ -70,13 +83,20 @@ def fetch(url: str, depth: int = 0) -> bytes | None:
     else:
         import concurrent.futures as cf
         with cf.ThreadPoolExecutor(len(cands)) as ex:
-            futs = [ex.submit(_get, c, timeout) for c in cands]
-            for f in cf.as_completed(futs):
-                r = f.result()
-                if r and r[0] and len(r[0]) <= MAX_BYTES:
-                    got = r
-                    for o in futs:
-                        o.cancel()
+            futs = []
+            i = 0
+            deadline = time.time() + timeout + 2.5 * (len(cands) - 1)
+            while got is None and time.time() < deadline:
+                if i < len(cands):
+                    futs.append(ex.submit(_get, cands[i], timeout)); i += 1
+                done, _ = cf.wait(futs, timeout=2.5, return_when=cf.FIRST_COMPLETED)
+                for f in done:
+                    r = f.result()
+                    if r and r[0] and len(r[0]) <= MAX_BYTES:
+                        got = r
+                        break
+                    futs.remove(f)
+                if got is None and i >= len(cands) and not futs:
                     break
     if not got:
         return None
@@ -142,7 +162,6 @@ _trim_at = {"ts": 0.0}
 def _trim_cache() -> None:
     """Every few minutes: if the thumbnail dir exceeds CACHE_CAP, drop the
     least recently used files until it is 20% under the cap."""
-    import time
     if time.time() - _trim_at["ts"] < 300 or not _trim_lock.acquire(blocking=False):
         return
     try:

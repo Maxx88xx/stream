@@ -577,7 +577,7 @@ async def _prefetch_image(addr: str, url: str) -> None:
 
 # ---- coin images: fetched once server-side, served as static thumbnails ----
 
-_img_sem = asyncio.Semaphore(12)
+_img_sem = asyncio.Semaphore(6)
 _img_failed: dict = {}
 IMG_HEADERS = {"Cache-Control": "public, max-age=86400"}
 
