@@ -25,7 +25,7 @@ IMG_DIR = os.path.join(db.DATA_DIR, "img")
 CACHE_CAP = int(os.environ.get("IMG_CACHE_MB") or 150) * 1024 * 1024   # thumbnails are a cache: keep the volume for the catalog
 MAX_BYTES = 12 * 1024 * 1024
 SIZE = 256
-UA = {"User-Agent": "pons.live/1.0 (+catalog thumbnails)"}
+UA = {"User-Agent": "plink/1.0 (+catalog thumbnails)"}
 GATEWAYS = ("https://{cid}.ipfs.nftstorage.link{tail}", "https://{cid}.ipfs.dweb.link{tail}",
             "https://ipfs.io/ipfs/{cid}{tail}", "https://gateway.pinata.cloud/ipfs/{cid}{tail}")
 _SUB = re.compile(r"^https?://([a-z0-9]{40,})\.ipfs\.[^/]+(/.*)?$", re.I)
