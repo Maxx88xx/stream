@@ -292,14 +292,14 @@
       </nav>
     </div>
     <div class="nav-right">
-      <button class="nav-connect" id="wallet">connect</button>
+      <button class="nav-connect" id="wallet">Connect</button>
     </div>
   </div></div></div>
 </header>
 <main class="bridge-shell launchpad-explore-shell" id="page"></main>
 <footer class="site-foot">
   <div class="site-foot-links"><a href="/privacy" data-link>Privacy</a><a href="/terms" data-link>Terms</a><a href="https://www.ponsfamily.com/launchpad" target="_blank" rel="noopener">PONS</a><a href="https://robinhoodchain.blockscout.com" target="_blank" rel="noopener">Robinhood Chain</a></div>
-  <p>wallets by Privy. plink never holds keys or funds. streams are live only, trading stays on PONS.</p>
+  <p>Wallets by Privy. plink never holds keys or funds. Streams stay live only, trading stays on PONS.</p>
 </footer>
 <div id="modal"></div>
 <script>
@@ -338,10 +338,10 @@
   dispatchEvent(new Event('eip6963:requestProvider'));
   let connecting = false;
   async function signIn(prov) {
-    if (connecting) return toast('open your wallet and confirm the pending request');
+    if (connecting) return toast('Open your wallet and confirm the pending request');
     connecting = true;
     try { await _signIn(prov); }
-    catch (e) { const m = String(e?.message || e); toast(/pending|current approval|already/i.test(m) ? 'your wallet has an unanswered popup — open it, confirm or reject, then try again' : /rejected|denied/i.test(m) ? 'rejected in wallet' : m.slice(0, 120)); }
+    catch (e) { const m = String(e?.message || e); toast(/pending|current approval|already/i.test(m) ? 'Your wallet has an unanswered popup — open it, confirm or reject, then try again' : /rejected|denied/i.test(m) ? 'Rejected in wallet' : m.slice(0, 120)); }
     finally { connecting = false; }
   }
   async function _signIn(prov) {
@@ -356,7 +356,7 @@
     const r = await api('/api/auth/verify', { method: 'POST', body: { address, signature } });
     session = { token: r.token, address: r.address, wallet: prov.info.name };
     localStorage.setItem('pl_session', JSON.stringify(session));
-    paintWallet(); wsSend({ t: 'auth', token: session.token }); render(); toast('you’re in');
+    paintWallet(); wsSend({ t: 'auth', token: session.token }); render(); toast('You’re in');
   }
   // Privy: the real wallet modal ("Protected by Privy"). The 5 MB SDK loads on first click only.
   let privyState = null;   // null | 'loading' | 'ready'
@@ -365,35 +365,35 @@
     const appId = (window.CFG || {}).privyAppId;
     if (!appId) return walletModalFallback();
     if (privyState === 'ready') return window.PrivyLogin.open();
-    if (privyState === 'loading') { toast('loading wallet…'); document.addEventListener('privy:ready', () => window.PrivyLogin.open(), { once: true }); return; }
-    privyState = 'loading'; toast('loading wallet…');
+    if (privyState === 'loading') { toast('Loading wallet…'); document.addEventListener('privy:ready', () => window.PrivyLogin.open(), { once: true }); return; }
+    privyState = 'loading'; toast('Loading wallet…');
     document.addEventListener('privy:ready', () => { if (privyState !== 'ready') { privyState = 'ready'; window.PrivyLogin.open(); } }, { once: true });
     document.addEventListener('privy:wallet', async (e) => { const d = e.detail; if (session && session.address === d.address) return; await signIn({ info: { name: d.name }, provider: d.provider }); });
-    document.addEventListener('privy:error', (e) => { console.warn('privy', e.detail); toast('wallet login didn’t go through'); });
+    document.addEventListener('privy:error', (e) => { console.warn('privy', e.detail); toast('Wallet login didn’t go through'); });
     const s = document.createElement('script'); s.src = '/assets/privy.js';
-    s.onload = () => window.PrivyMount(appId, { chain: ROBINHOOD_CHAIN, accent: '#d4fc50', theme: '#161616', logo: location.origin + '/assets/logo.svg', header: 'connect wallet', message: 'sign in with the wallet that launched your coin' });
-    s.onerror = () => { privyState = null; toast('couldn’t load the wallet module'); walletModalFallback(); };
+    s.onload = () => window.PrivyMount(appId, { chain: ROBINHOOD_CHAIN, accent: '#d4fc50', theme: '#161616', logo: location.origin + '/assets/logo.svg', header: 'Connect wallet', message: 'Sign in with the wallet that launched your coin' });
+    s.onerror = () => { privyState = null; toast('Couldn’t load the wallet module'); walletModalFallback(); };
     document.head.append(s);
   }
   function walletModal() { privyOpen(); }
-  const privyWarm = () => { if (privyState || !(window.CFG || {}).privyAppId || session) return; privyState = 'loading'; document.addEventListener('privy:ready', () => { privyState = 'ready'; }, { once: true }); document.addEventListener('privy:wallet', async (e) => { const d = e.detail; if (session && session.address === d.address) return; await signIn({ info: { name: d.name }, provider: d.provider }); }); const s = document.createElement('script'); s.src = '/assets/privy.js'; s.onload = () => window.PrivyMount((window.CFG || {}).privyAppId, { chain: ROBINHOOD_CHAIN, accent: '#d4fc50', theme: '#161616', logo: location.origin + '/assets/logo.svg', header: 'connect wallet', message: 'sign in with the wallet that launched your coin' }); s.onerror = () => { privyState = null; }; document.head.append(s); };
+  const privyWarm = () => { if (privyState || !(window.CFG || {}).privyAppId || session) return; privyState = 'loading'; document.addEventListener('privy:ready', () => { privyState = 'ready'; }, { once: true }); document.addEventListener('privy:wallet', async (e) => { const d = e.detail; if (session && session.address === d.address) return; await signIn({ info: { name: d.name }, provider: d.provider }); }); const s = document.createElement('script'); s.src = '/assets/privy.js'; s.onload = () => window.PrivyMount((window.CFG || {}).privyAppId, { chain: ROBINHOOD_CHAIN, accent: '#d4fc50', theme: '#161616', logo: location.origin + '/assets/logo.svg', header: 'Connect wallet', message: 'Sign in with the wallet that launched your coin' }); s.onerror = () => { privyState = null; }; document.head.append(s); };
   (window.requestIdleCallback || ((f) => setTimeout(f, 2500)))(() => setTimeout(privyWarm, 1500));
   function walletModalFallback() {
     const list = providers.length ? providers : (window.ethereum ? [{ info: { name: 'Browser wallet', uuid: 'legacy' }, provider: window.ethereum }] : []);
-    openModal(el('div', {}, el('h3', {}, 'connect wallet'),
+    openModal(el('div', {}, el('h3', {}, 'Connect wallet'),
       list.length ? el('div', {}, ...list.map(p => el('button', { class: 'pbtn wide', onclick: async () => { closeModal(); await signIn(p); } }, p.info.icon ? el('img', { src: p.info.icon, width: 22, height: 22, style: 'border-radius:6px' }) : null, p.info.name)))
-        : el('p', { class: 'hint' }, 'no wallet found. install MetaMask, Rabby or the Robinhood wallet.'),
-      el('p', { class: 'hint' }, 'one signature proves the wallet is yours. no transaction, no gas.')));
+        : el('p', { class: 'hint' }, 'No wallet found. Install MetaMask, Rabby or the Robinhood wallet.'),
+      el('p', { class: 'hint' }, 'One signature proves the wallet is yours. No transaction, no gas.')));
   }
-  function paintWallet() { $('#wallet').textContent = session ? short(session.address) : 'connect'; }
+  function paintWallet() { $('#wallet').textContent = session ? short(session.address) : 'Connect'; }
   $('#wallet').onclick = () => { if (session) { if (confirm('Sign out?')) { session = null; localStorage.removeItem('pl_session'); paintWallet(); render(); if (window.PrivyLogin) window.PrivyLogin.logout().catch(() => {}); } } else walletModal(); };
   paintWallet();
   async function goLiveEntry() {
     if (!session) return walletModal();
     const me = await api('/api/me').catch(() => ({ coins: [] }));
-    if (!me.coins || !me.coins.length) return toast('no PONS coins launched from this wallet');
+    if (!me.coins || !me.coins.length) return toast('No PONS coins launched from this wallet');
     if (me.coins.length === 1) return go('/coin/' + me.coins[0].address);
-    openModal(el('div', {}, el('h3', {}, 'your coins'), ...me.coins.map(c => el('button', { class: 'pbtn wide', onclick: () => { closeModal(); go('/coin/' + c.address); } }, c.image ? el('img', { src: c.image, width: 22, height: 22, style: 'border-radius:6px' }) : null, (c.name || short(c.address)) + (c.symbol ? '  $' + c.symbol : '')))));
+    openModal(el('div', {}, el('h3', {}, 'Your coins'), ...me.coins.map(c => el('button', { class: 'pbtn wide', onclick: () => { closeModal(); go('/coin/' + c.address); } }, c.image ? el('img', { src: c.image, width: 22, height: 22, style: 'border-radius:6px' }) : null, (c.name || short(c.address)) + (c.symbol ? '  $' + c.symbol : '')))));
   }
 
   // ---- modal ----
@@ -439,7 +439,7 @@
   const histAdd = (item) => { const list = histGet().filter(x => x.key !== item.key); list.unshift(item); localStorage.setItem(HIST_KEY, JSON.stringify(list.slice(0, 8))); };
   function toolbar(qs) {
     let timer = null, sel = -1, items = [];
-    const input = el('input', { placeholder: 'search coins', value: qs || '', autocomplete: 'off' });
+    const input = el('input', { placeholder: 'Search coins', value: qs || '', autocomplete: 'off' });
     const drop = el('div', { class: 'search-drop', style: 'display:none' });
     const wrap = el('label', { class: 'launch-explore-search float search-wrap' }, svgIcon(ICON.search), el('span', { class: 'launch-explore-search-copy', style: 'display:flex' }, input), el('kbd', { class: 'launch-explore-kbd' }, '↵'), drop);
     const hide = () => { drop.style.display = 'none'; sel = -1; };
@@ -459,7 +459,7 @@
       else if (e.key === 'Escape') hide();
       else if (e.key === 'Enter') { e.preventDefault(); if (sel >= 0 && rows[sel]) return rows[sel].dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true })); const q = input.value.trim(); hide(); if (q) { histAdd({ key: 'q:' + q.toLowerCase(), type: 'query', q }); go('/search?q=' + encodeURIComponent(q)); } else go('/explore'); }
     });
-    return el('div', { class: 'launch-explore-toolbar' }, wrap, el('button', { class: 'launch-explore-create-btn', onclick: goLiveEntry }, svgIcon(ICON.dot, '', '0 0 24 24'), 'go live'));
+    return el('div', { class: 'launch-explore-toolbar' }, wrap, el('button', { class: 'launch-explore-create-btn', onclick: goLiveEntry }, svgIcon(ICON.dot, '', '0 0 24 24'), 'Go live'));
   }
 
   // ---- cards ----
@@ -478,7 +478,7 @@
         el('span', { class: 'launch-card-name-row' }, el('strong', {}, c.name || short(c.address))),
         el('small', {}, c.symbol ? '$' + c.symbol : ' '),
         el('span', { class: 'launch-card-mcap' }, el('span', { class: 'launch-card-mcap-value' }, fmtUsd(c.mcap_usd)), el('span', { class: 'launch-card-mcap-label' }, 'MC')),
-        el('span', { class: 'launch-card-meta' }, el('button', { class: 'launch-card-deployer', onclick: (e) => { e.preventDefault(); e.stopPropagation(); navigator.clipboard?.writeText(c.deployer); toast('creator address copied'); } }, short(c.deployer)), el('time', {}, c.age != null ? ago(c.age) : ''))));
+        el('span', { class: 'launch-card-meta' }, el('button', { class: 'launch-card-deployer', onclick: (e) => { e.preventDefault(); e.stopPropagation(); navigator.clipboard?.writeText(c.deployer); toast('Creator address copied'); } }, short(c.deployer)), el('time', {}, c.age != null ? ago(c.age) : ''))));
   }
   const section = (opts) => {
     const grid = el('ul', { class: 'launch-explore-grid' });
@@ -495,24 +495,24 @@
     const page = $('#page'); page.innerHTML = '';
     page.append(toolbar(qs));
     if (qs) {
-      const s = section({ title: `results for “${qs}”`, h1: true, copy: 'name, ticker or address, across every PONS launch.' });
+      const s = section({ title: `Results for “${qs}”`, h1: true, copy: 'Name, ticker or address, across every PONS launch.' });
       page.append(s.sec);
       skeletons(s.grid, 8);
-      await swr('/api/search?q=' + encodeURIComponent(qs), ({ rows }) => { s.count.textContent = rows.length; fill(s.grid, rows, 'nothing here yet.'); });
+      await swr('/api/search?q=' + encodeURIComponent(qs), ({ rows }) => { s.count.textContent = rows.length; fill(s.grid, rows, 'Nothing here yet.'); });
       return;
     }
-    const live = section({ title: 'live now', h1: true, hot: true, copy: 'creators on air right now.' });
+    const live = section({ title: 'Live now', h1: true, hot: true, copy: 'Creators on air right now.' });
     page.append(live.sec);
     let rec;
-    if (!liveOnly) { rec = section({ title: 'new launches', copy: 'every coin on PONS, the second it hits the chain.' }); page.append(rec.sec); }
-    const paintLive = () => swr('/api/streams', ({ rows }) => { live.count.textContent = rows.length; fill(live.grid, rows, 'nobody’s live right now. own a coin? go live.'); });
+    if (!liveOnly) { rec = section({ title: 'New launches', copy: 'Every coin on PONS, the second it hits the chain.' }); page.append(rec.sec); }
+    const paintLive = () => swr('/api/streams', ({ rows }) => { live.count.textContent = rows.length; fill(live.grid, rows, 'Nobody is live right now. Own a coin? Go live.'); });
     if (rec) skeletons(rec.grid, 12);
     paintLive();
     const PAGE = 24; let shown = 0;
     let more = null;
     if (rec) {
       await swr('/api/recent?limit=' + PAGE, ({ rows, stats }) => { rec.count.textContent = stats.tokens.toLocaleString('en-US'); if (!shown) { fill(rec.grid, rows, ''); shown = rows.length; } });
-      more = el('button', { class: 'launch-explore-create-btn load-more', onclick: async () => { more.disabled = true; const off = rec.grid.children.length; const ph = []; for (let i = 0; i < PAGE; i++) { const li = el('li', {}, el('div', { class: 'launch-card is-skeleton' }, el('span', { class: 'launch-card-media' }, el('span', { class: 'launch-card-logo' })))); ph.push(li); rec.grid.append(li); } try { const { rows } = await apiRaw('/api/recent?limit=' + PAGE + '&offset=' + off); ph.forEach(p => p.remove()); rows.forEach(r => rec.grid.append(el('li', {}, card(r)))); shown += rows.length; if (!rows.length) more.style.display = 'none'; } catch { ph.forEach(p => p.remove()); } more.disabled = false; } }, 'show more');
+      more = el('button', { class: 'launch-explore-create-btn load-more', onclick: async () => { more.disabled = true; const off = rec.grid.children.length; const ph = []; for (let i = 0; i < PAGE; i++) { const li = el('li', {}, el('div', { class: 'launch-card is-skeleton' }, el('span', { class: 'launch-card-media' }, el('span', { class: 'launch-card-logo' })))); ph.push(li); rec.grid.append(li); } try { const { rows } = await apiRaw('/api/recent?limit=' + PAGE + '&offset=' + off); ph.forEach(p => p.remove()); rows.forEach(r => rec.grid.append(el('li', {}, card(r)))); shown += rows.length; if (!rows.length) more.style.display = 'none'; } catch { ph.forEach(p => p.remove()); } more.disabled = false; } }, 'Show more');
       rec.sec.append(el('div', { class: 'load-more-row' }, more));
     }
     let frozen = false; const queued = [];
@@ -530,29 +530,29 @@
     const step = (n, title, text) => el('div', { class: 'about-step' }, el('span', { class: 'about-num' }, n), el('h3', {}, title), el('p', {}, text));
     const feat = (title, text) => el('div', { class: 'land-feat' }, el('h3', {}, title), el('p', {}, text));
     const liveGrid = el('ul', { class: 'launch-explore-grid' });
-    const liveSec = el('section', { class: 'launch-explore float', style: 'display:none' }, el('header', { class: 'launch-explore-section-head' }, el('div', { class: 'launch-explore-head-main' }, el('div', { class: 'launch-explore-title-row' }, el('h2', {}, 'live now'), el('a', { class: 'launch-explore-count', href: '/live', 'data-link': '', style: 'padding:0 10px' }, 'all')))), liveGrid);
+    const liveSec = el('section', { class: 'launch-explore float', style: 'display:none' }, el('header', { class: 'launch-explore-section-head' }, el('div', { class: 'launch-explore-head-main' }, el('div', { class: 'launch-explore-title-row' }, el('h2', {}, 'Live now'), el('a', { class: 'launch-explore-count', href: '/live', 'data-link': '', style: 'padding:0 10px' }, 'All')))), liveGrid);
     page.append(
       el('section', { class: 'launch-explore launch-explore-graduated float land-hero' },
         el('span', { class: 'land-kicker' }, 'plink'),
-        el('h1', {}, 'coins go live.'),
-        el('p', { class: 'land-lead' }, 'Watch creators. Chat with holders. Trade in one tap on PONS.'),
-        el('div', { class: 'land-cta' }, el('button', { class: 'ui-btn ui-btn-primary land-btn', onclick: goLiveEntry }, el('span', { class: 'ui-btn-label' }, 'go live')), el('a', { class: 'ui-btn land-btn land-btn-ghost', href: '/explore', 'data-link': '' }, el('span', { class: 'ui-btn-label' }, 'explore coins')))),
+        el('h1', {}, 'Coins go live.'),
+        el('p', { class: 'land-lead' }, 'Every PONS coin gets a stage. Watch the creator on camera, talk to holders in real time, and follow the chart while it moves — trading is one tap away on PONS.'),
+        el('div', { class: 'land-cta' }, el('button', { class: 'ui-btn ui-btn-primary land-btn', onclick: goLiveEntry }, el('span', { class: 'ui-btn-label' }, 'Go live')), el('a', { class: 'ui-btn land-btn land-btn-ghost', href: '/explore', 'data-link': '' }, el('span', { class: 'ui-btn-label' }, 'Explore coins')))),
       el('section', { class: 'launch-explore float' },
-        el('h2', {}, 'three moves'),
+        el('h2', {}, 'Three moves, that’s it'),
         el('div', { class: 'about-steps' },
-          step('1', 'find your coin', 'Every PONS coin is here. New ones land the second they launch.'),
-          step('2', 'connect the deploy wallet', 'One signature, no gas, no custody. That’s the whole login.'),
-          step('3', 'go live', 'Webcam from the browser or OBS with a key. Holders see you in seconds.'))),
+          step('1', 'Find your coin', 'Every PONS coin is already here, and new ones land the second they launch.'),
+          step('2', 'Connect the deploy wallet', 'One signature, no gas, no custody. That’s the whole login.'),
+          step('3', 'Go live', 'Webcam straight from the browser, or OBS with a key. Holders see you in seconds.'))),
       el('section', { class: 'launch-explore float' },
-        el('h2', {}, 'markets are better live'),
+        el('h2', {}, 'Markets are better live'),
         el('div', { class: 'land-feats' },
-          feat('stream and chart, one screen', 'The chart sits right under the stream. The story and the numbers move together.'),
-          feat('live chat', 'Wallet-signed messages. Creators run their own room.'),
-          feat('no lag', 'Under a second from camera to viewer, whichever way you broadcast.'),
-          feat('everything on PONS', 'The full catalog, searchable, plus a Live tab for whoever’s on air right now.'))),
+          feat('Stream and chart on one screen', 'The chart sits right under the video, so the story and the numbers move together.'),
+          feat('Live chat', 'Wallet-signed messages, and creators run their own room.'),
+          feat('No lag', 'Under a second from camera to viewer, whichever way you broadcast.'),
+          feat('Everything on PONS', 'The full catalog, searchable, plus a Live tab for whoever is on air right now.'))),
       liveSec,
       el('section', { class: 'launch-explore float land-trust' },
-        el('h2', {}, 'what we never touch'),
+        el('h2', {}, 'What we never touch'),
         el('ul', { class: 'about-list' },
           el('li', {}, 'No keys, no approvals, no transactions. Ever.'),
           el('li', {}, 'Trading stays on PONS. Every coin page links straight there.'),
@@ -641,29 +641,29 @@
   async function coinPage(addr) {
     const page = $('#page'); page.innerHTML = '';
     let c; const cached = cacheGet('/api/token/' + addr); if (cached) { c = cached.data; if (Date.now() - cached.ts > ttlFor('/api/token/')) apiRaw('/api/token/' + addr).then(d => { cacheSet('/api/token/' + addr, d); if (location.pathname.endsWith(addr)) { Object.assign(c, d); document.dispatchEvent(new CustomEvent('coin-refreshed')); } }).catch(() => {}); }
-    else try { c = await api('/api/token/' + addr); } catch (e) { page.append(el('section', { class: 'token-about-card float' }, el('p', { class: 'token-about-empty' }, 'unknown coin'))); return; }
+    else try { c = await api('/api/token/' + addr); } catch (e) { page.append(el('section', { class: 'token-about-card float' }, el('p', { class: 'token-about-empty' }, 'Unknown coin'))); return; }
     const isDev = session && session.address === c.deployer;
     const wrap = el('div', { class: 'token-buy-page' });
-    wrap.append(el('a', { class: 'token-buy-back', href: '/explore', 'data-link': '' }, svgIcon(ICON.back), 'back to explore'));
+    wrap.append(el('a', { class: 'token-buy-back', href: '/explore', 'data-link': '' }, svgIcon(ICON.back), 'Back to explore'));
     const pairBadge = () => el('span', { class: 'pair-badge' }, el('span', { class: 'pair-badge-label' }, 'Paired'), el('span', { class: 'pair-badge-symbol' }, c.quote_symbol || '?'));
     // About
     wrap.append(el('section', { class: 'token-about-card float' },
-      el('div', { class: 'token-about-head' }, el('h2', {}, 'about'), pairBadge()),
+      el('div', { class: 'token-about-head' }, el('h2', {}, 'About'), pairBadge()),
       el('div', { class: 'token-about-meta' },
-        el('div', { class: 'v2-about-body' }, el('p', {}, c.description || 'no description yet.'), el('p', { class: 'v2-about-terms' }, 'creator ' + short(c.deployer), el('span', {}, '·'), el('span', {}, c.graduated ? 'graduated' : 'on the curve'))),
+        el('div', { class: 'v2-about-body' }, el('p', {}, c.description || 'No description yet.'), el('p', { class: 'v2-about-terms' }, 'Creator ' + short(c.deployer), el('span', {}, '·'), el('span', {}, c.graduated ? 'Graduated' : 'On the curve'))),
         el('div', { class: 'token-about-burn' }, el('span', { class: 'token-about-burn-label' }, 'Supply'), el('div', { class: 'token-about-burn-value' }, el('span', {}, '1,000,000,000'), el('span', {}, c.symbol)), el('small', { class: 'token-about-burn-meta' }, 'Fixed at launch'))),
       el('div', { class: 'token-info-links' },
-        el('button', { onclick: () => { navigator.clipboard?.writeText(c.address); toast('address copied'); } }, svgIcon(ICON.copy, 'ui-icon'), short(c.address)),
+        el('button', { onclick: () => { navigator.clipboard?.writeText(c.address); toast('Address copied'); } }, svgIcon(ICON.copy, 'ui-icon'), short(c.address)),
         el('a', { href: 'https://robinhoodchain.blockscout.com/address/' + c.address, target: '_blank', rel: 'noopener' }, svgIcon(ICON.globe, 'ui-icon'), 'Explorer'),
         c.twitter && el('a', { href: c.twitter, target: '_blank', rel: 'noopener' }, 'X'),
         c.telegram && el('a', { href: c.telegram, target: '_blank', rel: 'noopener' }, 'Telegram'),
         c.website && el('a', { href: c.website, target: '_blank', rel: 'noopener' }, 'Website'),
-        el('a', { class: 'trade-btn', href: 'https://www.ponsfamily.com/launchpad/' + c.address, target: '_blank', rel: 'noopener' }, 'trade on PONS ↗'))));
+        el('a', { class: 'trade-btn', href: 'https://www.ponsfamily.com/launchpad/' + c.address, target: '_blank', rel: 'noopener' }, 'Trade on PONS ↗'))));
     // left: identity + chat + action
     const msgs = el('div', { class: 'chat-msgs' });
     const chatCount = el('span', {}, c.viewers);
-    const input = el('input', { placeholder: session ? 'say something…' : 'connect wallet to chat', maxlength: 280 });
-    const form = el('form', { class: 'chat-form', onsubmit: (e) => { e.preventDefault(); if (!session) return walletModal(); if (input.value.trim()) { wsSend({ t: 'chat', text: input.value.trim() }); input.value = ''; } } }, input, el('button', { title: 'send' }, svgIcon(ICON.send)));
+    const input = el('input', { placeholder: session ? 'Say something…' : 'Connect wallet to chat', maxlength: 280 });
+    const form = el('form', { class: 'chat-form', onsubmit: (e) => { e.preventDefault(); if (!session) return walletModal(); if (input.value.trim()) { wsSend({ t: 'chat', text: input.value.trim() }); input.value = ''; } } }, input, el('button', { title: 'Send' }, svgIcon(ICON.send)));
     let roomState = { holders_only: false, mods: [], dev: c.deployer, you: '', can_chat: true, banned: [] };
     const myRole = () => roomState.you || (session && session.address === c.deployer ? 'dev' : '');
     const roleOf = (w) => w === roomState.dev ? 'dev' : (roomState.mods.includes(w) ? 'mod' : '');
@@ -675,23 +675,23 @@
       const banned = roomState.banned.includes(m.wallet);
       const item = (icon, label, cls, fn) => el('button', { class: cls || '', onclick: () => { fn(); menu.remove(); } }, svgIcon(icon), label);
       const menu = el('div', { class: 'chat-menu' },
-        me === 'dev' ? (them === 'mod' ? item(ICON.shield, 'remove moderator', '', () => wsSend({ t: 'mod', wallet: m.wallet, on: false })) : item(ICON.shield, 'make moderator', '', () => wsSend({ t: 'mod', wallet: m.wallet, on: true }))) : null,
-        banned ? item(ICON.trash, 'unban', '', () => wsSend({ t: 'unban', wallet: m.wallet })) : item(ICON.trash, 'ban and delete messages', 'is-danger', () => wsSend({ t: 'ban', wallet: m.wallet })));
+        me === 'dev' ? (them === 'mod' ? item(ICON.shield, 'Remove moderator', '', () => wsSend({ t: 'mod', wallet: m.wallet, on: false })) : item(ICON.shield, 'Make moderator', '', () => wsSend({ t: 'mod', wallet: m.wallet, on: true }))) : null,
+        banned ? item(ICON.trash, 'Unban', '', () => wsSend({ t: 'Unban', wallet: m.wallet })) : item(ICON.trash, 'Ban and delete messages', 'is-danger', () => wsSend({ t: 'ban', wallet: m.wallet })));
       anchor.closest('.chat-msg').append(menu);
       setTimeout(() => document.addEventListener('click', (e) => { if (!menu.contains(e.target)) menu.remove(); }, { once: true }), 0);
     };
     const canMod = (m) => { const me = myRole(); if (!me || !session || m.wallet === session.address) return false; const them = roleOf(m.wallet); return !(them === 'dev' || (me === 'mod' && them === 'mod')); };
-    const addMsg = (m, sys) => { const n = el('div', { class: 'chat-msg' + (sys ? ' is-sys' : ''), 'data-wallet': sys ? null : m.wallet }, sys ? m.text : [el('span', { class: 'chat-body' }, el('b', {}, m.who), roleBadge(m.role || roleOf(m.wallet)), ' ', m.text), el('button', { class: 'chat-dots', title: 'moderate', onclick: (e) => { e.stopPropagation(); modMenu(m, e.currentTarget); } }, '⋯')]); if (!sys) n.classList.toggle('can-mod', canMod(m)); msgs.append(n); msgs.scrollTop = msgs.scrollHeight; while (msgs.children.length > 300) msgs.firstChild.remove(); };
-    const holdersBtn = el('button', { class: 'chat-lock', title: 'holders-only chat', onclick: () => { if (myRole() !== 'dev') return; wsSend({ t: 'holders', on: !roomState.holders_only }); } }, svgIcon(ICON.lock));
+    const addMsg = (m, sys) => { const n = el('div', { class: 'chat-msg' + (sys ? ' is-sys' : ''), 'data-wallet': sys ? null : m.wallet }, sys ? m.text : [el('span', { class: 'chat-body' }, el('b', {}, m.who), roleBadge(m.role || roleOf(m.wallet)), ' ', m.text), el('button', { class: 'chat-dots', title: 'Moderate', onclick: (e) => { e.stopPropagation(); modMenu(m, e.currentTarget); } }, '⋯')]); if (!sys) n.classList.toggle('can-mod', canMod(m)); msgs.append(n); msgs.scrollTop = msgs.scrollHeight; while (msgs.children.length > 300) msgs.firstChild.remove(); };
+    const holdersBtn = el('button', { class: 'chat-lock', title: 'Holders-only chat', onclick: () => { if (myRole() !== 'dev') return; wsSend({ t: 'holders', on: !roomState.holders_only }); } }, svgIcon(ICON.lock));
     const paintRoom = () => {
       holdersBtn.classList.toggle('is-on', !!roomState.holders_only); holdersBtn.style.display = (myRole() === 'dev' || roomState.holders_only) ? '' : 'none'; holdersBtn.style.cursor = myRole() === 'dev' ? 'pointer' : 'default';
       input.disabled = !!(session && !roomState.can_chat);
-      input.placeholder = !session ? 'connect wallet to chat' : (!roomState.can_chat ? (roomState.banned.includes(session.address) ? 'you’re out of this chat' : 'holders only — grab some $' + c.symbol + ' to chat') : 'say something…');
+      input.placeholder = !session ? 'Connect wallet to chat' : (!roomState.can_chat ? (roomState.banned.includes(session.address) ? 'You’re out of this chat' : 'Holders only — grab some $' + c.symbol + ' to chat') : 'Say something…');
       msgs.querySelectorAll('.chat-msg[data-wallet]').forEach(n => { const w = n.dataset.wallet; const b = n.querySelector('.chat-role'); const r = roleOf(w); if (b) b.remove(); const nb = roleBadge(r); if (nb) n.querySelector('b').after(nb); n.classList.toggle('can-mod', canMod({ wallet: w })); });
     };
-    const actionBtn = isDev ? el('button', { class: 'ui-btn ui-btn-primary stream-action', onclick: () => goLive(c) }, el('span', { class: 'ui-btn-label' }, c.live ? 'stream settings' : 'go live')) : null;
+    const actionBtn = isDev ? el('button', { class: 'ui-btn ui-btn-primary stream-action', onclick: () => goLive(c) }, el('span', { class: 'ui-btn-label' }, c.live ? 'Stream settings' : 'Go live')) : null;
     const chatCard = el('article', { class: 'chat-card float' },
-      el('div', { class: 'chat-head' }, el('h3', {}, 'live chat'), el('span', { class: 'chat-head-right' }, holdersBtn, chatCount)),
+      el('div', { class: 'chat-head' }, el('h3', {}, 'Live chat'), el('span', { class: 'chat-head-right' }, holdersBtn, chatCount)),
       msgs, form);
     // right: stream + stats + chart
     const stage = el('div', { class: 'stream-stage' });
@@ -747,7 +747,7 @@
       const bar = el('div', { class: 'stream-controls' });
       const left = el('div', { class: 'sc-group' }), right = el('div', { class: 'sc-group' });
       if (opts.host) {
-        left.append(el('button', { class: 'sc-btn sc-stop', title: 'end stream', onclick: async () => { if (!confirm('end the stream?')) return; await stopPublish(); await api('/api/stream/stop', { method: 'POST', body: { token: c.address } }).catch(() => {}); toast('stream ended'); } }, el('i', {})));
+        left.append(el('button', { class: 'sc-btn sc-stop', title: 'End stream', onclick: async () => { if (!confirm('End the stream?')) return; await stopPublish(); await api('/api/stream/stop', { method: 'POST', body: { token: c.address } }).catch(() => {}); toast('Stream ended'); } }, el('i', {})));
         if (opts.publishing) {
           const lp = pubRoom.localParticipant;
           const micBtn = el('button', { class: 'sc-btn', title: 'Microphone', onclick: async () => { const on = !lp.isMicrophoneEnabled; await lp.setMicrophoneEnabled(on); micBtn.classList.toggle('is-off', !on); } }, svgIcon(ICON.mic)); micBtn.classList.toggle('is-off', !lp.isMicrophoneEnabled);
@@ -787,13 +787,13 @@
         if (c.ingest === 'webrtc' && c.whep_url && window.RTCPeerConnection) whepPlay(video).catch(() => { video.srcObject = null; hlsPlay(video); });
         else hlsPlay(video);
         stage.append(controlsBar(video, null, { host: isDev }));
-      } else stage.append(el('div', { class: 'stream-off' }, c.image && el('img', { src: c.image, alt: '' }), el('span', {}, isDev ? 'you’re not live yet' : 'no stream yet')));
+      } else stage.append(el('div', { class: 'stream-off' }, c.image && el('img', { src: c.image, alt: '' }), el('span', {}, isDev ? 'You’re not live yet' : 'No stream yet')));
     };
     const onPub = () => paintPlayer(); document.addEventListener('publish-changed', onPub);
     paintPlayer();
     const dd = (label, val) => el('div', {}, el('dt', {}, label), el('dd', {}, val));
     const price = c.mcap_usd ? c.mcap_usd / 1e9 : 0;
-    const stats = el('dl', { class: 'token-market-stats' }, dd('Price', fmtPrice(price)), dd('Market cap', fmtFull(c.mcap_usd)), dd('Price in ' + (c.quote_symbol || 'quote'), c.price_quote ? Number(c.price_quote).toPrecision(4) + ' ' + c.quote_symbol : '—'), dd('Market', c.graduated ? 'graduated' : 'PONS curve'));
+    const stats = el('dl', { class: 'token-market-stats' }, dd('Price', fmtPrice(price)), dd('Market cap', fmtFull(c.mcap_usd)), dd('Price in ' + (c.quote_symbol || 'quote'), c.price_quote ? Number(c.price_quote).toPrecision(4) + ' ' + c.quote_symbol : '—'), dd('Market', c.graduated ? 'Graduated' : 'PONS curve'));
     const priceRoll = el('p', { class: 'noxa-chart-price' }, fmtUsd(c.mcap_usd));
     const changeEl = el('p', { class: 'noxa-chart-change' }, '—', el('span', { class: 'noxa-chart-change-range' }, '1H'));
     const ranges = el('div', { class: 'noxa-chart-ranges' });
@@ -813,10 +813,10 @@
     page.append(wrap);
     // chat wiring
     wsRoom = c.address; wsSend({ t: 'sub', room: c.address });
-    const hHist = (m) => { msgs.innerHTML = ''; m.rows.forEach(r => addMsg(r)); if (!m.rows.length) addMsg({ text: 'new messages show up here' }, true); };
+    const hHist = (m) => { msgs.innerHTML = ''; m.rows.forEach(r => addMsg(r)); if (!m.rows.length) addMsg({ text: 'New messages show up here' }, true); };
     const hChat = (m) => addMsg(m);
     const hViewers = (m) => { if (m.token !== c.address) return; c.viewers = m.n; chatCount.textContent = m.n; const v = $('#viewers'); if (v) v.textContent = m.n + ' watching'; };
-    const hLive = async (m) => { if (m.token !== c.address) return; if (m.live && !c.live && !(pubRoom && pubCoin === c.address)) toast('creator went live'); try { c = { ...c, ...(await api('/api/token/' + addr)) }; } catch {} paintPlayer(); metaLeft.innerHTML = ''; metaLeft.append(c.live ? el('span', { class: 'launch-card-live-badge is-big' }, 'LIVE') : null, el('h2', { class: 'stream-title' }, c.title || c.name), startedEl); startedEl.textContent = c.started_ts && c.live ? 'Started ' + ago(Date.now() / 1000 - c.started_ts) : ''; actionBtn && (actionBtn.firstChild.textContent = c.live ? 'Stream settings' : 'Go live'); };
+    const hLive = async (m) => { if (m.token !== c.address) return; if (m.live && !c.live && !(pubRoom && pubCoin === c.address)) toast('Creator went live'); try { c = { ...c, ...(await api('/api/token/' + addr)) }; } catch {} paintPlayer(); metaLeft.innerHTML = ''; metaLeft.append(c.live ? el('span', { class: 'launch-card-live-badge is-big' }, 'LIVE') : null, el('h2', { class: 'stream-title' }, c.title || c.name), startedEl); startedEl.textContent = c.started_ts && c.live ? 'Started ' + ago(Date.now() / 1000 - c.started_ts) : ''; actionBtn && (actionBtn.firstChild.textContent = c.live ? 'Stream settings' : 'Go live'); };
     const hBan = (m) => { msgs.querySelectorAll('.chat-msg[data-wallet="' + m.wallet + '"]').forEach(n => n.remove()); addMsg({ text: (m.who || short(m.wallet)) + ' got banned' }, true); };
     const hUnban = (m) => addMsg({ text: (m.who || short(m.wallet)) + ' is back' }, true);
     const hRoom = (m) => { if (m.token !== c.address) return; roomState = m; paintRoom(); };
@@ -872,46 +872,46 @@
   const devSelect = (list, cur, onchange, empty) => { const s = el('select', { class: 'dev-select', onchange: (e) => onchange(e.target.value) }); if (!list.length) s.append(el('option', { value: '' }, empty)); list.forEach((d, i) => s.append(el('option', { value: d.deviceId, selected: d.deviceId === cur ? '' : null }, d.label || (empty + ' ' + (i + 1))))); return s; };
   async function goLive(c) {
     if (goingLive) return;
-    if (c.live && c.provider === 'livekit' && !pubRoom) { try { const creds = await api('/api/stream/creds?token=' + c.address); if (!creds.stream_key) return toast('you’re live from this tab — use the player controls'); return credsModal(c, creds); } catch (e) { return toast(e.message); } }
+    if (c.live && c.provider === 'livekit' && !pubRoom) { try { const creds = await api('/api/stream/creds?token=' + c.address); if (!creds.stream_key) return toast('You’re live from this tab — use the player controls'); return credsModal(c, creds); } catch (e) { return toast(e.message); } }
     let mode = 'webcam', cam = '', mic = '', previewStream = null;
     const preview = el('video', { class: 'preview', playsinline: '' }); preview.muted = true; preview.autoplay = true;
-    const title = el('input', { class: 'field', placeholder: 'what’s happening?', maxlength: 80, oninput: () => { next.disabled = !title.value.trim(); } });
-    const next = el('button', { class: 'ui-btn ui-btn-primary', disabled: '' }, el('span', { class: 'ui-btn-label' }, 'next'));
+    const title = el('input', { class: 'field', placeholder: 'What’s happening?', maxlength: 80, oninput: () => { next.disabled = !title.value.trim(); } });
+    const next = el('button', { class: 'ui-btn ui-btn-primary', disabled: '' }, el('span', { class: 'ui-btn-label' }, 'Next'));
     const stopPreview = () => { if (previewStream) { previewStream.getTracks().forEach(t => t.stop()); previewStream = null; } };
-    const startPreview = async () => { stopPreview(); try { previewStream = await navigator.mediaDevices.getUserMedia({ video: cam ? { deviceId: { exact: cam } } : true, audio: mic ? { deviceId: { exact: mic } } : true }); preview.srcObject = previewStream; const { cams, mics } = await enumerate(); cam = cam || (previewStream.getVideoTracks()[0]?.getSettings().deviceId || ''); mic = mic || (previewStream.getAudioTracks()[0]?.getSettings().deviceId || ''); inputs.innerHTML = ''; inputs.append(el('div', { class: 'dev-row' }, svgIcon(ICON.cam), devSelect(cams, cam, (v) => { cam = v; startPreview(); }, 'Camera')), el('div', { class: 'dev-row' }, svgIcon(ICON.mic), devSelect(mics, mic, (v) => { mic = v; startPreview(); }, 'Microphone'))); } catch (e) { inputs.innerHTML = ''; inputs.append(el('p', { class: 'hint' }, 'camera or mic not available: ' + (e.message || e))); } };
+    const startPreview = async () => { stopPreview(); try { previewStream = await navigator.mediaDevices.getUserMedia({ video: cam ? { deviceId: { exact: cam } } : true, audio: mic ? { deviceId: { exact: mic } } : true }); preview.srcObject = previewStream; const { cams, mics } = await enumerate(); cam = cam || (previewStream.getVideoTracks()[0]?.getSettings().deviceId || ''); mic = mic || (previewStream.getAudioTracks()[0]?.getSettings().deviceId || ''); inputs.innerHTML = ''; inputs.append(el('div', { class: 'dev-row' }, svgIcon(ICON.cam), devSelect(cams, cam, (v) => { cam = v; startPreview(); }, 'Camera')), el('div', { class: 'dev-row' }, svgIcon(ICON.mic), devSelect(mics, mic, (v) => { mic = v; startPreview(); }, 'Microphone'))); } catch (e) { inputs.innerHTML = ''; inputs.append(el('p', { class: 'hint' }, 'Camera or mic not available: ' + (e.message || e))); } };
     const inputs = el('div', { class: 'dev-inputs' });
-    const modeSel = el('select', { class: 'dev-select is-mode', onchange: (e) => { mode = e.target.value; paint(); } }, el('option', { value: 'webcam' }, 'webcam'), el('option', { value: 'rtmp' }, 'OBS / streaming software'));
-    const webcamBlock = el('div', {}, preview, el('div', { class: 'field-label' }, 'camera and mic'), inputs);
+    const modeSel = el('select', { class: 'dev-select is-mode', onchange: (e) => { mode = e.target.value; paint(); } }, el('option', { value: 'webcam' }, 'Webcam'), el('option', { value: 'rtmp' }, 'OBS / streaming software'));
+    const webcamBlock = el('div', {}, preview, el('div', { class: 'field-label' }, 'Camera and mic'), inputs);
     const body = el('div');
     const paint = () => { body.innerHTML = ''; if (mode === 'webcam') { body.append(webcamBlock); if (!previewStream) startPreview(); } else stopPreview(); };
     paint();
     const box = el('div', { class: 'golive' },
-      el('div', { class: 'golive-head' }, el('h3', {}, 'stream preview'), el('button', { class: 'golive-close', onclick: () => { stopPreview(); closeModal(); } }, '✕')),
-      el('div', { class: 'field-label' }, 'broadcast mode'), modeSel, el('p', { class: 'hint', style: 'margin:6px 0 14px' }, 'how do you want to go live?'),
+      el('div', { class: 'golive-head' }, el('h3', {}, 'Stream preview'), el('button', { class: 'golive-close', onclick: () => { stopPreview(); closeModal(); } }, '✕')),
+      el('div', { class: 'field-label' }, 'Broadcast mode'), modeSel, el('p', { class: 'hint', style: 'margin:6px 0 14px' }, 'How do you want to go live?'),
       body,
-      el('div', { class: 'field-label' }, 'stream title'), title,
-      el('label', { class: 'toggle-row' }, el('input', { type: 'checkbox', id: 'ho-toggle' }), el('span', { class: 'toggle-ui' }), el('span', {}, 'holders-only chat', el('small', {}, 'only wallets holding $' + c.symbol + ' can write'))),
+      el('div', { class: 'field-label' }, 'Stream title'), title,
+      el('label', { class: 'toggle-row' }, el('input', { type: 'checkbox', id: 'ho-toggle' }), el('span', { class: 'toggle-ui' }), el('span', {}, 'Holders-only chat', el('small', {}, 'Only wallets holding $' + c.symbol + ' can write'))),
       next);
     next.onclick = async () => {
       const t = title.value.trim(); if (!t) return;
-      goingLive = true; next.disabled = true; next.firstChild.textContent = 'starting…';
+      goingLive = true; next.disabled = true; next.firstChild.textContent = 'Starting…';
       try {
         const creds = await api('/api/stream/start', { method: 'POST', body: { token: c.address, title: t, mode, holders_only: !!document.querySelector('#ho-toggle')?.checked } });
         if (mode === 'rtmp') { stopPreview(); credsModal(c, creds); }
-        else { const s = previewStream; previewStream = null; closeModal(); await lkPublish(c, { stream: s, cam, mic }); toast('you’re in'); }
-      } catch (e) { toast(e.message || 'failed'); next.disabled = false; next.firstChild.textContent = 'next'; }
+        else { const s = previewStream; previewStream = null; closeModal(); await lkPublish(c, { stream: s, cam, mic }); toast('You’re in'); }
+      } catch (e) { toast(e.message || 'failed'); next.disabled = false; next.firstChild.textContent = 'Next'; }
       goingLive = false;
     };
     openModal(box);
   }
   function credsModal(c, creds) {
-    const row = (icon, value, hidden) => el('div', { class: 'cred-row' }, svgIcon(icon), el('span', { class: 'cred-val' }, hidden ? value.slice(0, 4) + '•'.repeat(10) : value), el('button', { class: 'cred-copy', title: 'Copy', onclick: () => { navigator.clipboard?.writeText(value); toast('copied'); } }, svgIcon(ICON.copy)));
+    const row = (icon, value, hidden) => el('div', { class: 'cred-row' }, svgIcon(icon), el('span', { class: 'cred-val' }, hidden ? value.slice(0, 4) + '•'.repeat(10) : value), el('button', { class: 'cred-copy', title: 'Copy', onclick: () => { navigator.clipboard?.writeText(value); toast('Copied'); } }, svgIcon(ICON.copy)));
     const box = el('div', { class: 'golive' },
-      el('div', { class: 'golive-head' }, el('h3', {}, 'stream credentials'), el('button', { class: 'golive-close', onclick: closeModal }, '✕')),
-      el('p', { class: 'hint', style: 'margin:0 0 14px;font-size:14px' }, 'paste the URL and key into OBS. viewers see you in a couple of seconds.'),
+      el('div', { class: 'golive-head' }, el('h3', {}, 'Stream credentials'), el('button', { class: 'golive-close', onclick: closeModal }, '✕')),
+      el('p', { class: 'hint', style: 'margin:0 0 14px;font-size:14px' }, 'Paste the URL and key into OBS and start streaming. Viewers see you in a couple of seconds.'),
       row(ICON.globe, creds.rtmps_url, false), row(ICON.key, creds.stream_key, true),
-      el('button', { class: 'ui-btn cred-reset', onclick: async (e) => { if (!confirm('reset credentials? the old key stops working.')) return; e.target.disabled = true; try { const n = await api('/api/stream/reset', { method: 'POST', body: { token: c.address } }); closeModal(); credsModal(c, n); toast('new credentials'); } catch (err) { toast(err.message); e.target.disabled = false; } } }, el('span', { class: 'ui-btn-label' }, 'reset credentials')),
-      c.live ? el('button', { class: 'ui-btn', style: 'margin-top:8px;background:var(--panel-blue)', onclick: async () => { await api('/api/stream/stop', { method: 'POST', body: { token: c.address } }).catch(() => {}); closeModal(); toast('stream ended'); } }, el('span', { class: 'ui-btn-label' }, 'end stream')) : null);
+      el('button', { class: 'ui-btn cred-reset', onclick: async (e) => { if (!confirm('Reset credentials? The old key stops working.')) return; e.target.disabled = true; try { const n = await api('/api/stream/reset', { method: 'POST', body: { token: c.address } }); closeModal(); credsModal(c, n); toast('New credentials'); } catch (err) { toast(err.message); e.target.disabled = false; } } }, el('span', { class: 'ui-btn-label' }, 'Reset credentials')),
+      c.live ? el('button', { class: 'ui-btn', style: 'margin-top:8px;background:var(--panel-blue)', onclick: async () => { await api('/api/stream/stop', { method: 'POST', body: { token: c.address } }).catch(() => {}); closeModal(); toast('Stream ended'); } }, el('span', { class: 'ui-btn-label' }, 'End stream')) : null);
     openModal(box);
   }
 
