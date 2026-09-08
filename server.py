@@ -789,7 +789,7 @@ def _backfill_thread():
 def make_app() -> web.Application:
     app = web.Application(client_max_size=64 * 1024, middlewares=[asset_cache])
     r = app.router
-    for p in ("/", "/explore", "/live", "/coin/{addr}", "/search", "/privacy", "/terms"):
+    for p in ("/", "/explore", "/live", "/coin/{addr}", "/search", "/privacy", "/terms", "/preview"):
         r.add_get(p, h_index)
     r.add_post("/api/auth/nonce", h_nonce)
     r.add_post("/api/auth/verify", h_verify)
