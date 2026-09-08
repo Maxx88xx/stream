@@ -30,7 +30,7 @@
   .nav-product-link .live-dot { width:7px; height:7px; border-radius:50%; background:var(--accent-red); box-shadow:0 0 8px var(--accent-red); }
   .nav-connect { min-height:40px; padding:9px 16px; font-size:15px; font-weight:500; border:0; cursor:pointer; }
   .nav-theme { cursor:pointer; display:inline-grid; place-items:center; }
-  .nav-wordmark { height:30px; width:auto; display:block; }
+  .nav-wordmark { display:block; height:30px; width:calc(30px * 1495 / 542); background:var(--accent); -webkit-mask:url("/assets/wordmark.png") center / contain no-repeat; mask:url("/assets/wordmark.png") center / contain no-repeat; }
   .nav-logo-mark { width:40px; height:40px; border-radius:12px; background:var(--accent); color:#111; display:grid; place-items:center; font-size:22px; font-weight:500; }
   main.bridge-shell { padding:22px 24px 60px; box-sizing:border-box; }
   .launchpad-explore-shell { max-width:1080px; }
@@ -291,7 +291,7 @@
 <header class="site-nav">
   <div class="liquid-glass nav-glass"><div class="liquid-glass-content"><div class="nav-inner">
     <div class="nav-left">
-      <a class="nav-brand" href="/" data-link><img class="nav-wordmark" src="/assets/wordmark.png" alt="plink" width="1495" height="542"></a>
+      <a class="nav-brand" href="/" data-link><span class="nav-wordmark" role="img" aria-label="plink"></span></a>
       <nav class="nav-product-links" id="nav-tabs"><span class="nav-product-indicator" id="nav-pill"></span>
         <a class="nav-product-link" href="/" data-link id="nav-about">plink</a>
         <a class="nav-product-link" href="/explore" data-link id="nav-home">Explore</a>
