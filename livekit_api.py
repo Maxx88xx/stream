@@ -70,6 +70,26 @@ def create_ingress(room: str, name: str) -> dict:
     raise RuntimeError("unreachable")
 
 
+def list_ingress() -> list:
+    return _twirp("Ingress", "ListIngress", {}, {"ingressAdmin": True}).get("items", [])
+
+
+def free_idle_ingress(keep: set = frozenset()) -> list:
+    """LiveKit Cloud caps the number of ingress objects per project. When the cap
+    is hit, drop every ingress that is not publishing right now (a creator who
+    stopped OBS keeps a dead slot otherwise). Returns the freed ingress ids."""
+    freed = []
+    for i in list_ingress():
+        st = (i.get("state") or {}).get("status")
+        if st == "ENDPOINT_PUBLISHING" or i.get("ingress_id") in keep:
+            continue
+        try:
+            delete_ingress(i["ingress_id"]); freed.append(i["ingress_id"])
+        except Exception as exc:  # noqa: BLE001
+            print(f"[lk] free ingress {i.get('ingress_id')} failed: {exc}")
+    return freed
+
+
 def delete_ingress(ingress_id: str) -> None:
     _twirp("Ingress", "DeleteIngress", {"ingress_id": ingress_id}, {"ingressAdmin": True})
 

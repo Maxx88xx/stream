@@ -301,9 +301,22 @@ async def h_stream_start(request):
                 try:
                     ing = await asyncio.to_thread(lk.create_ingress, addr, f"{t['symbol']} {t['name']}")
                 except Exception as exc:  # noqa: BLE001
-                    print(f"[lk] create_ingress failed: {exc}")
-                    msg = "All streaming slots are busy right now, try again in a minute" if "resource_exhausted" in str(exc) else "LiveKit refused the request: check LIVEKIT_* variables"
-                    return web.json_response({"error": msg}, status=503)
+                    ing = None
+                    if "resource_exhausted" in str(exc):
+                        # the project's ingress cap is hit: drop dead slots (creators who stopped OBS) and try once more
+                        freed = await asyncio.to_thread(lk.free_idle_ingress)
+                        for fid in freed:
+                            x("UPDATE streams SET ingress_id='', rtmps_url='', stream_key='' WHERE ingress_id=?", (fid,))
+                        print(f"[lk] ingress cap hit, freed {len(freed)} idle")
+                        if freed:
+                            try:
+                                ing = await asyncio.to_thread(lk.create_ingress, addr, f"{t['symbol']} {t['name']}")
+                            except Exception as exc2:  # noqa: BLE001
+                                exc = exc2
+                    if not ing:
+                        print(f"[lk] create_ingress failed: {exc}")
+                        msg = "Every OBS slot is taken by a live stream right now. Try again when one ends, or go live from the browser" if "resource_exhausted" in str(exc) else "LiveKit refused the request: check LIVEKIT_* variables"
+                        return web.json_response({"error": msg}, status=503)
                 x("UPDATE streams SET ingress_id=?, rtmps_url=?, stream_key=? WHERE address=?", (ing["ingress_id"], ing["url"], ing["stream_key"], addr))
                 s = _stream_row(addr)
         if not s:
