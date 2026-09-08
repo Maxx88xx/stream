@@ -266,7 +266,9 @@ def cycle(c) -> None:
         if not shares:
             raise RuntimeError("no eligible holders")
         paid, failed = 0, 0
-        left = bought
+        hold = tok.functions.balanceOf(me).call()          # everything we hold of the target goes out, leftovers of earlier runs included
+        bought = max(bought, hold)
+        left = hold
         for k, (w, sh) in enumerate(shares):
             # integer split: the last recipient takes whatever is left, so rounding can never exceed what we hold
             amt = left if k == len(shares) - 1 else int(bought * sh)
