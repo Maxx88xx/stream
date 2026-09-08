@@ -443,45 +443,48 @@ _miss: dict = {}
 
 
 async def poll_stream_status(app):
-    """Every 3 s: ask Cloudflare whether each started stream is actually
-    receiving video; flip `live` and tell the pages."""
+    """Every 2 s: ask LiveKit (or legacy Cloudflare) whether each started stream is
+    actually receiving video; flip `live` and tell the pages. One row's failure
+    never stops the pass for the others."""
     while True:
         try:
             _head["n"] = await asyncio.to_thread(chain.block_number)
         except Exception:  # noqa: BLE001
             pass
-        try:
-            for s in q("SELECT address, input_uid, live, ingest, ingress_id FROM streams WHERE started_ts>0 AND ended_ts=0"):
-                curst = {}
-                if s["ingress_id"]:
-                    try:
-                        now_live, how = await asyncio.to_thread(lk.publishing, s["address"])
-                    except Exception as exc:  # noqa: BLE001
-                        print(f"[lk] status failed for {s['address']}: {str(exc)[:100]}")
-                        continue
-                    curst = {"ingestProtocol": how}
-                else:
-                    try:
-                        st = await asyncio.to_thread(cf, "GET", f"/{s['input_uid']}")
-                    except Exception as exc:  # noqa: BLE001
-                        print(f"[cf] status failed for {s['address']}: {exc}")
-                        continue
-                    curst = ((st.get("status") or {}).get("current") or {})
-                    now_live = curst.get("state") == "connected"
-                if not now_live and s["live"] and _miss.get(s["address"], 0) < 2:      # one blip is not an outage
-                    _miss[s["address"]] = _miss.get(s["address"], 0) + 1
-                    continue
-                if now_live:
-                    _miss.pop(s["address"], None)
-                    if not (s["ingest"] if "ingest" in s.keys() else ""):
-                        x("UPDATE streams SET ingest=? WHERE address=?", (curst.get("ingestProtocol") or "", s["address"]))
-                if now_live != bool(s["live"]):
-                    x("UPDATE streams SET live=?, ingest=? WHERE address=?", (int(now_live), curst.get("ingestProtocol") or "", s["address"]))
-                    await broadcast_all({"t": "live", "token": s["address"], "live": now_live})
-                    print(f"[cf] {s['address']} live={now_live}")
-        except Exception as exc:  # noqa: BLE001
-            print(f"[cf] poll error: {exc}")
+        for s in q("SELECT address, input_uid, live, ingest, ingress_id FROM streams WHERE started_ts>0 AND ended_ts=0"):
+            try:
+                await _poll_one(s)
+            except Exception as exc:  # noqa: BLE001
+                print(f"[cf] poll row {s['address']} error: {exc}")
         await asyncio.sleep(2)
+
+
+async def _poll_one(s) -> None:
+    addr = s["address"]
+    curst = {}
+    if s["ingress_id"]:
+        now_live, how = await asyncio.to_thread(lk.publishing, addr)
+        curst = {"ingestProtocol": how}
+    elif lk.ENABLED:
+        # legacy Cloudflare-era row, or a browser stream that never had an ingress: not live by definition
+        now_live = False
+    else:
+        st = await asyncio.to_thread(cf, "GET", f"/{s['input_uid']}")
+        if not isinstance(st, dict):
+            raise RuntimeError(f"unexpected status shape {type(st).__name__}")
+        curst = ((st.get("status") or {}).get("current") or {})
+        now_live = curst.get("state") == "connected"
+    if not now_live and s["live"] and _miss.get(addr, 0) < 2:      # one blip is not an outage
+        _miss[addr] = _miss.get(addr, 0) + 1
+        return
+    if now_live:
+        _miss.pop(addr, None)
+        if not (s["ingest"] if "ingest" in s.keys() else ""):
+            x("UPDATE streams SET ingest=? WHERE address=?", (curst.get("ingestProtocol") or "", addr))
+    if now_live != bool(s["live"]):
+        x("UPDATE streams SET live=?, ingest=? WHERE address=?", (int(now_live), curst.get("ingestProtocol") or "", addr))
+        await broadcast_all({"t": "live", "token": addr, "live": now_live})
+        print(f"[cf] {addr} live={now_live}")
 
 
 # ---- LiveKit: viewer / publisher tokens ----
