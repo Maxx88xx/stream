@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>plink</title>
+<title>Plink</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27%3E%3Crect width=%2764%27 height=%2764%27 rx=%2718%27 fill=%27%23d4fc50%27/%3E%3Ctext x=%2732%27 y=%2745%27 font-family=%27Inter,Arial,sans-serif%27 font-size=%2738%27 font-weight=%27500%27 text-anchor=%27middle%27 fill=%27%23111%27%3EP%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
@@ -291,9 +291,9 @@
 <header class="site-nav">
   <div class="liquid-glass nav-glass"><div class="liquid-glass-content"><div class="nav-inner">
     <div class="nav-left">
-      <a class="nav-brand" href="/" data-link><span class="nav-wordmark" role="img" aria-label="plink"></span></a>
+      <a class="nav-brand" href="/" data-link><span class="nav-wordmark" role="img" aria-label="Plink"></span></a>
       <nav class="nav-product-links" id="nav-tabs"><span class="nav-product-indicator" id="nav-pill"></span>
-        <a class="nav-product-link" href="/" data-link id="nav-about">plink</a>
+        <a class="nav-product-link" href="/" data-link id="nav-about">Plink</a>
         <a class="nav-product-link" href="/explore" data-link id="nav-home">Explore</a>
         <a class="nav-product-link" href="/live" data-link id="nav-live"><i class="live-dot"></i>Live</a>
       </nav>
@@ -306,7 +306,7 @@
 <main class="bridge-shell launchpad-explore-shell" id="page"></main>
 <footer class="site-foot">
   <div class="site-foot-links"><a href="/privacy" data-link>Privacy</a><a href="/terms" data-link>Terms</a><a href="https://www.ponsfamily.com/launchpad" target="_blank" rel="noopener">PONS</a><a href="https://robinhoodchain.blockscout.com" target="_blank" rel="noopener">Robinhood Chain</a></div>
-  <p>Wallets by Privy. plink never holds keys or funds. Streams stay live only, trading stays on PONS.</p>
+  <p>Wallets by Privy. Plink never holds keys or funds. Streams stay live only, trading stays on PONS.</p>
 </footer>
 <div id="modal"></div>
 <script>
@@ -754,7 +754,7 @@ void main(){
     page.append(
       el('section', { class: 'launch-explore launch-explore-graduated float land-hero' },
         (heroCv = heroRipples()),
-        (heroKick = el('span', { class: 'land-kicker' }, 'plink')),
+        (heroKick = el('span', { class: 'land-kicker' }, 'Plink')),
         (heroH1 = el('h1', {}, 'Coins go live.')),
         (heroLead = el('p', { class: 'land-lead' }, 'Every PONS coin gets a stage. Watch the creator on camera, talk to holders in real time, and follow the chart while it moves — trading is one tap away on PONS.')),
         el('div', { class: 'land-cta' }, el('button', { class: 'ui-btn ui-btn-primary land-btn', onclick: goLiveEntry }, el('span', { class: 'ui-btn-label' }, 'Go live')), el('a', { class: 'ui-btn land-btn land-btn-ghost', href: '/explore', 'data-link': '' }, el('span', { class: 'ui-btn-label' }, 'Explore coins')))),
@@ -786,23 +786,23 @@ void main(){
 
   // ---- Privacy / Terms ----
   const LEGAL = {
-    privacy: { title: 'Privacy policy', date: 'Effective 7 September 2026 · plink', intro: 'Short version: plink works with wallet addresses and public blockchain data. Sign-in is handled by Privy, we keep the minimum needed to run streams and chat, and we never sell or share your data for advertising.', sections: [
-      ['Who we are', ['plink is a livestreaming service for coins launched on PONS. It lets the wallet that launched a coin broadcast on it, and lets anyone watch, chat and follow the chart.']],
+    privacy: { title: 'Privacy policy', date: 'Effective 7 September 2026 · Plink', intro: 'Short version: Plink works with wallet addresses and public blockchain data. Sign-in is handled by Privy, we keep the minimum needed to run streams and chat, and we never sell or share your data for advertising.', sections: [
+      ['Who we are', ['Plink is a livestreaming service for coins launched on PONS. It lets the wallet that launched a coin broadcast on it, and lets anyone watch, chat and follow the chart.']],
       ['What we collect', ['Wallet address. When you connect, Privy verifies your wallet and we store the address to know which coins you can stream on and to sign your chat messages. We never see your private key.', 'Stream details. The title you give a stream, when it started and ended, and the stream credentials issued to you. Credentials are shown only to the wallet that owns the coin.', 'Chat messages. Messages you send are stored with your wallet address and shown publicly in that coin’s chat.', 'Coin data. Names, tickers, images and links come from the launch on PONS and are public by nature. Prices and market caps are read from Robinhood Chain.', 'Operational logs. Our host keeps short-lived request logs (IP address, browser type, requested page) for security and debugging. They are not used to profile you and expire automatically.']],
       ['Video', ['Streams are delivered live and are not recorded by us. If a streamer records on their side, that is between them and their viewers.']],
       ['Cookies and storage', ['We keep your sign-in session in your browser’s local storage; it ends when you sign out. Privy sets its own cookies and local storage to keep your wallet session working; see Privy’s privacy policy for details. We do not run advertising trackers or third-party analytics.']],
       ['Who else sees data', ['Privy runs wallet sign-in. LiveKit carries the live video and audio between the streamer and viewers. Railway hosts the service. Robinhood Chain serves blockchain data. PONS runs the launchpad where coins trade.', 'We share data with these providers only as needed to run the service. We do not sell personal data and do not share it for advertising.']],
       ['Your choices', ['Sign out to end your session; revoke Privy access from Privy. Ask us to remove your chat messages or stream titles by contacting us; blockchain data cannot be deleted by anyone, including us.']],
-      ['Age', ['plink is not intended for anyone under 18. We do not knowingly collect data from children.']],
+      ['Age', ['Plink is not intended for anyone under 18. We do not knowingly collect data from children.']],
       ['Changes', ['If this policy changes, the new version is published here with a new effective date.']]] },
-    terms: { title: 'Terms of service', date: 'Effective 7 September 2026 · plink', intro: '', sections: [
-      ['What plink is', ['plink is a livestreaming interface for coins launched on PONS, a separate service with its own terms. It shows public blockchain data, lets the wallet that launched a coin stream on it, and lets viewers watch and chat. Coins are launched and traded on PONS, not here.']],
-      ['Wallets and keys', ['Sign-in is run by Privy. plink never holds private keys or funds and never asks you to sign a transaction. The only thing you sign is a message proving the wallet is yours.']],
+    terms: { title: 'Terms of service', date: 'Effective 7 September 2026 · Plink', intro: '', sections: [
+      ['What Plink is', ['Plink is a livestreaming interface for coins launched on PONS, a separate service with its own terms. It shows public blockchain data, lets the wallet that launched a coin stream on it, and lets viewers watch and chat. Coins are launched and traded on PONS, not here.']],
+      ['Wallets and keys', ['Sign-in is run by Privy. Plink never holds private keys or funds and never asks you to sign a transaction. The only thing you sign is a message proving the wallet is yours.']],
       ['Streaming', ['Only the wallet that launched a coin can stream on it. You are responsible for everything you broadcast and say in chat. Do not stream content that is illegal, that infringes someone’s rights, or that impersonates another person or project. We may end a stream or block a wallet that does.', 'Stream credentials are personal. Anyone with your stream key can broadcast as you; reset them if they leak.']],
       ['Who can use it', ['You must be at least 18 and allowed to use crypto services where you live. You are responsible for any taxes and for complying with your local laws.']],
       ['Don’t', ['Impersonate someone, or use the service to promote fraud, market manipulation or scams.', 'Attack, overload or reverse-engineer the service, or harass other users in chat.', 'We may block access for anyone who does.']],
-      ['No promises', ['plink is provided as is. Coins are volatile and can go to zero. Nothing here is financial, legal or tax advice, and nothing said on a stream is endorsed by us. We do not guarantee that any stream stays up, that any coin will trade, or that the service is always available. To the fullest extent the law allows, plink and its contributors are not liable for any loss arising from your use of the service, including losses caused by blockchains, wallets, third-party services, streamers or your own mistakes.']],
-      ['Changes', ['We can update these terms; the current version is always published here. Using plink after a change means you accept it.']]] },
+      ['No promises', ['Plink is provided as is. Coins are volatile and can go to zero. Nothing here is financial, legal or tax advice, and nothing said on a stream is endorsed by us. We do not guarantee that any stream stays up, that any coin will trade, or that the service is always available. To the fullest extent the law allows, Plink and its contributors are not liable for any loss arising from your use of the service, including losses caused by blockchains, wallets, third-party services, streamers or your own mistakes.']],
+      ['Changes', ['We can update these terms; the current version is always published here. Using Plink after a change means you accept it.']]] },
   };
   function legalPage(kind) {
     const page = $('#page'); page.innerHTML = '';

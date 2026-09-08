@@ -1,4 +1,4 @@
-"""plink — livestreams for PONS coins (Robinhood Chain), pump.fun style.
+"""Plink — livestreams for PONS coins (Robinhood Chain), pump.fun style.
 
 One aiohttp process: the site, the JSON API, the WebSocket (launch feed, chat,
 viewer counts, live flags), the Alchemy launch subscription (instant catalog),
@@ -38,7 +38,7 @@ CF_ACCOUNT = (os.environ.get("CF_ACCOUNT_ID") or "").strip()
 CF_TOKEN = (os.environ.get("CF_API_TOKEN") or "").strip()
 PRIVY_APP_ID = (os.environ.get("PRIVY_APP_ID") or "").strip()
 ADMIN_SECRET = (os.environ.get("ADMIN_SECRET") or "").strip()
-SITE_NAME = os.environ.get("SITE_NAME") or "plink"
+SITE_NAME = os.environ.get("SITE_NAME") or "Plink"
 _ADDR = re.compile(r"^0x[0-9a-fA-F]{40}$")
 NO_CACHE = {"Cache-Control": "no-cache"}
 TOKEN_TTL = 7 * 86400
