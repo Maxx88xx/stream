@@ -132,17 +132,38 @@
   .stream-live .launch-card-viewers { font-size:13px; padding:5px 10px; }
   @media (max-width:900px) { .stream-layout { grid-template-columns:1fr; } .stream-layout .chat-card { position:static; height:60vh; } .stream-meta { flex-wrap:wrap; } }
   /* landing + legal + footer */
-  .land-hero { padding:34px 32px 32px; position:relative; overflow:hidden; }
+  .land-hero { padding:64px 48px 44px; min-height:540px; position:relative; overflow:hidden; display:grid; align-content:center; }
+  .land-stats { display:flex; gap:10px; flex-wrap:wrap; margin-top:40px; }
+  .land-stat { display:inline-flex; align-items:baseline; gap:8px; padding:10px 16px; border-radius:999px; background:color-mix(in srgb, var(--text-primary) 6%, transparent); border:1px solid color-mix(in srgb, var(--text-primary) 10%, transparent); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); }
+  .land-stat b { font-size:18px; font-weight:500; font-variant-numeric:tabular-nums; }
+  .land-stat span { font-size:13px; color:var(--text-muted); }
+  .land-head { display:flex; align-items:flex-end; justify-content:space-between; gap:12px; margin-bottom:20px; }
+  .land-head h2 { margin:0; }
+  .land-eyebrow { display:block; font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--text-subtle); margin-bottom:8px; }
+  .land-sec h2 { font-size:28px; font-weight:500; letter-spacing:-.01em; }
+  .land-more { padding:0 12px; text-decoration:none; }
+  .land-ico { width:42px; height:42px; border-radius:13px; display:grid; place-items:center; flex:none; background:color-mix(in srgb, var(--accent) 22%, var(--bg-white)); color:color-mix(in srgb, var(--accent) 55%, var(--text-primary)); }
+  .land-ico svg, .trust-card svg { width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+  .trust-grid { list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:14px; }
+  .trust-card { background:var(--panel-blue); border-radius:20px; padding:18px 20px; display:flex; gap:12px; align-items:flex-start; font-size:15px; line-height:1.5; }
+  .trust-card svg { flex:none; margin-top:2px; color:color-mix(in srgb, var(--accent) 60%, var(--text-primary)); }
+  .land-final { text-align:center; padding:60px 32px; display:grid; justify-items:center; gap:14px; }
+  .land-final h2 { font-size:38px; font-weight:500; letter-spacing:-.02em; margin:0; }
+  .land-final p { margin:0 0 6px; color:var(--text-muted); font-size:17px; max-width:46ch; line-height:1.5; }
+  .land-final .land-eyebrow { margin:0; }
+  .reveal { opacity:0; transform:translateY(16px); transition:opacity .7s ease, transform .7s cubic-bezier(.22,1,.36,1); }
+  .reveal.is-in { opacity:1; transform:none; }
+  @media (max-width:720px) { .land-hero { padding:38px 22px 30px; min-height:0; } .land-stats { margin-top:26px; } .trust-grid { grid-template-columns:1fr; } .land-final { padding:40px 22px; } .land-final h2 { font-size:28px; } .land-head { flex-direction:column; align-items:flex-start; } }
   .land-hero > * { position:relative; z-index:1; }
   .land-ripple { position:absolute; z-index:0; top:0; right:0; width:100%; height:100%; display:block; opacity:0; transition:opacity .8s ease; pointer-events:none; -webkit-mask-image:linear-gradient(90deg, transparent, #000 12%); mask-image:linear-gradient(90deg, transparent, #000 12%); }
   .land-kicker { display:inline-block; justify-self:start; width:max-content; background:color-mix(in srgb, var(--accent) 16%, var(--bg-white)); color:color-mix(in srgb, var(--accent) 55%, var(--text-primary)); border-radius:999px; padding:5px 12px; font-size:12px; margin-bottom:16px; }
-  .land-hero h1 { margin:0 0 12px; font-size:44px; line-height:1.05; font-weight:500; letter-spacing:-.02em; }
-  .land-lead { color:var(--text-muted); font-size:17px; line-height:1.55; max-width:62ch; margin:0 0 24px; }
+  .land-hero h1 { margin:0 0 16px; font-size:64px; line-height:1.02; font-weight:500; letter-spacing:-.025em; }
+  .land-lead { color:var(--text-muted); font-size:19px; line-height:1.55; max-width:56ch; margin:0 0 28px; }
   .land-cta { display:flex; gap:10px; flex-wrap:wrap; }
-  .land-btn.ui-btn { width:auto; min-height:50px; padding:0 22px; border-radius:999px; border:0; cursor:pointer; font-size:16px; font-weight:500; text-decoration:none; display:inline-flex; align-items:center; }
+  .land-btn.ui-btn { width:auto; min-height:56px; padding:0 26px; border-radius:999px; border:0; cursor:pointer; font-size:17px; font-weight:500; text-decoration:none; display:inline-flex; align-items:center; }
   .land-btn-ghost { background:var(--panel-blue); color:var(--text-primary); }
   .land-feats { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:14px; }
-  .land-feat { background:var(--panel-blue); border-radius:20px; padding:18px 20px; }
+  .land-feat { background:var(--panel-blue); border-radius:20px; padding:20px 22px; display:flex; gap:14px; align-items:flex-start; }
   .land-feat h3 { margin:0 0 6px; font-size:17px; font-weight:500; }
   .land-feat p { margin:0; color:var(--text-muted); font-size:14px; line-height:1.55; }
   .land-trust h2 { margin-bottom:10px; }
@@ -157,7 +178,7 @@
   .site-foot-links a { color:var(--text-muted); }
   .site-foot-links a:hover { color:var(--text-primary); }
   .site-foot p { margin:0; }
-  @media (max-width:720px) { .land-feats { grid-template-columns:1fr; } .land-hero h1 { font-size:32px; } }
+  @media (max-width:720px) { .land-feats { grid-template-columns:1fr; } .land-hero h1 { font-size:36px; } .land-lead { font-size:16px; } }
   /* about page */
   .about-hero h1 { margin:0 0 10px; font-size:30px; font-weight:400; }
   .about-lead { color:var(--text-muted); font-size:15px; line-height:1.6; max-width:70ch; margin:0 0 22px; }
@@ -764,41 +785,72 @@ void main(){
   }
   async function landingPage() {
     const page = $('#page'); page.innerHTML = '';
+    const nf = (n) => Number(n || 0).toLocaleString('en-US');
+    const svgPath = (d) => svgIcon('<path d="' + d + '"/>');
+    const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
+    const ico = (d) => el('span', { class: 'land-ico' }, svgPath(d));
+    const I = {
+      play: 'M5 4.5v15l13-7.5z', chart: 'M4 19h16M6 15l4-5 3 3 5-7', chat: 'M4 5h16v10H9l-5 4z', bolt: 'M13 2 4 14h7l-1 8 9-12h-7z',
+      grid: 'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z', check: 'M5 12.5l4.5 4.5L19 7', key: 'M15 7a4 4 0 1 1-2.8 6.8L7 19H4v-3l5.2-5.2A4 4 0 0 1 15 7z', shield: 'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z', cam: 'M4 7h11v10H4zM15 10l5-3v10l-5-3z',
+    };
     const step = (n, title, text) => el('div', { class: 'about-step' }, el('span', { class: 'about-num' }, n), el('h3', {}, title), el('p', {}, text));
-    const feat = (title, text) => el('div', { class: 'land-feat' }, el('h3', {}, title), el('p', {}, text));
+    const feat = (d, title, text) => el('div', { class: 'land-feat' }, ico(d), el('div', {}, el('h3', {}, title), el('p', {}, text)));
+    const trust = (d, text) => el('li', { class: 'trust-card' }, svgPath(d), el('span', {}, text));
+    const head = (eyebrow, title, link) => el('div', { class: 'land-head' }, el('div', {}, el('span', { class: 'land-eyebrow' }, eyebrow), el('h2', {}, title)), link ? el('a', { class: 'launch-explore-count land-more', href: link[1], 'data-link': '' }, link[0]) : null);
     let heroCv, heroKick, heroH1, heroLead;
+    const stat = (label) => { const b = el('b', {}, '—'); return { el: el('span', { class: 'land-stat' }, b, el('span', {}, label)), b }; };
+    const sCoins = stat('coins on PONS'), sLive = stat('live now'), sWatch = stat('watching');
     const liveGrid = el('ul', { class: 'launch-explore-grid' });
-    const liveSec = el('section', { class: 'launch-explore float', style: 'display:none' }, el('header', { class: 'launch-explore-section-head' }, el('div', { class: 'launch-explore-head-main' }, el('div', { class: 'launch-explore-title-row' }, el('h2', {}, 'Live now'), el('a', { class: 'launch-explore-count', href: '/live', 'data-link': '', style: 'padding:0 10px' }, 'All')))), liveGrid);
+    const liveSec = el('section', { class: 'launch-explore float land-sec reveal', style: 'display:none' }, head('On air', 'Live now', ['All streams', '/live']), liveGrid);
+    const freshGrid = el('ul', { class: 'launch-explore-grid' });
     page.append(
       el('section', { class: 'launch-explore launch-explore-graduated float land-hero' },
         (heroCv = heroRipples()),
         (heroKick = el('span', { class: 'land-kicker' }, 'Plink')),
         (heroH1 = el('h1', {}, 'Coins go live.')),
         (heroLead = el('p', { class: 'land-lead' }, 'Every PONS coin gets a stage. Watch the creator on camera, talk to holders in real time, and follow the chart while it moves — trading is one tap away on PONS.')),
-        el('div', { class: 'land-cta' }, el('button', { class: 'ui-btn ui-btn-primary land-btn', onclick: goLiveEntry }, el('span', { class: 'ui-btn-label' }, 'Go live')), el('a', { class: 'ui-btn land-btn land-btn-ghost', href: '/explore', 'data-link': '' }, el('span', { class: 'ui-btn-label' }, 'Explore coins')))),
-      el('section', { class: 'launch-explore float' },
-        el('h2', {}, 'Three moves, that’s it'),
+        el('div', { class: 'land-cta' }, el('button', { class: 'ui-btn ui-btn-primary land-btn', onclick: goLiveEntry }, el('span', { class: 'ui-btn-label' }, 'Go live')), el('a', { class: 'ui-btn land-btn land-btn-ghost', href: '/explore', 'data-link': '' }, el('span', { class: 'ui-btn-label' }, 'Explore coins'))),
+        el('div', { class: 'land-stats' }, sCoins.el, sLive.el, sWatch.el)),
+      liveSec,
+      el('section', { class: 'launch-explore float land-sec reveal' }, head('Fresh from the chain', 'Just launched', ['Explore all', '/explore']), freshGrid),
+      el('section', { class: 'launch-explore float land-sec reveal' },
+        head('How it works', 'Three moves, that’s it'),
         el('div', { class: 'about-steps' },
           step('1', 'Find your coin', 'Every PONS coin is already here, and new ones land the second they launch.'),
           step('2', 'Connect the deploy wallet', 'One signature, no gas, no custody. That’s the whole login.'),
           step('3', 'Go live', 'Webcam straight from the browser, or OBS with a key. Holders see you in seconds.'))),
-      el('section', { class: 'launch-explore float' },
-        el('h2', {}, 'Markets are better live'),
+      el('section', { class: 'launch-explore float land-sec reveal' },
+        head('Why live', 'Markets are better live'),
         el('div', { class: 'land-feats' },
-          feat('Stream and chart on one screen', 'The chart sits right under the video, so the story and the numbers move together.'),
-          feat('Live chat', 'Wallet-signed messages, and creators run their own room.'),
-          feat('No lag', 'Under a second from camera to viewer, whichever way you broadcast.'),
-          feat('Everything on PONS', 'The full catalog, searchable, plus a Live tab for whoever is on air right now.'))),
-      liveSec,
-      el('section', { class: 'launch-explore float land-trust' },
-        el('h2', {}, 'What we never touch'),
-        el('ul', { class: 'about-list' },
-          el('li', {}, 'No keys, no approvals, no transactions. Ever.'),
-          el('li', {}, 'Trading stays on PONS. Every coin page links straight there.'),
-          el('li', {}, 'Only the wallet that launched a coin can stream on it.'))));
+          feat(I.chart, 'Stream and chart on one screen', 'The chart sits right under the video, so the story and the numbers move together.'),
+          feat(I.chat, 'Live chat', 'Wallet-signed messages, and creators run their own room.'),
+          feat(I.bolt, 'No lag', 'Under a second from camera to viewer, whichever way you broadcast.'),
+          feat(I.grid, 'Everything on PONS', 'The full catalog, searchable, plus a Live tab for whoever is on air right now.'))),
+      el('section', { class: 'launch-explore float land-sec land-trust reveal' },
+        head('Ground rules', 'What we never touch'),
+        el('ul', { class: 'trust-grid' },
+          trust(I.key, 'No keys, no approvals, no transactions. Ever.'),
+          trust(I.shield, 'Trading stays on PONS. Every coin page links straight there.'),
+          trust(I.cam, 'Only the wallet that launched a coin can stream on it.'))),
+      el('section', { class: 'launch-explore launch-explore-graduated float land-final reveal' },
+        el('span', { class: 'land-eyebrow' }, 'Own a coin on PONS?'),
+        el('h2', {}, 'Go live in under a minute.'),
+        el('p', {}, 'No keys, no gas, no setup. Just your camera, your chart and your holders.'),
+        el('button', { class: 'ui-btn ui-btn-primary land-btn', onclick: goLiveEntry }, el('span', { class: 'ui-btn-label' }, 'Go live'))));
     heroRippleText(heroCv, [heroKick, heroH1, heroLead]);
-    try { const { rows } = await api('/api/streams'); if (rows.length) { liveSec.style.display = ''; rows.slice(0, 4).forEach(r => liveGrid.append(el('li', {}, card(r)))); } } catch {}
-    const onLive = async () => { try { const { rows } = await api('/api/streams'); liveGrid.innerHTML = ''; liveSec.style.display = rows.length ? '' : 'none'; rows.slice(0, 4).forEach(r => liveGrid.append(el('li', {}, card(r)))); } catch {} };
+    // sections rise in as they scroll into view
+    if ('IntersectionObserver' in window && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target); } }), { rootMargin: '0px 0px -8% 0px' });
+      $$('.reveal', page).forEach((s) => io.observe(s));
+    } else $$('.reveal', page).forEach((s) => s.classList.add('is-in'));
+    const paintLive = ({ rows }) => {
+      liveGrid.innerHTML = ''; liveSec.style.display = rows.length ? '' : 'none';
+      rows.slice(0, 4).forEach(r => liveGrid.append(el('li', {}, card(r))));
+      sLive.b.textContent = nf(rows.length); sWatch.b.textContent = nf(rows.reduce((a, r) => a + (r.viewers || 0), 0));
+    };
+    swr('/api/streams', paintLive).catch(() => {});
+    swr('/api/recent?limit=4', ({ rows, stats }) => { sCoins.b.textContent = nf(stats.tokens); freshGrid.innerHTML = ''; rows.slice(0, 4).forEach(r => freshGrid.append(el('li', {}, card(r)))); }).catch(() => {});
+    const onLive = () => swr('/api/streams', paintLive).catch(() => {});
     on('live', onLive); cleanup = () => off('live', onLive);
   }
 
