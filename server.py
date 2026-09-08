@@ -742,10 +742,29 @@ async def h_admin(request):
 
 # ---- static / SPA ----
 
+def _asset_ver(name: str) -> str:
+    try:
+        return str(int((FRONTEND / "assets" / name).stat().st_mtime))
+    except OSError:
+        return "0"
+
+
 async def h_index(request):
     html = (FRONTEND / "index.html").read_text()
     html = html.replace("</head>", f"<script>window.CFG={json.dumps({'privyAppId': PRIVY_APP_ID, 'site': SITE_NAME})};</script></head>", 1)
+    # browsers heuristically cache un-headed static files for days; version the stylesheet and
+    # wordmark so a palette change lands on the next load instead of after a hard refresh
+    for name in ("pons.css", "wordmark.png"):
+        html = html.replace(f"/assets/{name}\"", f"/assets/{name}?v={_asset_ver(name)}\"")
     return web.Response(text=html, content_type="text/html", headers=NO_CACHE)
+
+
+@web.middleware
+async def asset_cache(request, handler):
+    resp = await handler(request)
+    if request.path.startswith("/assets/"):
+        resp.headers["Cache-Control"] = "public, max-age=31536000, immutable" if "v" in request.query else "no-cache"
+    return resp
 
 
 def _backfill_thread():
@@ -768,7 +787,7 @@ def _backfill_thread():
 
 
 def make_app() -> web.Application:
-    app = web.Application(client_max_size=64 * 1024)
+    app = web.Application(client_max_size=64 * 1024, middlewares=[asset_cache])
     r = app.router
     for p in ("/", "/explore", "/live", "/coin/{addr}", "/search", "/privacy", "/terms"):
         r.add_get(p, h_index)
