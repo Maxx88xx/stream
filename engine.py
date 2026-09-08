@@ -169,7 +169,8 @@ def pick_target(c, quote: str, head: int) -> dict | None:
 def _send(w3: Web3, acct, tx: dict) -> str:
     tx.setdefault("chainId", 4663)
     tx["nonce"] = w3.eth.get_transaction_count(acct.address, "pending")
-    tx.setdefault("gasPrice", int(w3.eth.gas_price * 1.2))
+    if "maxFeePerGas" not in tx and "gasPrice" not in tx:      # build_transaction already priced it (EIP-1559); only legacy txs need gasPrice
+        tx["gasPrice"] = int(w3.eth.gas_price * 1.2)
     if "gas" not in tx:
         tx["gas"] = int(w3.eth.estimate_gas(tx) * 1.3)
     signed = acct.sign_transaction(tx)
