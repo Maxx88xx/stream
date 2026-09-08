@@ -30,6 +30,7 @@
   .nav-product-link .live-dot { width:7px; height:7px; border-radius:50%; background:var(--accent-red); box-shadow:0 0 8px var(--accent-red); }
   .nav-connect { min-height:40px; padding:9px 16px; font-size:15px; font-weight:500; border:0; cursor:pointer; }
   .nav-theme { cursor:pointer; display:inline-grid; place-items:center; }
+  .nav-wordmark { height:30px; width:auto; display:block; }
   .nav-logo-mark { width:40px; height:40px; border-radius:12px; background:var(--accent); color:#111; display:grid; place-items:center; font-size:22px; font-weight:500; }
   main.bridge-shell { padding:22px 24px 60px; box-sizing:border-box; }
   .launchpad-explore-shell { max-width:1080px; }
@@ -128,7 +129,7 @@
   .land-hero { padding:34px 32px 32px; position:relative; overflow:hidden; }
   .land-hero > * { position:relative; z-index:1; }
   .land-ripple { position:absolute; z-index:0; top:0; right:0; width:100%; height:100%; display:block; opacity:0; transition:opacity .8s ease; pointer-events:none; -webkit-mask-image:linear-gradient(90deg, transparent, #000 12%); mask-image:linear-gradient(90deg, transparent, #000 12%); }
-  .land-kicker { display:inline-block; justify-self:start; width:max-content; background:var(--lime-soft, #1c2610); color:var(--accent); border-radius:999px; padding:5px 12px; font-size:12px; margin-bottom:16px; }
+  .land-kicker { display:inline-block; justify-self:start; width:max-content; background:var(--lime-soft, #1e211e); color:var(--accent); border-radius:999px; padding:5px 12px; font-size:12px; margin-bottom:16px; }
   .land-hero h1 { margin:0 0 12px; font-size:44px; line-height:1.05; font-weight:500; letter-spacing:-.02em; }
   .land-lead { color:var(--text-muted); font-size:17px; line-height:1.55; max-width:62ch; margin:0 0 24px; }
   .land-cta { display:flex; gap:10px; flex-wrap:wrap; }
@@ -212,7 +213,7 @@
   @keyframes shimmer { from { background-position:200% 0; } to { background-position:-200% 0; } }
   /* liquid-glass treatment for every lime element — PONS's own glass recipe, tinted lime: flat, hairline rim, no gloss */
   .nav-connect, .ui-btn-primary, .pbtn.primary, .trade-btn.pbtn, .token-info-links a.trade-btn, .launch-card-live-badge, .stream-action.ui-btn, .chat-card .chat-form button, .chat-lock.is-on, .about-num, .nav-logo-mark, .land-btn.ui-btn-primary {
-    background:rgba(212,252,80,.78) !important;
+    background:rgba(202,210,202,.78) !important;
     color:#111 !important;
     border:1px solid rgba(255,255,255,.28) !important;
     box-shadow:inset 0 1px 0 rgba(255,255,255,.32), inset 0 -1px 0 rgba(255,255,255,.08), inset 1px 0 2px -1px rgba(255,255,255,.2), inset -1px 0 2px -1px rgba(255,255,255,.2) !important;
@@ -225,7 +226,7 @@
   }
   .nav-connect > *, .ui-btn-primary > *, .pbtn.primary > *, .launch-card-live-badge > * { position:relative; z-index:1; }
   .launch-card-live-badge::before { z-index:1; position:relative; }
-  .nav-connect:hover:not(:disabled), .ui-btn-primary:hover:not(:disabled), .pbtn.primary:hover, .trade-btn:hover { background:rgba(212,252,80,.9) !important; }
+  .nav-connect:hover:not(:disabled), .ui-btn-primary:hover:not(:disabled), .pbtn.primary:hover, .trade-btn:hover { background:rgba(202,210,202,.9) !important; }
   /* go-live flow + player controls */
   .golive { display:grid; gap:6px; }
   .golive-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
@@ -266,7 +267,7 @@
   .sc-menu button:hover { background:var(--panel-blue); }
   .stream-stage:fullscreen video { width:100%; height:100%; object-fit:contain; }
   /* Privy modal in the site's skin */
-  #privy-root, #privy-dialog, #privy-modal-content, [id^=privy] { font-family:var(--font-sans) !important; --privy-color-background:#161616; --privy-color-background-2:#1f1f1f; --privy-color-background-3:#262626; --privy-color-foreground:#f2f2f2; --privy-color-foreground-2:#f2f2f294; --privy-color-foreground-3:#f2f2f266; --privy-color-foreground-4:#ffffff1f; --privy-color-accent:#d4fc50; --privy-color-accent-light:#e5f99a; --privy-color-accent-dark:#c4ef3c; --privy-color-accent-lightest:#1c2610; --privy-color-success:#30d158; --privy-color-error:#ff453a; --privy-border-radius-sm:12px; --privy-border-radius-md:16px; --privy-border-radius-mdlg:20px; --privy-border-radius-lg:24px; --privy-border-radius-full:999px; }
+  #privy-root, #privy-dialog, #privy-modal-content, [id^=privy] { font-family:var(--font-sans) !important; --privy-color-background:#161616; --privy-color-background-2:#1f1f1f; --privy-color-background-3:#262626; --privy-color-foreground:#f2f2f2; --privy-color-foreground-2:#f2f2f294; --privy-color-foreground-3:#f2f2f266; --privy-color-foreground-4:#ffffff1f; --privy-color-accent:#cad2ca; --privy-color-accent-light:#dfe5de; --privy-color-accent-dark:#b5beb4; --privy-color-accent-lightest:#1e211e; --privy-color-success:#30d158; --privy-color-error:#ff453a; --privy-border-radius-sm:12px; --privy-border-radius-md:16px; --privy-border-radius-mdlg:20px; --privy-border-radius-lg:24px; --privy-border-radius-full:999px; }
   #privy-dialog > div, #privy-modal-content { border:1px solid var(--float-border) !important; box-shadow:var(--float-shadow) !important; }
   /* modals (wallet, go live) */
   .modal { position:fixed; inset:0; background:#00000099; -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px); display:grid; place-items:center; z-index:80; padding:16px; }
@@ -290,7 +291,7 @@
 <header class="site-nav">
   <div class="liquid-glass nav-glass"><div class="liquid-glass-content"><div class="nav-inner">
     <div class="nav-left">
-      <a class="nav-brand" href="/" data-link><span class="nav-logo-mark">P</span></a>
+      <a class="nav-brand" href="/" data-link><img class="nav-wordmark" src="/assets/wordmark.png" alt="plink" width="1495" height="542"></a>
       <nav class="nav-product-links" id="nav-tabs"><span class="nav-product-indicator" id="nav-pill"></span>
         <a class="nav-product-link" href="/" data-link id="nav-about">plink</a>
         <a class="nav-product-link" href="/explore" data-link id="nav-home">Explore</a>
@@ -377,12 +378,12 @@
     document.addEventListener('privy:wallet', async (e) => { const d = e.detail; if (session && session.address === d.address) return; await signIn({ info: { name: d.name }, provider: d.provider }); });
     document.addEventListener('privy:error', (e) => { console.warn('privy', e.detail); toast('Wallet login didn’t go through'); });
     const s = document.createElement('script'); s.src = '/assets/privy.js';
-    s.onload = () => window.PrivyMount(appId, { chain: ROBINHOOD_CHAIN, accent: '#d4fc50', theme: '#161616', logo: location.origin + '/assets/logo.svg', header: 'Connect wallet', message: 'Sign in with the wallet that launched your coin' });
+    s.onload = () => window.PrivyMount(appId, { chain: ROBINHOOD_CHAIN, accent: '#cad2ca', theme: '#161616', logo: location.origin + '/assets/logo.svg', header: 'Connect wallet', message: 'Sign in with the wallet that launched your coin' });
     s.onerror = () => { privyState = null; toast('Couldn’t load the wallet module'); walletModalFallback(); };
     document.head.append(s);
   }
   function walletModal() { privyOpen(); }
-  const privyWarm = () => { if (privyState || !(window.CFG || {}).privyAppId || session) return; privyState = 'loading'; document.addEventListener('privy:ready', () => { privyState = 'ready'; }, { once: true }); document.addEventListener('privy:wallet', async (e) => { const d = e.detail; if (session && session.address === d.address) return; await signIn({ info: { name: d.name }, provider: d.provider }); }); const s = document.createElement('script'); s.src = '/assets/privy.js'; s.onload = () => window.PrivyMount((window.CFG || {}).privyAppId, { chain: ROBINHOOD_CHAIN, accent: '#d4fc50', theme: '#161616', logo: location.origin + '/assets/logo.svg', header: 'Connect wallet', message: 'Sign in with the wallet that launched your coin' }); s.onerror = () => { privyState = null; }; document.head.append(s); };
+  const privyWarm = () => { if (privyState || !(window.CFG || {}).privyAppId || session) return; privyState = 'loading'; document.addEventListener('privy:ready', () => { privyState = 'ready'; }, { once: true }); document.addEventListener('privy:wallet', async (e) => { const d = e.detail; if (session && session.address === d.address) return; await signIn({ info: { name: d.name }, provider: d.provider }); }); const s = document.createElement('script'); s.src = '/assets/privy.js'; s.onload = () => window.PrivyMount((window.CFG || {}).privyAppId, { chain: ROBINHOOD_CHAIN, accent: '#cad2ca', theme: '#161616', logo: location.origin + '/assets/logo.svg', header: 'Connect wallet', message: 'Sign in with the wallet that launched your coin' }); s.onerror = () => { privyState = null; }; document.head.append(s); };
   (window.requestIdleCallback || ((f) => setTimeout(f, 2500)))(() => setTimeout(privyWarm, 1500));
   function walletModalFallback() {
     const list = providers.length ? providers : (window.ethereum ? [{ info: { name: 'Browser wallet', uuid: 'legacy' }, provider: window.ethereum }] : []);
@@ -612,7 +613,7 @@ void main(){
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
     const loc = gl.getAttribLocation(prog, 'a'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
     const uRes = gl.getUniformLocation(prog, 'uRes'), uT = gl.getUniformLocation(prog, 'uT'), uR = gl.getUniformLocation(prog, 'uR');
-    gl.uniform3f(gl.getUniformLocation(prog, 'uLime'), 0.83, 0.99, 0.31);
+    gl.uniform3f(gl.getUniformLocation(prog, 'uLime'), 0.792, 0.824, 0.792);
     const drops = new Float32Array(N * 4);
     let aspect = 1, raf = 0, visible = true, onScreen = true, shown = false;
     const t0 = performance.now();                                // the first drop falls right as the page opens
