@@ -123,8 +123,7 @@
   /* landing + legal + footer */
   .land-hero { padding:34px 32px 32px; position:relative; overflow:hidden; }
   .land-hero > * { position:relative; z-index:1; }
-  .land-ripple { position:absolute; z-index:0; top:0; right:0; width:64%; height:100%; display:block; opacity:0; transition:opacity 1.6s ease; pointer-events:none; -webkit-mask-image:linear-gradient(90deg, transparent, #000 38%); mask-image:linear-gradient(90deg, transparent, #000 38%); }
-  @media (max-width:720px) { .land-ripple { width:100%; -webkit-mask-image:linear-gradient(90deg, transparent, #000 60%); mask-image:linear-gradient(90deg, transparent, #000 60%); opacity:.7; } }
+  .land-ripple { position:absolute; z-index:0; top:0; right:0; width:100%; height:100%; display:block; opacity:0; transition:opacity .8s ease; pointer-events:none; -webkit-mask-image:linear-gradient(90deg, transparent, #000 12%); mask-image:linear-gradient(90deg, transparent, #000 12%); }
   .land-kicker { display:inline-block; justify-self:start; width:max-content; background:var(--lime-soft, #1c2610); color:var(--accent); border-radius:999px; padding:5px 12px; font-size:12px; margin-bottom:16px; }
   .land-hero h1 { margin:0 0 12px; font-size:44px; line-height:1.05; font-weight:500; letter-spacing:-.02em; }
   .land-lead { color:var(--text-muted); font-size:17px; line-height:1.55; max-width:62ch; margin:0 0 24px; }
@@ -549,10 +548,10 @@ float wave(vec2 p,vec4 r,float t){
   vec2 q=p-r.xy;
   float th=atan(q.y,q.x);
   float rr=length(q)*(1.+0.014*sin(3.*th+W*t)+0.009*sin(5.*th-2.*W*t+1.7));
-  float d=rr-0.12*age;
+  float d=rr-0.15*age;
   float lam=0.17+0.02*age;
   float env=exp(-d*d/(lam*lam*1.1))*smoothstep(-lam*2.4,-lam*0.6,d);
-  float amp=r.w*smoothstep(0.,0.9,age)*exp(-age*0.2)/(1.+age*0.22);
+  float amp=r.w*smoothstep(0.,0.9,age)*exp(-age*0.13)/(1.+age*0.14);
   amp*=0.9+0.1*sin(2.*th+W*t+1.2);
   return amp*env*sin(6.2831853*d/lam);
 }
@@ -594,9 +593,9 @@ void main(){
     gl.uniform3f(gl.getUniformLocation(prog, 'uLime'), 0.83, 0.99, 0.31);
     const drops = new Float32Array(N * 4);
     let aspect = 1, raf = 0, visible = true, onScreen = true, shown = false;
-    const t0 = performance.now() + PERIOD * 1000 * 0.55;      // join the loop mid-way, not at a drop
+    const t0 = performance.now();                                // the first drop falls right as the page opens
     const now = () => (performance.now() - t0) / 1000;
-    const place = () => { for (let i = 0; i < N; i++) { drops[i * 4] = aspect * 0.109; drops[i * 4 + 1] = 0.04; drops[i * 4 + 3] = 0.55; } };   // spring sits mid-way across the panel's right half
+    const place = () => { for (let i = 0; i < N; i++) { drops[i * 4] = aspect * 0.25; drops[i * 4 + 1] = 0.04; drops[i * 4 + 3] = 0.55; } };   // spring sits mid-way across the panel's right half
     const resize = () => {
       const dpr = Math.min(devicePixelRatio || 1, 2);
       const w = Math.round(cv.clientWidth * dpr), hh = Math.round(cv.clientHeight * dpr);
@@ -633,15 +632,15 @@ void main(){
   // filter on each overlapping text block, so the letters ride the water.
   function heroRippleText(cv, targets) {
     if (!cv.PERIOD || !('SVGFEDisplacementMapElement' in window)) return;
-    const W = 2 * Math.PI / cv.PERIOD, SCALE = 56, RES = 3, PAD = 32;
+    const W = 2 * Math.PI / cv.PERIOD, SCALE = 36, RES = 3, PAD = 32;
     const sm = (a, b, x) => { const k = Math.min(1, Math.max(0, (x - a) / (b - a))); return k * k * (3 - 2 * k); };
     const wave = (px, py, dx, dy, birth, w, t) => {
       const age = t - birth; if (age <= 0) return 0;
       const qx = px - dx, qy = py - dy, th = Math.atan2(qy, qx);
       const rr = Math.hypot(qx, qy) * (1 + 0.014 * Math.sin(3 * th + W * t) + 0.009 * Math.sin(5 * th - 2 * W * t + 1.7));
-      const d = rr - 0.12 * age, lam = 0.17 + 0.02 * age;
+      const d = rr - 0.15 * age, lam = 0.17 + 0.02 * age;
       const env = Math.exp(-d * d / (lam * lam * 1.1)) * sm(-lam * 2.4, -lam * 0.6, d);
-      let amp = w * sm(0, 0.9, age) * Math.exp(-age * 0.2) / (1 + age * 0.22);
+      let amp = w * sm(0, 0.9, age) * Math.exp(-age * 0.13) / (1 + age * 0.14);
       amp *= 0.9 + 0.1 * Math.sin(2 * th + W * t + 1.2);
       return amp * env * Math.sin(2 * Math.PI * d / lam);
     };
@@ -669,7 +668,7 @@ void main(){
       for (const it of items) {
         const er = it.elm.getBoundingClientRect();
         const rg = document.createRange(); rg.selectNodeContents(it.elm);
-        if (!(rg.getBoundingClientRect().right > cr.left + cw * 0.12))   // the letters themselves, not the block { if (it.on) { it.elm.style.filter = ''; it.on = false; } continue; }
+        if (!(rg.getBoundingClientRect().right > cr.left + cw * 0.04))   // the letters themselves, not the block { if (it.on) { it.elm.style.filter = ''; it.on = false; } continue; }
         it.x = er.left - pr.left; it.y = er.top - pr.top; it.w = er.width; it.h = er.height;
         it.cw = cw; it.ch = ch; it.offX = offX;
         const fw = it.w + PAD * 2, fh = it.h + PAD * 2;
@@ -682,9 +681,12 @@ void main(){
       }
     };
     new ResizeObserver(layout).observe(cv.parentElement);
+    addEventListener('resize', layout);
+    document.fonts?.ready.then(layout);
     layout();
     cv.textRipple = (t, drops) => {
       if (t - last < 1 / 30) return; last = t;          // 30 fps is plenty for a paragraph
+      const gain = 2.0 * sm(0, 0.9, t);                    // letters ease in together with the canvas
       for (const it of items) {
         if (!it.on) continue;
         const { map, ctx, cw, ch, offX } = it, mw = map.width, mh = map.height;
@@ -692,7 +694,7 @@ void main(){
         const e = 2 / ch;
         for (let j = 0; j < mh; j++) for (let i = 0; i < mw; i++) {
           const ex = it.x - PAD + (i + 0.5) * RES, ey = it.y - PAD + (j + 0.5) * RES;   // panel css px
-          const fade = Math.min(1, Math.max(0, (ex - offX) / (cw * 0.38)));
+          const fade = Math.min(1, Math.max(0, (ex - offX) / (cw * 0.12)));
           let dx = 0, dy = 0;
           if (fade > 0) {
             const p0x = ((ex - offX) - 0.5 * cw) / ch, p0y = (0.5 * ch - ey) / ch;
@@ -703,7 +705,7 @@ void main(){
               hx += wave(p0x + e, p0y, bx, by, bt, bw, t);
               hy += wave(p0x, p0y + e, bx, by, bt, bw, t);
             }
-            dx = -(hx - h0) / e * 2.0 * fade; dy = (hy - h0) / e * 2.0 * fade;   // css px, y down
+            dx = -(hx - h0) / e * gain * fade; dy = (hy - h0) / e * gain * fade;   // css px, y down
           }
           const o = (j * mw + i) * 4;
           d[o] = Math.round(255 * Math.min(1, Math.max(0, 0.5 + dx / SCALE)));
@@ -719,13 +721,13 @@ void main(){
     const page = $('#page'); page.innerHTML = '';
     const step = (n, title, text) => el('div', { class: 'about-step' }, el('span', { class: 'about-num' }, n), el('h3', {}, title), el('p', {}, text));
     const feat = (title, text) => el('div', { class: 'land-feat' }, el('h3', {}, title), el('p', {}, text));
-    let heroCv, heroH1, heroLead;
+    let heroCv, heroKick, heroH1, heroLead;
     const liveGrid = el('ul', { class: 'launch-explore-grid' });
     const liveSec = el('section', { class: 'launch-explore float', style: 'display:none' }, el('header', { class: 'launch-explore-section-head' }, el('div', { class: 'launch-explore-head-main' }, el('div', { class: 'launch-explore-title-row' }, el('h2', {}, 'Live now'), el('a', { class: 'launch-explore-count', href: '/live', 'data-link': '', style: 'padding:0 10px' }, 'All')))), liveGrid);
     page.append(
       el('section', { class: 'launch-explore launch-explore-graduated float land-hero' },
         (heroCv = heroRipples()),
-        el('span', { class: 'land-kicker' }, 'plink'),
+        (heroKick = el('span', { class: 'land-kicker' }, 'plink')),
         (heroH1 = el('h1', {}, 'Coins go live.')),
         (heroLead = el('p', { class: 'land-lead' }, 'Every PONS coin gets a stage. Watch the creator on camera, talk to holders in real time, and follow the chart while it moves — trading is one tap away on PONS.')),
         el('div', { class: 'land-cta' }, el('button', { class: 'ui-btn ui-btn-primary land-btn', onclick: goLiveEntry }, el('span', { class: 'ui-btn-label' }, 'Go live')), el('a', { class: 'ui-btn land-btn land-btn-ghost', href: '/explore', 'data-link': '' }, el('span', { class: 'ui-btn-label' }, 'Explore coins')))),
@@ -749,7 +751,7 @@ void main(){
           el('li', {}, 'No keys, no approvals, no transactions. Ever.'),
           el('li', {}, 'Trading stays on PONS. Every coin page links straight there.'),
           el('li', {}, 'Only the wallet that launched a coin can stream on it.'))));
-    heroRippleText(heroCv, [heroH1, heroLead]);
+    heroRippleText(heroCv, [heroKick, heroH1, heroLead]);
     try { const { rows } = await api('/api/streams'); if (rows.length) { liveSec.style.display = ''; rows.slice(0, 4).forEach(r => liveGrid.append(el('li', {}, card(r)))); } } catch {}
     const onLive = async () => { try { const { rows } = await api('/api/streams'); liveGrid.innerHTML = ''; liveSec.style.display = rows.length ? '' : 'none'; rows.slice(0, 4).forEach(r => liveGrid.append(el('li', {}, card(r)))); } catch {} };
     on('live', onLive); cleanup = () => off('live', onLive);
