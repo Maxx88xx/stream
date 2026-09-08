@@ -29,6 +29,7 @@ from eth_account import Account
 from eth_account.messages import encode_defunct
 
 import livekit_api as lk
+import engine
 from indexer import chain, db, images, live, market
 
 BASE = Path(__file__).resolve().parent
@@ -700,6 +701,14 @@ def _admin(request) -> bool:
     return bool(ADMIN_SECRET) and hmac.compare_digest(request.headers.get("X-Admin-Secret", "").encode(), ADMIN_SECRET.encode())
 
 
+async def h_fees(request):
+    def load():
+        c = db.connect()
+        c.executescript(engine.SCHEMA)
+        return engine.summary(c)
+    return web.json_response(await asyncio.to_thread(load), headers=NO_CACHE)
+
+
 async def h_admin(request):
     if not _admin(request):
         return web.json_response({"error": "unauthorized"}, status=401)
@@ -719,6 +728,15 @@ async def h_admin(request):
         return web.json_response({"db_mb": round(sum(os.path.getsize(f) for f in (db.DB_PATH, db.DB_PATH + "-wal", db.DB_PATH + "-shm") if os.path.exists(f)) / 1048576, 1),
                                   "img": du(images.IMG_DIR) if os.path.isdir(images.IMG_DIR) else {"mb": 0, "files": 0},
                                   "free_mb": round(st.f_bavail * st.f_frsize / 1048576, 1), "total_mb": round(st.f_blocks * st.f_frsize / 1048576, 1)})
+    if act == "set":                      # runtime settings: the Plink coin address (`ca`) and friends, no redeploy
+        key = str(body.get("key") or "")
+        if key not in ("ca",):
+            return web.json_response({"error": "unknown key"}, status=400)
+        val = _norm_addr(body.get("value")) if key == "ca" else str(body.get("value") or "")
+        if key == "ca" and not val:
+            return web.json_response({"error": "bad address"}, status=400)
+        db.set_progress(C, key, val); C.commit()
+        return web.json_response({"ok": True, key: val})
     if act == "ban":
         w = _norm_addr(body.get("wallet"))
         x("INSERT OR REPLACE INTO bans(wallet,room,by_wallet,ts) VALUES(?,'*','admin',?)", (w, int(time.time())))
@@ -751,7 +769,8 @@ def _asset_ver(name: str) -> str:
 
 async def h_index(request):
     html = (FRONTEND / "index.html").read_text()
-    html = html.replace("</head>", f"<script>window.CFG={json.dumps({'privyAppId': PRIVY_APP_ID, 'site': SITE_NAME})};</script></head>", 1)
+    ca = db.get_progress(C, "ca") or ""
+    html = html.replace("</head>", f"<script>window.CFG={json.dumps({'privyAppId': PRIVY_APP_ID, 'site': SITE_NAME, 'ca': ca})};</script></head>", 1)
     # browsers heuristically cache un-headed static files for days; version the stylesheet and
     # wordmark so a palette change lands on the next load instead of after a hard refresh
     origin = f"{request.scheme}://{request.host}"
@@ -808,6 +827,7 @@ def make_app() -> web.Application:
     r.add_post("/api/lk/publisher", h_lk_publisher)
     r.add_get("/api/stream/creds", h_stream_creds)
     r.add_post("/api/admin", h_admin)
+    r.add_get("/api/fees", h_fees)
     r.add_get("/ws", h_ws)
     r.add_get("/img/{addr}", h_img)
     r.add_static("/assets", FRONTEND / "assets")
@@ -816,6 +836,7 @@ def make_app() -> web.Application:
         app["tasks"] = [asyncio.create_task(live.run(on_launch)), asyncio.create_task(poll_stream_status(app)), asyncio.create_task(track_head()), asyncio.create_task(checkpoint_wal())]
         if (os.environ.get("BACKFILL") or "1") == "1":
             threading.Thread(target=_backfill_thread, daemon=True).start()
+        engine.start()
 
     async def on_stop(app):
         for t in app.get("tasks", []):
