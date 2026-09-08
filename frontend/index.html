@@ -22,7 +22,11 @@
   .nav-inner { max-width:1080px; }
   .nav-product-links { gap:2px; }
   .nav-product-link { font-size:14px; display:inline-flex; align-items:center; gap:8px; }
-  .nav-product-link.is-active { background:var(--bg-white); box-shadow:0 1px 3px #11111114; }
+  .nav-product-link.is-active { background:transparent; box-shadow:none; color:var(--text-primary); }
+  .nav-product-indicator { top:3px; height:calc(100% - 6px); width:0; opacity:0; background:rgba(255,255,255,.1) !important; border:1px solid rgba(255,255,255,.14); box-shadow:inset 0 1px 0 rgba(255,255,255,.18), inset 0 -1px 0 rgba(255,255,255,.05), inset 1px 0 2px -1px rgba(255,255,255,.14), inset -1px 0 2px -1px rgba(255,255,255,.14) !important; -webkit-backdrop-filter:blur(10px) saturate(140%); backdrop-filter:blur(10px) saturate(140%); box-sizing:border-box; transform-origin:center; transition:transform .55s cubic-bezier(.22,1,.36,1), width .55s cubic-bezier(.22,1,.36,1), opacity .25s ease; will-change:transform,width; }
+  .nav-product-indicator.is-moving { animation:pill-stretch .55s cubic-bezier(.22,1,.36,1); }
+  @keyframes pill-stretch { 0% { scale:1 1; } 35% { scale:1.08 .9; } 100% { scale:1 1; } }
+  @media (prefers-reduced-motion:reduce) { .nav-product-indicator { transition:none; animation:none !important; } }
   .nav-product-link .live-dot { width:7px; height:7px; border-radius:50%; background:var(--accent-red); box-shadow:0 0 8px var(--accent-red); }
   .nav-connect { min-height:40px; padding:9px 16px; font-size:15px; font-weight:500; border:0; cursor:pointer; }
   .nav-theme { cursor:pointer; display:inline-grid; place-items:center; }
@@ -287,7 +291,7 @@
   <div class="liquid-glass nav-glass"><div class="liquid-glass-content"><div class="nav-inner">
     <div class="nav-left">
       <a class="nav-brand" href="/" data-link><span class="nav-logo-mark">P</span></a>
-      <nav class="nav-product-links">
+      <nav class="nav-product-links" id="nav-tabs"><span class="nav-product-indicator" id="nav-pill"></span>
         <a class="nav-product-link" href="/" data-link id="nav-about">plink</a>
         <a class="nav-product-link" href="/explore" data-link id="nav-home">Explore</a>
         <a class="nav-product-link" href="/live" data-link id="nav-live"><i class="live-dot"></i>Live</a>
@@ -420,12 +424,30 @@
   function go(p) { history.pushState({}, '', p); render(); window.scrollTo(0, 0); }
   addEventListener('popstate', render);
   let cleanup = null;
+  // The tab pill: one glass capsule that swims from tab to tab (a little stretch on the way).
+  let pillAt = null;
+  function movePill() {
+    const pill = $('#nav-pill'), on = document.querySelector('.nav-product-link.is-active');
+    if (!pill) return;
+    if (!on) { pill.style.opacity = '0'; pillAt = null; return; }
+    const x = on.offsetLeft, w = on.offsetWidth;
+    const first = pillAt === null;
+    if (first) pill.style.transition = 'none';
+    pill.style.transform = `translateX(${x}px)`; pill.style.width = w + 'px'; pill.style.opacity = '1';
+    if (first) { pill.getBoundingClientRect(); pill.style.transition = ''; }
+    else if (pillAt !== x) { pill.classList.remove('is-moving'); void pill.offsetWidth; pill.classList.add('is-moving'); }
+    pillAt = x;
+  }
+  addEventListener('resize', () => { pillAt = null; movePill(); });
+  document.fonts?.ready.then(() => { pillAt = null; movePill(); });
+
   function render() {
     if (cleanup) { cleanup(); cleanup = null; }
     const p = location.pathname;
     $('#nav-live').classList.toggle('is-active', p === '/live');
     $('#nav-home').classList.toggle('is-active', p === '/explore' || p === '/search');
     $('#nav-about').classList.toggle('is-active', p === '/');
+    movePill();
     const main = $('#page'); main.className = p.startsWith('/coin/') ? 'bridge-shell token-buy-shell' : 'bridge-shell launchpad-explore-shell';
     if (p.startsWith('/coin/')) return coinPage(p.split('/')[2]);
     if (p === '/search') return explorePage(false, new URLSearchParams(location.search).get('q') || '');
@@ -605,7 +627,7 @@ void main(){
     };
     const frame = () => {
       raf = 0;
-      if (!cv.isConnected) { gl.getExtension('WEBGL_lose_context')?.loseContext(); return; }
+      if (!cv.isConnected) { cv.textDispose?.(); gl.getExtension('WEBGL_lose_context')?.loseContext(); return; }
       if (!visible || !onScreen) return;
       resize();
       const t = now();
@@ -632,6 +654,7 @@ void main(){
   // filter on each overlapping text block, so the letters ride the water.
   function heroRippleText(cv, targets) {
     if (!cv.PERIOD || !('SVGFEDisplacementMapElement' in window)) return;
+    heroRippleText.seq = (heroRippleText.seq || 0) + 1;    // fresh filter ids per visit, so a stale <svg> can never be picked up
     const W = 2 * Math.PI / cv.PERIOD, SCALE = 36, RES = 3, PAD = 32;
     const sm = (a, b, x) => { const k = Math.min(1, Math.max(0, (x - a) / (b - a))); return k * k * (3 - 2 * k); };
     const wave = (px, py, dx, dy, birth, w, t) => {
@@ -648,7 +671,7 @@ void main(){
     const svg = document.createElementNS(svgNS, 'svg');
     svg.setAttribute('width', '0'); svg.setAttribute('height', '0'); svg.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden';
     const items = targets.map((elm, i) => {
-      const id = 'hero-ripple-' + i;
+      const id = `hero-ripple-${heroRippleText.seq}-${i}`;
       const filt = document.createElementNS(svgNS, 'filter');
       filt.setAttribute('id', id); filt.setAttribute('filterUnits', 'userSpaceOnUse'); filt.setAttribute('color-interpolation-filters', 'sRGB');
       const img = document.createElementNS(svgNS, 'feImage');
@@ -663,6 +686,7 @@ void main(){
     document.body.append(svg);
     let last = -1;
     const layout = () => {
+      if (!cv.isConnected) return dispose();               // page was swapped out: never size against detached nodes
       const pr = cv.parentElement.getBoundingClientRect(), cr = cv.getBoundingClientRect();
       const offX = cr.left - pr.left, cw = cr.width || 1, ch = cr.height || 1;
       for (const it of items) {
@@ -680,9 +704,11 @@ void main(){
         if (!it.on) { it.elm.style.filter = `url(#${it.id})`; it.on = true; }
       }
     };
-    new ResizeObserver(layout).observe(cv.parentElement);
+    const ro = new ResizeObserver(layout); ro.observe(cv.parentElement);
     addEventListener('resize', layout);
     document.fonts?.ready.then(layout);
+    const dispose = () => { ro.disconnect(); removeEventListener('resize', layout); svg.remove(); for (const it of items) it.elm.style.filter = ''; cv.textRipple = null; cv.textDispose = null; };
+    cv.textDispose = dispose;
     layout();
     cv.textRipple = (t, drops) => {
       if (t - last < 1 / 30) return; last = t;          // 30 fps is plenty for a paragraph
