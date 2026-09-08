@@ -750,6 +750,20 @@ async def h_admin(request):
         return web.json_response({"db_mb": round(sum(os.path.getsize(f) for f in (db.DB_PATH, db.DB_PATH + "-wal", db.DB_PATH + "-shm") if os.path.exists(f)) / 1048576, 1),
                                   "img": du(images.IMG_DIR) if os.path.isdir(images.IMG_DIR) else {"mb": 0, "files": 0},
                                   "free_mb": round(st.f_bavail * st.f_frsize / 1048576, 1), "total_mb": round(st.f_blocks * st.f_frsize / 1048576, 1)})
+    if act == "stream_info":              # what the site hands the creator vs what LiveKit has
+        a = _norm_addr(body.get("token")); s = _stream_row(a) if a else None
+        return web.json_response({"row": {k: (s[k][:6] + "…" if k == "stream_key" and s[k] else s[k]) for k in ("address", "ingress_id", "rtmps_url", "stream_key", "live", "started_ts", "ended_ts", "wallet")} if s else None})
+    if act == "stream_reset":             # drop the ingress + creds; the next Go live / Stream settings mints fresh ones
+        a = _norm_addr(body.get("token")); s = _stream_row(a) if a else None
+        if not s:
+            return web.json_response({"error": "no stream row"}, status=404)
+        if s["ingress_id"]:
+            try:
+                await asyncio.to_thread(lk.delete_ingress, s["ingress_id"])
+            except Exception as exc:  # noqa: BLE001
+                print(f"[lk] admin reset delete failed: {exc}")
+        x("UPDATE streams SET ingress_id='', rtmps_url='', stream_key='' WHERE address=?", (a,))
+        return web.json_response({"ok": True})
     if act == "set":                      # runtime settings: the Plink coin address (`ca`) and friends, no redeploy
         key = str(body.get("key") or "")
         if key not in ("ca",):
