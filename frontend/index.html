@@ -543,11 +543,18 @@
 uniform vec2 uRes;uniform float uT;uniform vec4 uR[${N}];uniform vec3 uLime;
 float wave(vec2 p,vec4 r,float t){
   float age=t-r.z; if(age<=0.) return 0.;
-  float d=length(p-r.xy)-0.11*age;
-  float lam=0.09+0.012*age;
-  float env=exp(-d*d/(lam*lam*3.0))*smoothstep(-lam*4.0,-lam*1.2,d);
-  float amp=r.w*exp(-age*0.16)/(1.+age*0.32);
-  return amp*env*sin(6.2831853*d/lam);
+  vec2 q=p-r.xy;
+  float th=atan(q.y,q.x);
+  float rr=length(q);
+  // organic ring: the radius breathes around the circle, slowly drifting
+  rr*=1.+0.028*sin(3.*th+t*0.35)+0.02*sin(5.*th-t*0.22+1.7)+0.012*sin(9.*th+t*0.4+0.6);
+  float d=rr-0.13*age;
+  float lam=0.10+0.014*age;
+  float env=exp(-d*d/(lam*lam*2.6))*smoothstep(-lam*3.2,-lam*1.0,d);
+  float amp=r.w*exp(-age*0.24)/(1.+age*0.2);
+  amp*=0.8+0.2*sin(4.*th-t*0.3+2.1);
+  float ph=6.2831853*d/lam;
+  return amp*env*(sin(ph)+0.12*sin(2.*ph+0.8));
 }
 float height(vec2 p,float t){float h=0.;for(int i=0;i<${N};i++)h+=wave(p,uR[i],t);return h;}
 void main(){
@@ -556,14 +563,15 @@ void main(){
   float h=height(p,uT);
   float hx=height(p+vec2(e,0.),uT)-h;
   float hy=height(p+vec2(0.,e),uT)-h;
-  vec3 n=normalize(vec3(-hx/e*0.03,-hy/e*0.03,1.));
+  vec3 n=normalize(vec3(-hx/e*0.045,-hy/e*0.045,1.));
   vec3 L=normalize(vec3(-0.55,0.75,0.5));
   vec3 H=normalize(L+vec3(0.,0.,1.));
   float base=dot(vec3(0.,0.,1.),L);
   float dl=dot(n,L)-base;
-  float spec=pow(max(dot(n,H),0.),160.)-pow(dot(vec3(0.,0.,1.),H),160.);
-  vec3 hi=vec3(1.)*(max(dl,0.)*0.72+max(spec,0.)*0.55)+uLime*max(h,0.)*0.9;
-  float sh=max(-dl,0.)*0.52;
+  float spec=pow(max(dot(n,H),0.),48.)-pow(dot(vec3(0.,0.,1.),H),48.);
+  // lime only: crests glow, the far slope just dims a touch, nothing white or glossy
+  vec3 hi=uLime*(max(spec,0.)*0.85+max(dl,0.)*0.12+max(h,0.)*0.1);
+  float sh=max(-dl,0.)*0.14;
   float a=clamp(sh+max(hi.r,max(hi.g,hi.b)),0.,1.);
   gl_FragColor=vec4(min(hi,vec3(a)),a);
 }`;
@@ -585,7 +593,7 @@ void main(){
       drops[i * 4] = aspect * 0.24;                 // one spring, right of centre
       drops[i * 4 + 1] = 0.04;
       drops[i * 4 + 2] = t;
-      drops[i * 4 + 3] = 0.42 + Math.random() * 0.2;
+      drops[i * 4 + 3] = 0.5 + Math.random() * 0.2;
     };
     const resize = () => {
       const dpr = Math.min(devicePixelRatio || 1, 2);
@@ -600,7 +608,7 @@ void main(){
       if (!visible || !onScreen) return;
       resize();
       const t = now();
-      while (t >= next) { spawn(next); next += 2.6 + Math.random() * 1.2; }
+      while (t >= next) { spawn(next); next += 7.5 + Math.random() * 2; }   // one drop, let it spread, then the next
       gl.uniform2f(uRes, cv.width, cv.height); gl.uniform1f(uT, t); gl.uniform4fv(uR, drops);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
       raf = requestAnimationFrame(frame);
@@ -608,8 +616,8 @@ void main(){
     const kick = () => { if (!raf && visible && onScreen && cv.isConnected) raf = requestAnimationFrame(frame); };
     requestAnimationFrame(() => {
       resize();
-      for (let k = 0; k < 4; k++) spawn(-k * 3.1 - Math.random());   // already rippling on first paint
-      next = 1.5;
+      spawn(-2.5);   // already rippling on first paint
+      next = 5.5;
       new IntersectionObserver(([en]) => { onScreen = en.isIntersecting; kick(); }).observe(cv);
       document.addEventListener('visibilitychange', () => { visible = !document.hidden; kick(); });
       kick();
