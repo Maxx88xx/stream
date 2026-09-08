@@ -1,6 +1,6 @@
 # Palette
 
-Current accent: **mist** `#c3d4bd` (pale green-white lifted from the PONS glass P (mid/light body tone)), applied 2026-09-08.
+Current accent: **sky** `#8fd3ff` (sky blue, chosen 2026-09-08; the previous mist #c3d4bd is one commit back), applied 2026-09-08.
 
 Rollback to the original PONS lime (`#d4fc50`):
 
