@@ -31,6 +31,8 @@ CYCLE = int(os.environ.get("FEE_CYCLE_SEC") or 600)
 MAX_RECIPIENTS = int(os.environ.get("FEE_MAX_RECIPIENTS") or 300)
 MIN_SHARE = float(os.environ.get("FEE_MIN_SHARE") or 0.0005)     # holders below this share are skipped (dust vs gas)
 LAUNCHER = "0xe33e9e479df8802cb0866d5d05258bec4cf62948"
+FEE_ESCROW = (os.environ.get("FEE_ESCROW") or "0xd3AFEB2a57f70eF218Aa82451c51B2fb0416Ac9e")   # PONS v2 fee escrow: creator fees wait here until claimed
+CLAIM_GAS_MIN = 0.001
 ZERO = "0x" + "0" * 40
 TRANSFER_TOPIC = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
 
@@ -45,6 +47,13 @@ CURVE = [
      "inputs": [{"name": "quoteIn", "type": "uint256"}, {"name": "minOut", "type": "uint256"}, {"name": "to", "type": "address"}], "outputs": []},
     {"name": "getReserves", "type": "function", "stateMutability": "view", "inputs": [], "outputs": [{"name": "q", "type": "uint256"}, {"name": "t", "type": "uint256"}]},
     {"name": "graduated", "type": "function", "stateMutability": "view", "inputs": [], "outputs": [{"name": "", "type": "bool"}]},
+]
+
+ESCROW = [
+    {"name": "balanceOf", "type": "function", "stateMutability": "view", "inputs": [{"name": "a", "type": "address"}], "outputs": [{"name": "", "type": "uint256"}]},
+    {"name": "balanceOfToken", "type": "function", "stateMutability": "view", "inputs": [{"name": "a", "type": "address"}, {"name": "t", "type": "address"}], "outputs": [{"name": "", "type": "uint256"}]},
+    {"name": "claim", "type": "function", "stateMutability": "nonpayable", "inputs": [{"name": "amount", "type": "uint256"}], "outputs": []},
+    {"name": "claimToken", "type": "function", "stateMutability": "nonpayable", "inputs": [{"name": "t", "type": "address"}, {"name": "amount", "type": "uint256"}], "outputs": []},
 ]
 
 SCHEMA = """
@@ -181,6 +190,16 @@ def cycle(c) -> None:
     quote = (main["pair_token"] or ZERO).lower()
     native = quote == ZERO
     head = w3.eth.block_number
+
+    # 0. claim what PONS holds for us in the fee escrow (needs a little ETH for gas)
+    esc = w3.eth.contract(Web3.to_checksum_address(FEE_ESCROW), abi=ESCROW)
+    claimable = esc.functions.balanceOf(me).call() if native else esc.functions.balanceOfToken(me, Web3.to_checksum_address(quote)).call()
+    if claimable > 0:
+        if w3.eth.get_balance(me) < CLAIM_GAS_MIN * 1e18:
+            _log(f"claimable {claimable / 1e18:.6f} but no ETH for gas"); return
+        fn = esc.functions.claim(claimable) if native else esc.functions.claimToken(Web3.to_checksum_address(quote), claimable)
+        txh = _send(w3, acct, fn.build_transaction({"from": me}))
+        _log(f"claimed {claimable / (10 ** (18 if native else chain.decimals(quote))):.6f} from escrow tx {txh}")
 
     # 1. fees = balance delta, fail-closed
     if native:
