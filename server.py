@@ -754,7 +754,9 @@ async def h_index(request):
     html = html.replace("</head>", f"<script>window.CFG={json.dumps({'privyAppId': PRIVY_APP_ID, 'site': SITE_NAME})};</script></head>", 1)
     # browsers heuristically cache un-headed static files for days; version the stylesheet and
     # wordmark so a palette change lands on the next load instead of after a hard refresh
-    for name in ("pons.css", "wordmark.png"):
+    origin = f"{request.scheme}://{request.host}"
+    html = html.replace('content="/assets/og.png"', f'content="{origin}/assets/og.png"')
+    for name in ("pons.css", "wordmark.png", "icon-32.png", "icon-192.png", "icon-180.png"):
         html = html.replace(f"/assets/{name}\"", f"/assets/{name}?v={_asset_ver(name)}\"")
     return web.Response(text=html, content_type="text/html", headers=NO_CACHE)
 

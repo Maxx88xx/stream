@@ -1,11 +1,13 @@
-# stream (provisional name)
+# Plink
 
-Livestreams for PONS coins on Robinhood Chain — pump.fun-style live page for any coin launched on PONS.
-The coin's deployer wallet signs in (personal_sign, no gas) and goes live from the browser (WebRTC/WHIP) or OBS (RTMPS key).
-Viewers get a Cloudflare Stream player, live chat, and a market-cap candle chart built from the bonding-curve trades.
+Livestream PONS coins in seconds. Every coin launched on PONS (Robinhood Chain) gets a page with the creator on camera,
+the market-cap chart underneath and a wallet-signed chat. Only the coin's deployer wallet can go live (Privy sign-in,
+one signed message, no gas); viewers need nothing. Broadcast from the browser (WebRTC) or OBS (RTMP key), playback is
+sub-second via LiveKit.
 
-- `indexer/` — catalog of every PONS launch straight from the chain (public RPC for logs, Alchemy for multicall/batch/WSS), SQLite + FTS5 search by name.
-- `server.py` — aiohttp app: auth, catalog API, Cloudflare live inputs, chat WebSocket, candles, image cache.
-- `frontend/` — single-page UI.
+- Catalog of all PONS coins, indexed from chain, new launches appear instantly (Alchemy WSS).
+- Chat moderation like pump.fun: dev bans/unbans and appoints mods, holders-only mode.
+- No buying or selling here; every coin page links to PONS.
 
-Env: `ALCHEMY_KEY`, `CF_ACCOUNT_ID`, `CF_API_TOKEN`, `SESSION_SECRET`, `ADMIN_SECRET`, `DATA_DIR` (volume, default `/data`), optional `SITE_NAME`, `PRIVY_APP_ID`, `BACKFILL=0`.
+Run locally: `.venv/bin/python server.py` (see `.claude/launch.json`). Deploy: Railway project `stream`, `railway up -d`.
+Palette notes and rollback: `PALETTE.md`. Colour catalogue for the accent: `/preview`.
