@@ -297,6 +297,14 @@ async def h_stream_start(request):
                 x("INSERT OR IGNORE INTO streams(address,input_uid,rtmps_url,stream_key,whip_url,hls_url,whep_url,title,wallet,created_ts) VALUES(?,?,?,?,?,?,?,?,?,?)",
                   (addr, "", "", "", "", "", "", title, w, int(time.time())))
                 s = _stream_row(addr)
+            if mode == "rtmp" and s["ingress_id"]:
+                # the slot may have been reclaimed (cap cleanup, manual delete): a dead id would leave the creator with a dead key
+                try:
+                    alive = {i.get("ingress_id") for i in await asyncio.to_thread(lk.list_ingress)}
+                    if s["ingress_id"] not in alive:
+                        x("UPDATE streams SET ingress_id='', rtmps_url='', stream_key='' WHERE address=?", (addr,)); s = _stream_row(addr)
+                except Exception as exc:  # noqa: BLE001
+                    print(f"[lk] list_ingress failed: {exc}")
             if mode == "rtmp" and not s["ingress_id"]:
                 try:
                     ing = await asyncio.to_thread(lk.create_ingress, addr, f"{t['symbol']} {t['name']}")
