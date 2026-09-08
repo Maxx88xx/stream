@@ -123,7 +123,7 @@
   /* landing + legal + footer */
   .land-hero { padding:34px 32px 32px; position:relative; overflow:hidden; }
   .land-hero > * { position:relative; z-index:1; }
-  .land-ripple { position:absolute; z-index:0; top:0; right:0; width:64%; height:100%; display:block; pointer-events:none; -webkit-mask-image:linear-gradient(90deg, transparent, #000 38%); mask-image:linear-gradient(90deg, transparent, #000 38%); }
+  .land-ripple { position:absolute; z-index:0; top:0; right:0; width:64%; height:100%; display:block; opacity:0; transition:opacity 1.6s ease; pointer-events:none; -webkit-mask-image:linear-gradient(90deg, transparent, #000 38%); mask-image:linear-gradient(90deg, transparent, #000 38%); }
   @media (max-width:720px) { .land-ripple { width:100%; -webkit-mask-image:linear-gradient(90deg, transparent, #000 60%); mask-image:linear-gradient(90deg, transparent, #000 60%); opacity:.7; } }
   .land-kicker { display:inline-block; justify-self:start; width:max-content; background:var(--lime-soft, #1c2610); color:var(--accent); border-radius:999px; padding:5px 12px; font-size:12px; margin-bottom:16px; }
   .land-hero h1 { margin:0 0 12px; font-size:44px; line-height:1.05; font-weight:500; letter-spacing:-.02em; }
@@ -529,49 +529,46 @@
 
   // ---- Landing ----
 
-  // Hero backdrop: rain-drop ripples in flat liquid glass. Analytic wave packets
-  // summed in a fragment shader, shaded as a refracting surface: thin rim light
-  // from the top-left, soft shadow on the far slope, faint lime under the crests.
+  // Hero backdrop: a drop on liquid glass. One drop every PERIOD seconds from the
+  // same spring, the rings are wide, soft bumps (no ribs) shaded as a smooth
+  // refracting surface with lime light only. Every time term is a multiple of
+  // 2π/PERIOD, so the whole thing is a true loop; the canvas fades in over the
+  // running loop instead of starting from flat water.
   function heroRipples() {
     const cv = el('canvas', { class: 'land-ripple', 'aria-hidden': 'true' });
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) return cv;
     const gl = cv.getContext('webgl', { alpha: true, antialias: false, premultipliedAlpha: true, depth: false, stencil: false, powerPreference: 'low-power' });
     if (!gl) return cv;
-    const N = 6;
+    const PERIOD = 8, N = 3;
     const VS = 'attribute vec2 a;void main(){gl_Position=vec4(a,0.,1.);}';
     const FS = `precision highp float;
 uniform vec2 uRes;uniform float uT;uniform vec4 uR[${N}];uniform vec3 uLime;
+const float W=6.2831853/${PERIOD.toFixed(1)};
 float wave(vec2 p,vec4 r,float t){
   float age=t-r.z; if(age<=0.) return 0.;
   vec2 q=p-r.xy;
   float th=atan(q.y,q.x);
-  float rr=length(q);
-  // organic ring: the radius breathes around the circle, slowly drifting
-  rr*=1.+0.028*sin(3.*th+t*0.35)+0.02*sin(5.*th-t*0.22+1.7)+0.012*sin(9.*th+t*0.4+0.6);
-  float d=rr-0.13*age;
-  float lam=0.10+0.014*age;
-  float env=exp(-d*d/(lam*lam*2.6))*smoothstep(-lam*3.2,-lam*1.0,d);
-  float amp=r.w*exp(-age*0.24)/(1.+age*0.2);
-  amp*=0.8+0.2*sin(4.*th-t*0.3+2.1);
-  float ph=6.2831853*d/lam;
-  return amp*env*(sin(ph)+0.12*sin(2.*ph+0.8));
+  float rr=length(q)*(1.+0.014*sin(3.*th+W*t)+0.009*sin(5.*th-2.*W*t+1.7));
+  float d=rr-0.12*age;
+  float lam=0.17+0.02*age;
+  float env=exp(-d*d/(lam*lam*1.1))*smoothstep(-lam*2.4,-lam*0.6,d);
+  float amp=r.w*smoothstep(0.,0.9,age)*exp(-age*0.2)/(1.+age*0.22);
+  amp*=0.9+0.1*sin(2.*th+W*t+1.2);
+  return amp*env*sin(6.2831853*d/lam);
 }
 float height(vec2 p,float t){float h=0.;for(int i=0;i<${N};i++)h+=wave(p,uR[i],t);return h;}
 void main(){
   vec2 p=(gl_FragCoord.xy-0.5*uRes)/uRes.y;
-  float e=1.2/uRes.y;
+  float e=2.0/uRes.y;
   float h=height(p,uT);
   float hx=height(p+vec2(e,0.),uT)-h;
   float hy=height(p+vec2(0.,e),uT)-h;
-  vec3 n=normalize(vec3(-hx/e*0.045,-hy/e*0.045,1.));
-  vec3 L=normalize(vec3(-0.55,0.75,0.5));
-  vec3 H=normalize(L+vec3(0.,0.,1.));
-  float base=dot(vec3(0.,0.,1.),L);
-  float dl=dot(n,L)-base;
-  float spec=pow(max(dot(n,H),0.),48.)-pow(dot(vec3(0.,0.,1.),H),48.);
-  // lime only: crests glow, the far slope just dims a touch, nothing white or glossy
-  vec3 hi=uLime*(max(spec,0.)*0.85+max(dl,0.)*0.12+max(h,0.)*0.1);
-  float sh=max(-dl,0.)*0.14;
+  vec3 n=normalize(vec3(-hx/e*0.02,-hy/e*0.02,1.));
+  vec3 L=normalize(vec3(-0.5,0.7,0.6));
+  float dl=dot(n,L)-dot(vec3(0.,0.,1.),L);
+  // soft glass: lit slopes take a broad lime wash, crests hold a little light, far slopes dim gently
+  vec3 hi=uLime*(max(dl,0.)*0.9+max(h,0.)*0.55);
+  float sh=max(-dl,0.)*0.35;
   float a=clamp(sh+max(hi.r,max(hi.g,hi.b)),0.,1.);
   gl_FragColor=vec4(min(hi,vec3(a)),a);
 }`;
@@ -585,22 +582,16 @@ void main(){
     const uRes = gl.getUniformLocation(prog, 'uRes'), uT = gl.getUniformLocation(prog, 'uT'), uR = gl.getUniformLocation(prog, 'uR');
     gl.uniform3f(gl.getUniformLocation(prog, 'uLime'), 0.83, 0.99, 0.31);
     const drops = new Float32Array(N * 4);
-    let aspect = 1, next = 0, slot = 0, raf = 0, visible = true, onScreen = true;
-    const t0 = performance.now();
+    let aspect = 1, raf = 0, visible = true, onScreen = true, shown = false;
+    const t0 = performance.now() + PERIOD * 1000 * 0.55;      // join the loop mid-way, not at a drop
     const now = () => (performance.now() - t0) / 1000;
-    const spawn = (t) => {
-      const i = slot++ % N;
-      drops[i * 4] = aspect * 0.24;                 // one spring, right of centre
-      drops[i * 4 + 1] = 0.04;
-      drops[i * 4 + 2] = t;
-      drops[i * 4 + 3] = 0.5 + Math.random() * 0.2;
-    };
+    const place = () => { for (let i = 0; i < N; i++) { drops[i * 4] = aspect * 0.24; drops[i * 4 + 1] = 0.04; drops[i * 4 + 3] = 0.55; } };
     const resize = () => {
       const dpr = Math.min(devicePixelRatio || 1, 2);
       const w = Math.round(cv.clientWidth * dpr), hh = Math.round(cv.clientHeight * dpr);
       if (!w || !hh) return;
       if (cv.width !== w || cv.height !== hh) { cv.width = w; cv.height = hh; gl.viewport(0, 0, w, hh); }
-      aspect = w / hh;
+      aspect = w / hh; place();
     };
     const frame = () => {
       raf = 0;
@@ -608,16 +599,15 @@ void main(){
       if (!visible || !onScreen) return;
       resize();
       const t = now();
-      while (t >= next) { spawn(next); next += 7.5 + Math.random() * 2; }   // one drop, let it spread, then the next
+      const k = Math.floor(t / PERIOD);                 // births at k·PERIOD, deterministic → loops
+      for (let i = 0; i < N; i++) drops[i * 4 + 2] = (k - i) * PERIOD;
       gl.uniform2f(uRes, cv.width, cv.height); gl.uniform1f(uT, t); gl.uniform4fv(uR, drops);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
+      if (!shown) { shown = true; requestAnimationFrame(() => { cv.style.opacity = '1'; }); }
       raf = requestAnimationFrame(frame);
     };
     const kick = () => { if (!raf && visible && onScreen && cv.isConnected) raf = requestAnimationFrame(frame); };
     requestAnimationFrame(() => {
-      resize();
-      spawn(-2.5);   // already rippling on first paint
-      next = 5.5;
       new IntersectionObserver(([en]) => { onScreen = en.isIntersecting; kick(); }).observe(cv);
       document.addEventListener('visibilitychange', () => { visible = !document.hidden; kick(); });
       kick();
