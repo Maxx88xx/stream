@@ -542,7 +542,7 @@
     const PERIOD = 8, N = 3;
     const VS = 'attribute vec2 a;void main(){gl_Position=vec4(a,0.,1.);}';
     const FS = `precision highp float;
-uniform vec2 uRes;uniform float uT;uniform vec4 uR[${N}];uniform vec3 uLime;
+uniform vec2 uRes;uniform float uT;uniform vec4 uR[${N}];uniform vec3 uLime;uniform vec4 uPanel;
 const float W=6.2831853/${PERIOD.toFixed(1)};
 float wave(vec2 p,vec4 r,float t){
   float age=t-r.z; if(age<=0.) return 0.;
@@ -557,20 +557,49 @@ float wave(vec2 p,vec4 r,float t){
   return amp*env*sin(6.2831853*d/lam);
 }
 float height(vec2 p,float t){float h=0.;for(int i=0;i<${N};i++)h+=wave(p,uR[i],t);return h;}
+// The panel's own CSS backdrop, rebuilt here so the glass has something to refract.
+// c = panel-space pixels (y down).
+vec3 bg(vec2 c){
+  vec2 W=uPanel.xy;
+  float L=W.x*0.5736+W.y*0.8192;
+  float t=((c.x-W.x*0.5)*0.5736+(c.y-W.y*0.5)*0.8192)/L+0.5;
+  vec3 col=mix(vec3(0.094,0.125,0.059),vec3(0.086),clamp(t/0.64,0.,1.));
+  float rr=length(c-vec2(0.14*W.x,0.))/length(vec2(0.86*W.x,W.y));
+  return mix(col,uLime,0.18*(1.-clamp(rr/0.52,0.,1.)));
+}
+// A hidden soft light field behind the glass: invisible on flat water, shows up
+// only where the surface bends the view (differential refraction).
+vec3 env(vec2 c){
+  vec2 u=c/uPanel.y;
+  float g=0.5+0.5*sin(u.x*2.3+0.4)*sin(u.y*2.9-0.9);
+  return uLime*g*0.34;
+}
 void main(){
   vec2 p=(gl_FragCoord.xy-0.5*uRes)/uRes.y;
   float e=2.0/uRes.y;
   float h=height(p,uT);
   float hx=height(p+vec2(e,0.),uT)-h;
   float hy=height(p+vec2(0.,e),uT)-h;
-  vec3 n=normalize(vec3(-hx/e*0.02,-hy/e*0.02,1.));
+  vec3 n=normalize(vec3(-hx/e*0.1,-hy/e*0.1,1.));
+  vec2 css=vec2(gl_FragCoord.x+uPanel.z,(uRes.y-gl_FragCoord.y)+uPanel.w);
+  // refraction: bend the view by the surface slope, a touch more for blue than red
+  vec2 off=n.xy*vec2(1.,-1.)*uRes.y*0.2;
+  vec3 tr;
+  tr.r=bg(css+off*0.92).r+env(css+off*0.92).r-env(css).r;
+  tr.g=bg(css+off).g+env(css+off).g-env(css).g;
+  tr.b=bg(css+off*1.08).b+env(css+off*1.08).b-env(css).b;
+  // reflection: studio key light from the top-left plus a soft sky band, weighted by fresnel
+  vec3 R=2.*n.z*n-vec3(0.,0.,1.);
+  vec3 key=normalize(vec3(-0.5,0.7,0.6));
+  float kd=max(dot(R,key),0.);
+  float F=0.03+0.97*pow(1.-n.z,2.2);
+  vec3 refl=vec3(1.)*(pow(kd,70.)*1.2+pow(kd,7.)*0.4)+mix(vec3(1.),uLime,0.5)*smoothstep(0.05,0.8,R.y)*0.45;
+  vec3 col=tr+refl*F*4.5+uLime*max(h,0.)*0.3;
+  // shade the slopes that turn away from the key light, like glass thickness
   vec3 L=normalize(vec3(-0.5,0.7,0.6));
-  float dl=dot(n,L)-dot(vec3(0.,0.,1.),L);
-  // soft glass: lit slopes take a broad lime wash, crests hold a little light, far slopes dim gently
-  vec3 hi=uLime*(max(dl,0.)*0.9+max(h,0.)*0.55);
-  float sh=max(-dl,0.)*0.35;
-  float a=clamp(sh+max(hi.r,max(hi.g,hi.b)),0.,1.);
-  gl_FragColor=vec4(min(hi,vec3(a)),a);
+  col*=1.-max(dot(vec3(0.,0.,1.),L)-dot(n,L),0.)*0.6;
+  if(css.y<uPanel.w+1.5) col+=0.12;   // the panel's own 1px top highlight
+  gl_FragColor=vec4(col,1.);
 }`;
     const sh = (t, s) => { const o = gl.createShader(t); gl.shaderSource(o, s); gl.compileShader(o); return o; };
     const prog = gl.createProgram(); gl.attachShader(prog, sh(gl.VERTEX_SHADER, VS)); gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, FS)); gl.linkProgram(prog);
@@ -579,7 +608,7 @@ void main(){
     gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
     const loc = gl.getAttribLocation(prog, 'a'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
-    const uRes = gl.getUniformLocation(prog, 'uRes'), uT = gl.getUniformLocation(prog, 'uT'), uR = gl.getUniformLocation(prog, 'uR');
+    const uRes = gl.getUniformLocation(prog, 'uRes'), uT = gl.getUniformLocation(prog, 'uT'), uR = gl.getUniformLocation(prog, 'uR'), uPanel = gl.getUniformLocation(prog, 'uPanel');
     gl.uniform3f(gl.getUniformLocation(prog, 'uLime'), 0.83, 0.99, 0.31);
     const drops = new Float32Array(N * 4);
     let aspect = 1, raf = 0, visible = true, onScreen = true, shown = false;
@@ -592,6 +621,8 @@ void main(){
       if (!w || !hh) return;
       if (cv.width !== w || cv.height !== hh) { cv.width = w; cv.height = hh; gl.viewport(0, 0, w, hh); }
       aspect = w / hh; place();
+      const pr = cv.parentElement.getBoundingClientRect(), cr = cv.getBoundingClientRect();
+      gl.uniform4f(uPanel, pr.width * dpr, pr.height * dpr, (cr.left - pr.left) * dpr, (cr.top - pr.top) * dpr);
     };
     const frame = () => {
       raf = 0;
