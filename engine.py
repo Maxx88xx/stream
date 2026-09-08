@@ -265,18 +265,28 @@ def cycle(c) -> None:
         shares = holder_shares(c, w3, main, excluded)
         if not shares:
             raise RuntimeError("no eligible holders")
-        paid = 0
-        for w, sh in shares:
-            amt = int(bought * sh)
+        paid, failed = 0, 0
+        left = bought
+        for k, (w, sh) in enumerate(shares):
+            # integer split: the last recipient takes whatever is left, so rounding can never exceed what we hold
+            amt = left if k == len(shares) - 1 else int(bought * sh)
+            amt = min(amt, left, tok.functions.balanceOf(me).call())
             if amt <= 0:
                 continue
-            h = _send(w3, acct, tok.functions.transfer(Web3.to_checksum_address(w), amt).build_transaction({"from": me}))
+            try:
+                h = _send(w3, acct, tok.functions.transfer(Web3.to_checksum_address(w), amt).build_transaction({"from": me}))
+            except Exception as exc:  # noqa: BLE001
+                failed += 1
+                _log(f"payout to {w} failed: {str(exc)[:120]}")
+                continue
+            left -= amt
             c.execute("INSERT INTO fee_payouts(run_id,wallet,amount,tx,ts) VALUES(?,?,?,?,?)", (run_id, w, str(amt), h, int(time.time())))
             c.commit()
             paid += 1
-        c.execute("UPDATE fee_runs SET status='done', recipients=? WHERE id=?", (paid, run_id))
+        status = "done" if paid and not failed else ("partial" if paid else "error")
+        c.execute("UPDATE fee_runs SET status=?, recipients=?, note=? WHERE id=?", (status, paid, f"{failed} payouts failed" if failed else "", run_id))
         c.commit()
-        _log(f"paid {paid} holders")
+        _log(f"paid {paid} holders, {failed} failed")
     except Exception as e:  # noqa: BLE001
         c.execute("UPDATE fee_runs SET status='error', note=? WHERE id=?", (str(e)[:300], run_id))
         c.commit()
@@ -292,7 +302,12 @@ def cycle(c) -> None:
 
 def summary(c) -> dict:
     runs = [dict(r) for r in c.execute("SELECT id,ts,status,note,quote,spent,target,target_symbol,bought,recipients,tx_buy FROM fee_runs ORDER BY id DESC LIMIT 12")]
-    tot = c.execute("SELECT COUNT(*) AS n, COALESCE(SUM(recipients),0) AS r FROM fee_runs WHERE status='done'").fetchone()
+    # a drop counts once it bought something; recipients come from the actual payout rows (partial runs included)
+    tot = c.execute("SELECT COUNT(*) AS n FROM fee_runs WHERE CAST(bought AS REAL) > 0").fetchone()
+    paid = c.execute("SELECT COUNT(*) AS r FROM fee_payouts").fetchone()
+    for r in runs:
+        r["paid"] = c.execute("SELECT COUNT(*) AS n FROM fee_payouts WHERE run_id=?", (r["id"],)).fetchone()["n"]
+    tot = {"n": tot["n"], "r": paid["r"]}
     main = main_coin(c)
     return {"enabled": enabled(), "wallet": wallet_address(), "main": main["address"] if main else "", "main_symbol": main["symbol"] if main else "",
             "runs": runs, "done": tot["n"], "recipients": tot["r"]}

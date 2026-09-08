@@ -948,7 +948,7 @@ void main(){
       sLive.b.textContent = nf(rows.length); sWatch.b.textContent = nf(rows.reduce((a, r) => a + (r.viewers || 0), 0));
     };
     swr('/api/streams', paintLive).catch(() => {});
-    api('/api/fees').then((f) => { const last = (f.runs || []).find(r => r.status === 'done'); feePick.textContent = last ? '$' + (last.target_symbol || '…') : 'Coming up'; feeRuns.textContent = nf(f.done); feePaid.textContent = nf(f.recipients); }).catch(() => { feePick.textContent = 'Coming up'; feeRuns.textContent = '0'; feePaid.textContent = '0'; });
+    api('/api/fees').then((f) => { const last = (f.runs || []).find(r => Number(r.bought) > 0); feePick.textContent = last ? '$' + (last.target_symbol || '…') : 'Coming up'; feeRuns.textContent = nf(f.done); feePaid.textContent = nf(f.recipients); }).catch(() => { feePick.textContent = 'Coming up'; feeRuns.textContent = '0'; feePaid.textContent = '0'; });
     swr('/api/recent?limit=4', ({ rows, stats }) => { sCoins.b.textContent = nf(stats.tokens); freshGrid.innerHTML = ''; rows.slice(0, 4).forEach(r => freshGrid.append(el('li', {}, card(r)))); }).catch(() => {});
     const onLive = () => swr('/api/streams', paintLive).catch(() => {});
     on('live', onLive); cleanup = () => off('live', onLive);
