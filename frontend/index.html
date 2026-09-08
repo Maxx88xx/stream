@@ -121,7 +121,10 @@
   .stream-live .launch-card-viewers { font-size:13px; padding:5px 10px; }
   @media (max-width:900px) { .stream-layout { grid-template-columns:1fr; } .stream-layout .chat-card { position:static; height:60vh; } .stream-meta { flex-wrap:wrap; } }
   /* landing + legal + footer */
-  .land-hero { padding:34px 32px 32px; }
+  .land-hero { padding:34px 32px 32px; position:relative; overflow:hidden; }
+  .land-hero > * { position:relative; z-index:1; }
+  .land-ripple { position:absolute; z-index:0; top:0; right:0; bottom:0; width:64%; pointer-events:none; -webkit-mask-image:linear-gradient(90deg, transparent, #000 38%); mask-image:linear-gradient(90deg, transparent, #000 38%); }
+  @media (max-width:720px) { .land-ripple { width:100%; -webkit-mask-image:linear-gradient(90deg, transparent, #000 60%); mask-image:linear-gradient(90deg, transparent, #000 60%); opacity:.7; } }
   .land-kicker { display:inline-block; justify-self:start; width:max-content; background:var(--lime-soft, #1c2610); color:var(--accent); border-radius:999px; padding:5px 12px; font-size:12px; margin-bottom:16px; }
   .land-hero h1 { margin:0 0 12px; font-size:44px; line-height:1.05; font-weight:500; letter-spacing:-.02em; }
   .land-lead { color:var(--text-muted); font-size:17px; line-height:1.55; max-width:62ch; margin:0 0 24px; }
@@ -525,6 +528,94 @@
   }
 
   // ---- Landing ----
+
+  // Hero backdrop: rain-drop ripples in flat liquid glass. Analytic wave packets
+  // summed in a fragment shader, shaded as a refracting surface: thin rim light
+  // from the top-left, soft shadow on the far slope, faint lime under the crests.
+  function heroRipples() {
+    const cv = el('canvas', { class: 'land-ripple', 'aria-hidden': 'true' });
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return cv;
+    const gl = cv.getContext('webgl', { alpha: true, antialias: false, premultipliedAlpha: true, depth: false, stencil: false, powerPreference: 'low-power' });
+    if (!gl) return cv;
+    const N = 10;
+    const VS = 'attribute vec2 a;void main(){gl_Position=vec4(a,0.,1.);}';
+    const FS = `precision highp float;
+uniform vec2 uRes;uniform float uT;uniform vec4 uR[${N}];uniform vec3 uLime;
+float wave(vec2 p,vec4 r,float t){
+  float age=t-r.z; if(age<=0.) return 0.;
+  float d=length(p-r.xy)-0.22*age;
+  float lam=0.042+0.011*age;
+  float env=exp(-d*d/(lam*lam*3.2))*smoothstep(-lam*4.5,-lam*1.5,d);
+  float amp=r.w*exp(-age*0.3)/(1.+age*0.55);
+  return amp*env*sin(6.2831853*d/lam);
+}
+float height(vec2 p,float t){float h=0.;for(int i=0;i<${N};i++)h+=wave(p,uR[i],t);return h;}
+void main(){
+  vec2 p=(gl_FragCoord.xy-0.5*uRes)/uRes.y;
+  float e=1.2/uRes.y;
+  float h=height(p,uT);
+  float hx=height(p+vec2(e,0.),uT)-h;
+  float hy=height(p+vec2(0.,e),uT)-h;
+  vec3 n=normalize(vec3(-hx/e*0.026,-hy/e*0.026,1.));
+  vec3 L=normalize(vec3(-0.55,0.75,0.5));
+  vec3 H=normalize(L+vec3(0.,0.,1.));
+  float base=dot(vec3(0.,0.,1.),L);
+  float dl=dot(n,L)-base;
+  float spec=pow(max(dot(n,H),0.),160.)-pow(dot(vec3(0.,0.,1.),H),160.);
+  vec3 hi=vec3(1.)*(max(dl,0.)*0.72+max(spec,0.)*0.55)+uLime*max(h,0.)*0.9;
+  float sh=max(-dl,0.)*0.52;
+  float a=clamp(sh+max(hi.r,max(hi.g,hi.b)),0.,1.);
+  gl_FragColor=vec4(min(hi,vec3(a)),a);
+}`;
+    const sh = (t, s) => { const o = gl.createShader(t); gl.shaderSource(o, s); gl.compileShader(o); return o; };
+    const prog = gl.createProgram(); gl.attachShader(prog, sh(gl.VERTEX_SHADER, VS)); gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, FS)); gl.linkProgram(prog);
+    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) return cv;
+    gl.useProgram(prog);
+    gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+    const loc = gl.getAttribLocation(prog, 'a'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+    const uRes = gl.getUniformLocation(prog, 'uRes'), uT = gl.getUniformLocation(prog, 'uT'), uR = gl.getUniformLocation(prog, 'uR');
+    gl.uniform3f(gl.getUniformLocation(prog, 'uLime'), 0.83, 0.99, 0.31);
+    const drops = new Float32Array(N * 4);
+    let aspect = 1, next = 0, slot = 0, raf = 0, visible = true, onScreen = true;
+    const t0 = performance.now();
+    const now = () => (performance.now() - t0) / 1000;
+    const spawn = (t) => {
+      const i = slot++ % N;
+      drops[i * 4] = -aspect * 0.42 + Math.random() * aspect * 0.92;
+      drops[i * 4 + 1] = -0.46 + Math.random() * 0.92;
+      drops[i * 4 + 2] = t;
+      drops[i * 4 + 3] = 0.35 + Math.random() * 0.55;
+    };
+    const resize = () => {
+      const dpr = Math.min(devicePixelRatio || 1, 2);
+      const w = Math.round(cv.clientWidth * dpr), hh = Math.round(cv.clientHeight * dpr);
+      if (!w || !hh) return;
+      if (cv.width !== w || cv.height !== hh) { cv.width = w; cv.height = hh; gl.viewport(0, 0, w, hh); }
+      aspect = w / hh;
+    };
+    const frame = () => {
+      raf = 0;
+      if (!cv.isConnected) { gl.getExtension('WEBGL_lose_context')?.loseContext(); return; }
+      if (!visible || !onScreen) return;
+      resize();
+      const t = now();
+      while (t >= next) { spawn(next); next += 0.9 + Math.random() * 1.4; }
+      gl.uniform2f(uRes, cv.width, cv.height); gl.uniform1f(uT, t); gl.uniform4fv(uR, drops);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+      raf = requestAnimationFrame(frame);
+    };
+    const kick = () => { if (!raf && visible && onScreen && cv.isConnected) raf = requestAnimationFrame(frame); };
+    requestAnimationFrame(() => {
+      resize();
+      for (let k = 0; k < 7; k++) spawn(-k * 1.1 - Math.random());   // already rippling on first paint
+      next = 0.6;
+      new IntersectionObserver(([en]) => { onScreen = en.isIntersecting; kick(); }).observe(cv);
+      document.addEventListener('visibilitychange', () => { visible = !document.hidden; kick(); });
+      kick();
+    });
+    return cv;
+  }
   async function landingPage() {
     const page = $('#page'); page.innerHTML = '';
     const step = (n, title, text) => el('div', { class: 'about-step' }, el('span', { class: 'about-num' }, n), el('h3', {}, title), el('p', {}, text));
@@ -533,6 +624,7 @@
     const liveSec = el('section', { class: 'launch-explore float', style: 'display:none' }, el('header', { class: 'launch-explore-section-head' }, el('div', { class: 'launch-explore-head-main' }, el('div', { class: 'launch-explore-title-row' }, el('h2', {}, 'Live now'), el('a', { class: 'launch-explore-count', href: '/live', 'data-link': '', style: 'padding:0 10px' }, 'All')))), liveGrid);
     page.append(
       el('section', { class: 'launch-explore launch-explore-graduated float land-hero' },
+        heroRipples(),
         el('span', { class: 'land-kicker' }, 'plink'),
         el('h1', {}, 'Coins go live.'),
         el('p', { class: 'land-lead' }, 'Every PONS coin gets a stage. Watch the creator on camera, talk to holders in real time, and follow the chart while it moves — trading is one tap away on PONS.'),
