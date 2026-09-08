@@ -32,14 +32,36 @@
   .nav-connect { min-height:40px; padding:9px 16px; font-size:15px; font-weight:500; border:0; cursor:pointer; }
   .nav-theme { cursor:pointer; display:inline-grid; place-items:center; }
   html:not([data-theme=dark]) .nav-wordmark { background:color-mix(in srgb, var(--accent) 40%, var(--text-primary)); }
-  .preview-grid { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:16px; }
-  .preview-cell { display:grid; gap:8px; }
-  .preview-label { display:flex; align-items:center; gap:8px; font-size:13px; color:var(--text-muted); }
-  .preview-label i { width:12px; height:12px; border-radius:50%; display:inline-block; }
-  .preview-label a { margin-left:auto; color:var(--text-primary); }
-  .preview-cell iframe { width:100%; height:720px; border:1px solid var(--divider); border-radius:24px; background:var(--bg-page); }
-  html[data-embed] .site-nav, html[data-embed] .site-foot { display:none; }
-  @media (max-width:900px) { .preview-grid { grid-template-columns:1fr; } }
+  .pv-h { font-size:14px; letter-spacing:.08em; text-transform:uppercase; color:var(--text-subtle); margin:8px 0 12px; }
+  .pv-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(380px, 1fr)); gap:16px; margin-bottom:28px; }
+  .pv-card { --a:#c3d4bd; position:relative; overflow:hidden; color:#f2f2f2; background:radial-gradient(circle at 14% 0%, color-mix(in srgb, var(--a) 18%, transparent), transparent 52%), linear-gradient(145deg, color-mix(in srgb, var(--a) 10%, #161616), #161616 64%); border:1px solid color-mix(in srgb, var(--a) 32%, transparent); border-radius:24px; padding:20px 22px; display:grid; gap:12px; }
+  .pv-ring { position:absolute; right:-40px; top:-30px; width:240px; height:240px; border-radius:50%; border:24px solid color-mix(in srgb, var(--a) 35%, #fff); opacity:.35; filter:blur(8px); -webkit-mask:radial-gradient(circle, transparent 55%, #000 60%, #000 70%, transparent 76%); mask:radial-gradient(circle, transparent 55%, #000 60%, #000 70%, transparent 76%); pointer-events:none; }
+  .pv-card > *:not(.pv-ring) { position:relative; }
+  .pv-top { display:flex; align-items:center; justify-content:space-between; }
+  .pv-wm { display:block; height:24px; width:calc(24px * 1495 / 542); background:var(--a); -webkit-mask:url("/assets/wordmark.png") center / contain no-repeat; mask:url("/assets/wordmark.png") center / contain no-repeat; }
+  .pv-tabs { display:inline-flex; gap:2px; padding:3px; border-radius:999px; background:#ffffff0f; font-size:12px; color:#f2f2f294; }
+  .pv-tabs span { padding:5px 10px; border-radius:999px; }
+  .pv-tabs .on { background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.14); color:#f2f2f2; }
+  .pv-kick { display:inline-block; width:max-content; background:color-mix(in srgb, var(--a) 12%, #161616); color:var(--a); border-radius:999px; padding:4px 11px; font-size:12px; }
+  .pv-card h2 { margin:0; font-size:28px; font-weight:500; letter-spacing:-.02em; }
+  .pv-card p { margin:0; color:#f2f2f294; font-size:13px; line-height:1.5; max-width:44ch; }
+  .pv-row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+  .pv-btn { background:color-mix(in srgb, var(--a) 78%, transparent); color:#111; border:1px solid rgba(255,255,255,.28); box-shadow:inset 0 1px 0 rgba(255,255,255,.32); border-radius:999px; padding:10px 18px; font-size:14px; font-weight:500; }
+  .pv-ghost { background:#1f1f1f; color:#f2f2f2; border-radius:999px; padding:10px 18px; font-size:14px; font-weight:500; }
+  .pv-live { display:inline-flex; align-items:center; gap:6px; font-size:12px; }
+  .pv-live i { width:7px; height:7px; border-radius:50%; background:var(--a); box-shadow:0 0 8px var(--a); }
+  .pv-name { display:flex; justify-content:space-between; font-size:12px; color:#f2f2f27a; }
+  .pv-name a { color:#f2f2f2; }
+  .pv-light .pv-card { color:#111; background:radial-gradient(circle at 14% 0%, color-mix(in srgb, var(--a) 22%, transparent), transparent 48%), linear-gradient(145deg, color-mix(in srgb, var(--a) 14%, #fff), #fff 62%); border-color:color-mix(in srgb, var(--a) 55%, transparent); box-shadow:0 10px 32px #1111110f; }
+  .pv-light .pv-card p { color:#1111118c; }
+  .pv-light .pv-tabs { background:#1111110d; color:#1111118c; }
+  .pv-light .pv-tabs .on { background:#fff; border-color:#fff; color:#111; box-shadow:0 1px 3px #11111114; }
+  .pv-light .pv-kick { background:color-mix(in srgb, var(--a) 22%, #fff); color:color-mix(in srgb, var(--a) 55%, #111); }
+  .pv-light .pv-wm { background:color-mix(in srgb, var(--a) 45%, #111); }
+  .pv-light .pv-ghost { background:#111; color:#fff; }
+  .pv-light .pv-btn { border-color:#ffffffd1; }
+  .pv-light .pv-ring { border-color:color-mix(in srgb, var(--a) 60%, #111); opacity:.22; }
+  .pv-light .pv-name { color:#1116; } .pv-light .pv-name a { color:#111; }
   .theme-btn { width:40px; height:40px; border-radius:999px; margin-right:8px; }
   .theme-btn .ico-sun { display:none; }
   html[data-theme=dark] .theme-btn .ico-sun { display:block; }
@@ -807,13 +829,22 @@ void main(){
       }
     };
   }
-  // /preview: the real landing rendered in a row of accents, each in its own frame
+  // /preview: a plain catalogue of accent colours, each as a small mock of the hero (dark and light)
   function previewPage() {
     const page = $('#page'); page.innerHTML = '';
-    const P = [['Mint (current)', 'c3d4bd'], ['Sage', 'a9c4a1'], ['Pistachio', 'bfe0a3'], ['Cream lime', 'e3f0b8'], ['Periwinkle', 'a9b8ff'], ['Sky', '8fd3ff'], ['Aqua', '7fe0d0'], ['Lavender', 'c9b4ff'], ['Peach', 'ffb38a'], ['Amber', 'f2c14e'], ['Rose', 'ffb3c7'], ['Bone', 'e6e2d6']];
-    const grid = el('div', { class: 'preview-grid' });
-    for (const [name, hex] of P) grid.append(el('div', { class: 'preview-cell' }, el('div', { class: 'preview-label' }, el('i', { style: 'background:#' + hex }), name, el('span', {}, '#' + hex), el('a', { href: '/?accent=' + hex, target: '_blank', rel: 'noopener' }, 'Open')), el('iframe', { src: '/?accent=' + hex + '&embed=1', loading: 'lazy', title: name })));
-    page.append(grid);
+    const P = [['Mint (current)', '#c3d4bd'], ['Sage', '#a9c4a1'], ['Pistachio', '#bfe0a3'], ['Cream lime', '#e3f0b8'], ['Ice mint', '#c9e6d6'], ['Muted chartreuse', '#d6e39a'], ['Lime (old)', '#d4fc50'],
+      ['Periwinkle', '#a9b8ff'], ['Sky', '#8fd3ff'], ['Aqua', '#7fe0d0'], ['Lavender', '#c9b4ff'], ['Peach', '#ffb38a'], ['Amber', '#f2c14e'], ['Rose', '#ffb3c7'], ['Coral', '#ff8a70'], ['Bone', '#e6e2d6'], ['Silver', '#d4d8dc']];
+    const cardFor = (name, hex) => el('div', { class: 'pv-card', style: '--a:' + hex },
+      el('div', { class: 'pv-ring' }),
+      el('div', { class: 'pv-top' }, el('span', { class: 'pv-wm' }), el('span', { class: 'pv-tabs' }, el('span', { class: 'on' }, 'Plink'), el('span', {}, 'Explore'), el('span', {}, '● Live'))),
+      el('span', { class: 'pv-kick' }, 'Plink'),
+      el('h2', {}, 'Coins go live.'),
+      el('p', {}, 'Every PONS coin gets a stage. Watch the creator on camera, talk to holders in real time.'),
+      el('div', { class: 'pv-row' }, el('span', { class: 'pv-btn' }, 'Go live'), el('span', { class: 'pv-ghost' }, 'Explore coins'), el('span', { class: 'pv-live' }, el('i'), '1,284 watching')),
+      el('div', { class: 'pv-name' }, name + ' · ' + hex, el('a', { href: '/?accent=' + hex.slice(1), target: '_blank', rel: 'noopener' }, 'Open site')));
+    const dark = el('div', { class: 'pv-grid' }), light = el('div', { class: 'pv-grid pv-light' });
+    for (const [n, c] of P) { dark.append(cardFor(n, c)); light.append(cardFor(n, c)); }
+    page.append(el('h2', { class: 'pv-h' }, 'Dark'), dark, el('h2', { class: 'pv-h' }, 'Light'), light);
   }
   async function landingPage() {
     const page = $('#page'); page.innerHTML = '';
