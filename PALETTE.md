@@ -1,6 +1,6 @@
 # Palette
 
-Current accent: **mist** `#cad2ca` (pale green-white lifted from the PONS glass P (mid/light body tone)), applied 2026-09-08.
+Current accent: **mist** `#c3d4bd` (pale green-white lifted from the PONS glass P (mid/light body tone)), applied 2026-09-08.
 
 Rollback to the original PONS lime (`#d4fc50`):
 
