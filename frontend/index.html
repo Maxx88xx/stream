@@ -81,6 +81,7 @@
   .nav-ca-label { font-size:11px; letter-spacing:.08em; padding:2px 7px; border-radius:999px; background:var(--accent); color:#111; font-weight:500; }
   .nav-ca-addr { font-variant-numeric:tabular-nums; }
   @media (max-width:720px) { .nav-ca-addr { display:none; } .nav-ca { padding-right:10px; } }
+  .stream-whois { font-size:12px; color:var(--text-subtle); white-space:nowrap; }
   .theme-btn { width:40px; height:40px; border-radius:999px; margin-right:8px; }
   .theme-btn .ico-sun { display:none; }
   html[data-theme=dark] .theme-btn .ico-sun { display:block; }
@@ -501,7 +502,7 @@
   async function goLiveEntry() {
     if (!session) return walletModal();
     const me = await api('/api/me').catch(() => ({ coins: [] }));
-    if (!me.coins || !me.coins.length) return toast('No PONS coins launched from this wallet');
+    if (!me.coins || !me.coins.length) return toast('No PONS coins launched from ' + short(session.address) + '. Connect the wallet that launched the coin');
     if (me.coins.length === 1) return go('/coin/' + me.coins[0].address);
     openModal(el('div', {}, el('h3', {}, 'Your coins'), ...me.coins.map(c => el('button', { class: 'pbtn wide', onclick: () => { closeModal(); go('/coin/' + c.address); } }, c.image ? el('img', { src: c.image, width: 22, height: 22, style: 'border-radius:6px' }) : null, (c.name || short(c.address)) + (c.symbol ? '  $' + c.symbol : '')))));
   }
@@ -1080,7 +1081,7 @@ void main(){
       input.placeholder = !session ? 'Connect wallet to chat' : (!roomState.can_chat ? (roomState.banned.includes(session.address) ? 'You’re out of this chat' : 'Holders only. Grab some $' + c.symbol + ' to chat') : 'Say something…');
       msgs.querySelectorAll('.chat-msg[data-wallet]').forEach(n => { const w = n.dataset.wallet; const b = n.querySelector('.chat-role'); const r = roleOf(w); if (b) b.remove(); const nb = roleBadge(r); if (nb) n.querySelector('b').after(nb); n.classList.toggle('can-mod', canMod({ wallet: w })); });
     };
-    const actionBtn = isDev ? el('button', { class: 'ui-btn ui-btn-primary stream-action', onclick: () => goLive(c) }, el('span', { class: 'ui-btn-label' }, c.live ? 'Stream settings' : 'Go live')) : null;
+    const actionBtn = isDev ? el('button', { class: 'ui-btn ui-btn-primary stream-action', onclick: () => goLive(c) }, el('span', { class: 'ui-btn-label' }, c.live ? 'Stream settings' : 'Go live')) : (session ? el('span', { class: 'stream-whois', title: 'Only the wallet that launched this coin can go live' }, 'Signed in as ' + short(session.address) + ' · launched by ' + short(c.deployer)) : null);
     const chatCard = el('article', { class: 'chat-card float' },
       el('div', { class: 'chat-head' }, el('h3', {}, 'Live chat'), el('span', { class: 'chat-head-right' }, holdersBtn, chatCount)),
       msgs, form);

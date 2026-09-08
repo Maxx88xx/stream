@@ -283,7 +283,8 @@ async def h_stream_start(request):
     if not t:
         return web.json_response({"error": "unknown coin"}, status=404)
     if t["deployer"] != w:
-        return web.json_response({"error": "only the wallet that launched this coin can stream it"}, status=403)
+        print(f"[stream] go-live refused: {w} is not the deployer of {addr} ({t['deployer']})")
+        return web.json_response({"error": f"Only the wallet that launched this coin can stream it. You are signed in as {w[:6]}…{w[-4:]}, the coin was launched by {t['deployer'][:6]}…{t['deployer'][-4:]}"}, status=403)
     if q("SELECT 1 FROM bans WHERE wallet=? AND room='*'", (w,)):
         return web.json_response({"error": "banned"}, status=403)
     if not (CF_ACCOUNT and CF_TOKEN):
