@@ -123,7 +123,7 @@
   /* landing + legal + footer */
   .land-hero { padding:34px 32px 32px; position:relative; overflow:hidden; }
   .land-hero > * { position:relative; z-index:1; }
-  .land-ripple { position:absolute; z-index:0; top:0; right:0; bottom:0; width:64%; pointer-events:none; -webkit-mask-image:linear-gradient(90deg, transparent, #000 38%); mask-image:linear-gradient(90deg, transparent, #000 38%); }
+  .land-ripple { position:absolute; z-index:0; top:0; right:0; width:64%; height:100%; display:block; pointer-events:none; -webkit-mask-image:linear-gradient(90deg, transparent, #000 38%); mask-image:linear-gradient(90deg, transparent, #000 38%); }
   @media (max-width:720px) { .land-ripple { width:100%; -webkit-mask-image:linear-gradient(90deg, transparent, #000 60%); mask-image:linear-gradient(90deg, transparent, #000 60%); opacity:.7; } }
   .land-kicker { display:inline-block; justify-self:start; width:max-content; background:var(--lime-soft, #1c2610); color:var(--accent); border-radius:999px; padding:5px 12px; font-size:12px; margin-bottom:16px; }
   .land-hero h1 { margin:0 0 12px; font-size:44px; line-height:1.05; font-weight:500; letter-spacing:-.02em; }
@@ -537,16 +537,16 @@
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) return cv;
     const gl = cv.getContext('webgl', { alpha: true, antialias: false, premultipliedAlpha: true, depth: false, stencil: false, powerPreference: 'low-power' });
     if (!gl) return cv;
-    const N = 10;
+    const N = 6;
     const VS = 'attribute vec2 a;void main(){gl_Position=vec4(a,0.,1.);}';
     const FS = `precision highp float;
 uniform vec2 uRes;uniform float uT;uniform vec4 uR[${N}];uniform vec3 uLime;
 float wave(vec2 p,vec4 r,float t){
   float age=t-r.z; if(age<=0.) return 0.;
-  float d=length(p-r.xy)-0.22*age;
-  float lam=0.042+0.011*age;
-  float env=exp(-d*d/(lam*lam*3.2))*smoothstep(-lam*4.5,-lam*1.5,d);
-  float amp=r.w*exp(-age*0.3)/(1.+age*0.55);
+  float d=length(p-r.xy)-0.11*age;
+  float lam=0.09+0.012*age;
+  float env=exp(-d*d/(lam*lam*3.0))*smoothstep(-lam*4.0,-lam*1.2,d);
+  float amp=r.w*exp(-age*0.16)/(1.+age*0.32);
   return amp*env*sin(6.2831853*d/lam);
 }
 float height(vec2 p,float t){float h=0.;for(int i=0;i<${N};i++)h+=wave(p,uR[i],t);return h;}
@@ -556,7 +556,7 @@ void main(){
   float h=height(p,uT);
   float hx=height(p+vec2(e,0.),uT)-h;
   float hy=height(p+vec2(0.,e),uT)-h;
-  vec3 n=normalize(vec3(-hx/e*0.026,-hy/e*0.026,1.));
+  vec3 n=normalize(vec3(-hx/e*0.03,-hy/e*0.03,1.));
   vec3 L=normalize(vec3(-0.55,0.75,0.5));
   vec3 H=normalize(L+vec3(0.,0.,1.));
   float base=dot(vec3(0.,0.,1.),L);
@@ -582,10 +582,10 @@ void main(){
     const now = () => (performance.now() - t0) / 1000;
     const spawn = (t) => {
       const i = slot++ % N;
-      drops[i * 4] = -aspect * 0.42 + Math.random() * aspect * 0.92;
-      drops[i * 4 + 1] = -0.46 + Math.random() * 0.92;
+      drops[i * 4] = aspect * 0.24;                 // one spring, right of centre
+      drops[i * 4 + 1] = 0.04;
       drops[i * 4 + 2] = t;
-      drops[i * 4 + 3] = 0.35 + Math.random() * 0.55;
+      drops[i * 4 + 3] = 0.42 + Math.random() * 0.2;
     };
     const resize = () => {
       const dpr = Math.min(devicePixelRatio || 1, 2);
@@ -600,7 +600,7 @@ void main(){
       if (!visible || !onScreen) return;
       resize();
       const t = now();
-      while (t >= next) { spawn(next); next += 0.9 + Math.random() * 1.4; }
+      while (t >= next) { spawn(next); next += 2.6 + Math.random() * 1.2; }
       gl.uniform2f(uRes, cv.width, cv.height); gl.uniform1f(uT, t); gl.uniform4fv(uR, drops);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
       raf = requestAnimationFrame(frame);
@@ -608,8 +608,8 @@ void main(){
     const kick = () => { if (!raf && visible && onScreen && cv.isConnected) raf = requestAnimationFrame(frame); };
     requestAnimationFrame(() => {
       resize();
-      for (let k = 0; k < 7; k++) spawn(-k * 1.1 - Math.random());   // already rippling on first paint
-      next = 0.6;
+      for (let k = 0; k < 4; k++) spawn(-k * 3.1 - Math.random());   // already rippling on first paint
+      next = 1.5;
       new IntersectionObserver(([en]) => { onScreen = en.isIntersecting; kick(); }).observe(cv);
       document.addEventListener('visibilitychange', () => { visible = !document.hidden; kick(); });
       kick();
