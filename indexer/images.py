@@ -5,7 +5,7 @@ challenge (403 + CORP same-origin → the browser drops the image), but they
 answer a plain server-side GET fine. So the first request for a coin's image
 fetches it once (trying several gateways), shrinks it to a 320px JPEG on the
 volume, and every later request is a static file. Some "logo" URIs are really
-pump.fun-style metadata JSON with an `image` field — followed one level."""
+pump.fun-style metadata JSON with an `image` field: followed one level."""
 from __future__ import annotations
 
 import io

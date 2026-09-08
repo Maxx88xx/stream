@@ -75,7 +75,7 @@ async def run(on_launch, stop: asyncio.Event | None = None) -> None:
         except (asyncio.CancelledError, KeyboardInterrupt):
             raise
         except Exception as exc:  # noqa: BLE001
-            print(f"[live] socket lost ({type(exc).__name__}: {str(exc)[:80]}) — reconnecting in 3s")
+            print(f"[live] socket lost ({type(exc).__name__}: {str(exc)[:80]}), reconnecting in 3s")
             await asyncio.sleep(3)
 
 

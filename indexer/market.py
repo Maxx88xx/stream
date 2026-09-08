@@ -57,7 +57,7 @@ def quote_info(pair_token: str) -> tuple[int, float, str]:
     """(decimals, usd_per_unit, symbol) for the quote asset of a launch.
     Native ETH → Coinbase; USDG → $1; anything else (Robinhood tokenized
     stocks: NVDA, SPCX, SPY…) → DexScreener price of that token, cached 5 min.
-    Does network I/O — call it off the event loop."""
+    Does network I/O: call it off the event loop."""
     p = (pair_token or "").lower()
     if p in ("", "0x0000000000000000000000000000000000000000"):
         return 18, eth_usd(), "ETH"
@@ -114,7 +114,7 @@ def trade_start(c, curve: str, head: int) -> int | None:
 def fetch_trades(curve: str, frm: int, head: int, max_chunks: int = 12) -> tuple[list, int]:
     """CurveBuy/CurveSell logs in [frm, head] from the public RPC, at most
     `max_chunks` × 100k blocks per call (the caller comes back for the rest).
-    Network only — no database handle, so it never blocks the web loop.
+    Network only: no database handle, so it never blocks the web loop.
     Returns (rows, last_block_scanned)."""
     rows, to = [], frm - 1
     for _ in range(max_chunks):

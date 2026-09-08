@@ -1,4 +1,4 @@
-"""Plink — livestreams for PONS coins (Robinhood Chain), pump.fun style.
+"""Plink: livestreams for PONS coins (Robinhood Chain), pump.fun style.
 
 One aiohttp process: the site, the JSON API, the WebSocket (launch feed, chat,
 viewer counts, live flags), the Alchemy launch subscription (instant catalog),
@@ -301,7 +301,7 @@ async def h_stream_start(request):
                     ing = await asyncio.to_thread(lk.create_ingress, addr, f"{t['symbol']} {t['name']}")
                 except Exception as exc:  # noqa: BLE001
                     print(f"[lk] create_ingress failed: {exc}")
-                    msg = "All streaming slots are busy right now, try again in a minute" if "resource_exhausted" in str(exc) else "LiveKit refused the request — check LIVEKIT_* variables"
+                    msg = "All streaming slots are busy right now, try again in a minute" if "resource_exhausted" in str(exc) else "LiveKit refused the request: check LIVEKIT_* variables"
                     return web.json_response({"error": msg}, status=503)
                 x("UPDATE streams SET ingress_id=?, rtmps_url=?, stream_key=? WHERE address=?", (ing["ingress_id"], ing["url"], ing["stream_key"], addr))
                 s = _stream_row(addr)
@@ -608,7 +608,7 @@ async def h_ws(request):
                     continue
                 role = _roles(room).get(wallet, "")
                 if not role and _holders_only(room) and not await _is_holder(room, wallet):
-                    await _send(ws, {"t": "notice", "text": "Holders only — you need to hold this coin to chat"})
+                    await _send(ws, {"t": "notice", "text": "Holders only: you need to hold this coin to chat"})
                     continue
                 ts = int(time.time())
                 x("INSERT INTO chat(room,wallet,text,ts) VALUES(?,?,?,?)", (room, wallet, text, ts))

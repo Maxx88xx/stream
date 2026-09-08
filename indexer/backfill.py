@@ -4,7 +4,7 @@
   2. names: ERC-20 name()/symbol() for every unnamed token (Alchemy multicall,
      600 per call), newest first so the visible part of the catalog fills first;
   3. meta: launch calldata (image/description/socials) for tokens without it
-     (Alchemy batches of 50), newest first — a slow background pass.
+     (Alchemy batches of 50), newest first: a slow background pass.
 Run: `python -m indexer.backfill [launches|names|meta|all]`. Idempotent.
 """
 from __future__ import annotations
@@ -29,7 +29,7 @@ def launches(c) -> None:
         try:
             logs = chain.launch_logs(frm, to)
         except chain.RpcError as exc:                     # the public RPC has bad minutes; wait it out
-            print(f"[backfill]   {frm}-{to}: {str(exc)[:80]} — retrying in 15s")
+            print(f"[backfill]   {frm}-{to}: {str(exc)[:80]}: retrying in 15s")
             time.sleep(15)
             continue
         rows = [chain.parse_launch_log(lg) for lg in logs]

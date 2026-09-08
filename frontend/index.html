@@ -161,7 +161,8 @@
   .land-lead { color:var(--text-muted); font-size:19px; line-height:1.55; max-width:56ch; margin:0 0 28px; }
   .land-cta { display:flex; gap:10px; flex-wrap:wrap; }
   .land-btn.ui-btn { width:auto; min-height:56px; padding:0 26px; border-radius:999px; border:0; cursor:pointer; font-size:17px; font-weight:500; text-decoration:none; display:inline-flex; align-items:center; }
-  .land-btn-ghost { background:var(--panel-blue); color:var(--text-primary); }
+  .land-btn-ghost { background:color-mix(in srgb, var(--text-primary) 9%, transparent); border:1px solid color-mix(in srgb, var(--text-primary) 10%, transparent) !important; color:var(--text-primary); }
+  .land-cta .ui-btn, .land-stat { -webkit-backdrop-filter:none !important; backdrop-filter:none !important; }   /* inside the wave filter a backdrop blur has nothing to sample; the panel is opaque anyway */
   .land-feats { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:14px; }
   .land-feat { background:var(--panel-blue); border-radius:20px; padding:20px 22px; display:flex; gap:14px; align-items:flex-start; }
   .land-feat h3 { margin:0 0 6px; font-size:17px; font-weight:500; }
@@ -238,7 +239,7 @@
   .launch-card.is-skeleton .launch-card-logo { background:linear-gradient(90deg, var(--bg-page) 25%, var(--panel-blue) 50%, var(--bg-page) 75%); background-size:200% 100%; animation:shimmer 1.2s infinite; }
   .launch-card.is-skeleton strong, .launch-card.is-skeleton small { background:#1a1a1a; border-radius:6px; display:block; height:12px; width:60%; }
   @keyframes shimmer { from { background-position:200% 0; } to { background-position:-200% 0; } }
-  /* liquid-glass treatment for every lime element — PONS's own glass recipe, tinted lime: flat, hairline rim, no gloss */
+  /* liquid-glass treatment for every lime element: PONS's own glass recipe, tinted lime: flat, hairline rim, no gloss */
   .nav-connect, .ui-btn-primary, .pbtn.primary, .trade-btn.pbtn, .token-info-links a.trade-btn, .launch-card-live-badge, .stream-action.ui-btn, .chat-card .chat-form button, .chat-lock.is-on, .about-num, .nav-logo-mark, .land-btn.ui-btn-primary {
     background:rgba(195,212,189,.78) !important;
     color:#111 !important;
@@ -346,7 +347,7 @@
   const ICON = { shield: '<path d="M12 3l7 3v5c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6z"/>', trash: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>', lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>', send: '<path d="M4 12 20 4l-4 16-5-6zM11 14l9-10"/>', cam: '<path d="M15 10l4.5-2.5v9L15 14M4 6h11v12H4z"/>', mic: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>', share: '<path d="M12 16V5M7 10l5-5 5 5M5 19h14"/>', vol: '<path d="M4 10v4h4l5 4V6l-5 4H4zM16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/>', full: '<path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/>', key: '<circle cx="8" cy="14" r="4"/><path d="M11 11l9-9M16 6l3 3M14 8l2 2"/>', search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>', up: '<path d="M7 17 17 7M9 7h8v8"/>', down: '<path d="M17 7 7 17M7 9v8h8"/>', copy: '<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/>', globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>', back: '<path d="m15 18-6-6 6-6"/>', dot: '<circle cx="12" cy="12" r="5" fill="currentColor" stroke="none"/>' };
   const fmtUsd = (v) => { v = Number(v || 0); return v >= 1e9 ? '$' + (v / 1e9).toFixed(2) + 'B' : v >= 1e6 ? '$' + (v / 1e6).toFixed(2) + 'M' : v >= 1e3 ? '$' + (v / 1e3).toFixed(2) + 'K' : '$' + v.toFixed(v < 10 ? 2 : 0); };
   const fmtFull = (v) => '$' + Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  const fmtPrice = (v) => { v = Number(v || 0); if (!v) return '—'; return '$' + (v >= 1 ? v.toFixed(2) : v.toFixed(Math.min(10, 2 - Math.floor(Math.log10(v))))); };
+  const fmtPrice = (v) => { v = Number(v || 0); if (!v) return '…'; return '$' + (v >= 1 ? v.toFixed(2) : v.toFixed(Math.min(10, 2 - Math.floor(Math.log10(v))))); };
   const fmtAmt = (v) => { v = Number(v || 0); return v >= 1e9 ? (v / 1e9).toFixed(2) + 'B' : v >= 1e6 ? (v / 1e6).toFixed(2) + 'M' : v >= 1e3 ? (v / 1e3).toFixed(2) + 'K' : v.toFixed(2); };
   const short = (a) => a ? a.slice(0, 6) + '…' + a.slice(-4) : '';
   const ago = (s, suffix = ' ago') => { s = Math.max(0, Math.round(s)); return (s < 60 ? s + 's' : s < 3600 ? Math.floor(s / 60) + 'm' : s < 86400 ? Math.floor(s / 3600) + 'h' : Math.floor(s / 86400) + 'd') + suffix; };
@@ -377,7 +378,7 @@
     if (connecting) return toast('Open your wallet and confirm the pending request');
     connecting = true;
     try { await _signIn(prov); }
-    catch (e) { const m = String(e?.message || e); toast(/pending|current approval|already/i.test(m) ? 'Your wallet has an unanswered popup — open it, confirm or reject, then try again' : /rejected|denied/i.test(m) ? 'Rejected in wallet' : m.slice(0, 120)); }
+    catch (e) { const m = String(e?.message || e); toast(/pending|current approval|already/i.test(m) ? 'Your wallet has an unanswered popup. Open it, confirm or reject, then try again' : /rejected|denied/i.test(m) ? 'Rejected in wallet' : m.slice(0, 120)); }
     finally { connecting = false; }
   }
   async function _signIn(prov) {
@@ -618,7 +619,7 @@ void main(){
   float hy=height(p+vec2(0.,e),uT)-h;
   vec3 n=normalize(vec3(-hx/e*0.075,-hy/e*0.075,1.));
   vec3 V=vec3(0.,0.,1.);
-  // high gloss: the surface mirrors a studio — two softboxes and a thin strip light —
+  // high gloss: the surface mirrors a studio (two softboxes and a thin strip light)
   // with hard edges, so the reflections slide over the bumps like on wet black glass.
   // Still water (n = +z) reflects only the dark ceiling, so the flat panel stays dark.
   vec3 R=2.*n.z*n-V;
@@ -797,8 +798,8 @@ void main(){
     const feat = (d, title, text) => el('div', { class: 'land-feat' }, ico(d), el('div', {}, el('h3', {}, title), el('p', {}, text)));
     const trust = (d, text) => el('li', { class: 'trust-card' }, svgPath(d), el('span', {}, text));
     const head = (eyebrow, title, link) => el('div', { class: 'land-head' }, el('div', {}, el('span', { class: 'land-eyebrow' }, eyebrow), el('h2', {}, title)), link ? el('a', { class: 'launch-explore-count land-more', href: link[1], 'data-link': '' }, link[0]) : null);
-    let heroCv, heroKick, heroH1, heroLead;
-    const stat = (label) => { const b = el('b', {}, '—'); return { el: el('span', { class: 'land-stat' }, b, el('span', {}, label)), b }; };
+    let heroCv, heroKick, heroH1, heroLead, heroCta, heroStats;
+    const stat = (label) => { const b = el('b', {}, '…'); return { el: el('span', { class: 'land-stat' }, b, el('span', {}, label)), b }; };
     const sCoins = stat('coins on PONS'), sLive = stat('live now'), sWatch = stat('watching');
     const liveGrid = el('ul', { class: 'launch-explore-grid' });
     const liveSec = el('section', { class: 'launch-explore float land-sec reveal', style: 'display:none' }, head('On air', 'Live now', ['All streams', '/live']), liveGrid);
@@ -808,9 +809,9 @@ void main(){
         (heroCv = heroRipples()),
         (heroKick = el('span', { class: 'land-kicker' }, 'Plink')),
         (heroH1 = el('h1', {}, 'Coins go live.')),
-        (heroLead = el('p', { class: 'land-lead' }, 'Every PONS coin gets a stage. Watch the creator on camera, talk to holders in real time, and follow the chart while it moves — trading is one tap away on PONS.')),
-        el('div', { class: 'land-cta' }, el('button', { class: 'ui-btn ui-btn-primary land-btn', onclick: goLiveEntry }, el('span', { class: 'ui-btn-label' }, 'Go live')), el('a', { class: 'ui-btn land-btn land-btn-ghost', href: '/explore', 'data-link': '' }, el('span', { class: 'ui-btn-label' }, 'Explore coins'))),
-        el('div', { class: 'land-stats' }, sCoins.el, sLive.el, sWatch.el)),
+        (heroLead = el('p', { class: 'land-lead' }, 'Every PONS coin gets a stage. Watch the creator on camera, talk to holders in real time, and follow the chart while it moves. Trading is one tap away on PONS.')),
+        (heroCta = el('div', { class: 'land-cta' }, el('button', { class: 'ui-btn ui-btn-primary land-btn', onclick: goLiveEntry }, el('span', { class: 'ui-btn-label' }, 'Go live')), el('a', { class: 'ui-btn land-btn land-btn-ghost', href: '/explore', 'data-link': '' }, el('span', { class: 'ui-btn-label' }, 'Explore coins')))),
+        (heroStats = el('div', { class: 'land-stats' }, sCoins.el, sLive.el, sWatch.el))),
       liveSec,
       el('section', { class: 'launch-explore float land-sec reveal' }, head('Fresh from the chain', 'Just launched', ['Explore all', '/explore']), freshGrid),
       el('section', { class: 'launch-explore float land-sec reveal' },
@@ -837,7 +838,7 @@ void main(){
         el('h2', {}, 'Go live in under a minute.'),
         el('p', {}, 'No keys, no gas, no setup. Just your camera, your chart and your holders.'),
         el('button', { class: 'ui-btn ui-btn-primary land-btn', onclick: goLiveEntry }, el('span', { class: 'ui-btn-label' }, 'Go live'))));
-    heroRippleText(heroCv, [heroKick, heroH1, heroLead]);
+    heroRippleText(heroCv, [heroKick, heroH1, heroLead, heroCta, heroStats]);
     // sections rise in as they scroll into view
     if ('IntersectionObserver' in window && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
       const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target); } }), { rootMargin: '0px 0px -8% 0px' });
@@ -898,7 +899,7 @@ void main(){
     const Y = (v) => padT + (1 - (v - lo) / (hi - lo)) * (H - padT - padB);
     // monotone-ish smooth path
     const P = pts.map(p => [X(p.t), Y(p.v)]);
-    // monotone cubic Hermite (Fritsch–Carlson): smooth, never overshoots the data
+    // monotone cubic Hermite (Fritsch-Carlson): smooth, never overshoots the data
     const n0 = P.length, dx = [], dy = [], m = [], tg = new Array(n0).fill(0);
     for (let i = 0; i < n0 - 1; i++) { dx[i] = P[i + 1][0] - P[i][0] || 1e-6; dy[i] = P[i + 1][1] - P[i][1]; m[i] = dy[i] / dx[i]; }
     tg[0] = m[0]; tg[n0 - 1] = m[n0 - 2];
@@ -978,7 +979,7 @@ void main(){
     const paintRoom = () => {
       holdersBtn.classList.toggle('is-on', !!roomState.holders_only); holdersBtn.style.display = (myRole() === 'dev' || roomState.holders_only) ? '' : 'none'; holdersBtn.style.cursor = myRole() === 'dev' ? 'pointer' : 'default';
       input.disabled = !!(session && !roomState.can_chat);
-      input.placeholder = !session ? 'Connect wallet to chat' : (!roomState.can_chat ? (roomState.banned.includes(session.address) ? 'You’re out of this chat' : 'Holders only — grab some $' + c.symbol + ' to chat') : 'Say something…');
+      input.placeholder = !session ? 'Connect wallet to chat' : (!roomState.can_chat ? (roomState.banned.includes(session.address) ? 'You’re out of this chat' : 'Holders only. Grab some $' + c.symbol + ' to chat') : 'Say something…');
       msgs.querySelectorAll('.chat-msg[data-wallet]').forEach(n => { const w = n.dataset.wallet; const b = n.querySelector('.chat-role'); const r = roleOf(w); if (b) b.remove(); const nb = roleBadge(r); if (nb) n.querySelector('b').after(nb); n.classList.toggle('can-mod', canMod({ wallet: w })); });
     };
     const actionBtn = isDev ? el('button', { class: 'ui-btn ui-btn-primary stream-action', onclick: () => goLive(c) }, el('span', { class: 'ui-btn-label' }, c.live ? 'Stream settings' : 'Go live')) : null;
@@ -1085,9 +1086,9 @@ void main(){
     paintPlayer();
     const dd = (label, val) => el('div', {}, el('dt', {}, label), el('dd', {}, val));
     const price = c.mcap_usd ? c.mcap_usd / 1e9 : 0;
-    const stats = el('dl', { class: 'token-market-stats' }, dd('Price', fmtPrice(price)), dd('Market cap', fmtFull(c.mcap_usd)), dd('Price in ' + (c.quote_symbol || 'quote'), c.price_quote ? Number(c.price_quote).toPrecision(4) + ' ' + c.quote_symbol : '—'), dd('Market', c.graduated ? 'Graduated' : 'PONS curve'));
+    const stats = el('dl', { class: 'token-market-stats' }, dd('Price', fmtPrice(price)), dd('Market cap', fmtFull(c.mcap_usd)), dd('Price in ' + (c.quote_symbol || 'quote'), c.price_quote ? Number(c.price_quote).toPrecision(4) + ' ' + c.quote_symbol : '…'), dd('Market', c.graduated ? 'Graduated' : 'PONS curve'));
     const priceRoll = el('p', { class: 'noxa-chart-price' }, fmtUsd(c.mcap_usd));
-    const changeEl = el('p', { class: 'noxa-chart-change' }, '—', el('span', { class: 'noxa-chart-change-range' }, '1H'));
+    const changeEl = el('p', { class: 'noxa-chart-change' }, '…', el('span', { class: 'noxa-chart-change-range' }, '1H'));
     const ranges = el('div', { class: 'noxa-chart-ranges' });
     const chartStage = el('div', { class: 'noxa-chart-stage' }, el('p', { class: 'noxa-chart-empty' }, 'Loading chart…'));
     const chart = el('div', { class: 'noxa-chart token-market-chart' }, el('div', { class: 'noxa-chart-head' }, el('div', { class: 'noxa-chart-price-block' }, priceRoll, changeEl), ranges), chartStage);
@@ -1164,7 +1165,7 @@ void main(){
   const devSelect = (list, cur, onchange, empty) => { const s = el('select', { class: 'dev-select', onchange: (e) => onchange(e.target.value) }); if (!list.length) s.append(el('option', { value: '' }, empty)); list.forEach((d, i) => s.append(el('option', { value: d.deviceId, selected: d.deviceId === cur ? '' : null }, d.label || (empty + ' ' + (i + 1))))); return s; };
   async function goLive(c) {
     if (goingLive) return;
-    if (c.live && c.provider === 'livekit' && !pubRoom) { try { const creds = await api('/api/stream/creds?token=' + c.address); if (!creds.stream_key) return toast('You’re live from this tab — use the player controls'); return credsModal(c, creds); } catch (e) { return toast(e.message); } }
+    if (c.live && c.provider === 'livekit' && !pubRoom) { try { const creds = await api('/api/stream/creds?token=' + c.address); if (!creds.stream_key) return toast('You’re live from this tab, use the player controls'); return credsModal(c, creds); } catch (e) { return toast(e.message); } }
     let mode = 'webcam', cam = '', mic = '', previewStream = null;
     const preview = el('video', { class: 'preview', playsinline: '' }); preview.muted = true; preview.autoplay = true;
     const title = el('input', { class: 'field', placeholder: 'What’s happening?', maxlength: 80, oninput: () => { next.disabled = !title.value.trim(); } });

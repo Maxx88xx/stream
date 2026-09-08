@@ -1,5 +1,5 @@
 """LiveKit Cloud from the server side: access tokens (HS256 JWT, no library)
-and the Twirp JSON endpoints we need — RTMP ingress per coin (OBS: server +
+and the Twirp JSON endpoints we need: RTMP ingress per coin (OBS: server +
 stream key → WebRTC room, sub-second) and room participants (live detection)."""
 from __future__ import annotations
 
@@ -54,7 +54,7 @@ def _twirp(service: str, method: str, body: dict, grant: dict) -> dict:
 
 def create_ingress(room: str, name: str) -> dict:
     """RTMP ingress bound to `room`; returns {ingress_id, url, stream_key}. The
-    creator publishes as participant 'creator' — that is what live detection looks for.
+    creator publishes as participant 'creator': that is what live detection looks for.
     LiveKit Cloud caps ingress objects and counts just-deleted ones for a while,
     so a resource_exhausted answer is retried a few times."""
     for attempt in range(4):

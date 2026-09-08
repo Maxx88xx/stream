@@ -1,9 +1,9 @@
 """Chain access for the PONS catalog indexer (Robinhood Chain, chainId 4663).
 
 Two endpoints, each used for what it is good at (measured 2026-09-06):
-  * PUBLIC RPC  — eth_getLogs over wide ranges (100k blocks / 10k logs per call)
+  * PUBLIC RPC : eth_getLogs over wide ranges (100k blocks / 10k logs per call)
                   but 429s under bursts → paced, with backoff.
-  * ALCHEMY     — eth_call (multicall3: 600 tokens' name+symbol in one call),
+  * ALCHEMY    : eth_call (multicall3: 600 tokens' name+symbol in one call),
                   batched eth_getTransactionByHash (50 per HTTP request), and
                   the WebSocket log subscription for instant launches. Its free
                   tier caps eth_getLogs at 10 blocks, so it never serves logs.
