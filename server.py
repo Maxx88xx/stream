@@ -771,8 +771,9 @@ async def h_admin(request):
         key = str(body.get("key") or "")
         if key not in ("ca",):
             return web.json_response({"error": "unknown key"}, status=400)
-        val = _norm_addr(body.get("value")) if key == "ca" else str(body.get("value") or "")
-        if key == "ca" and not val:
+        raw = str(body.get("value") or "").strip()
+        val = "" if not raw else (_norm_addr(raw) if key == "ca" else raw)      # empty value clears the setting
+        if key == "ca" and raw and not val:
             return web.json_response({"error": "bad address"}, status=400)
         db.set_progress(C, key, val); C.commit()
         return web.json_response({"ok": True, key: val})
