@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en" data-theme="dark">
-<script>try{document.documentElement.dataset.theme=localStorage.getItem('pl_theme')||'dark';if(/[?&]embed=1/.test(location.search))document.documentElement.dataset.embed='1'}catch(e){}</script>
+<script>try{document.documentElement.dataset.theme='dark';if(/[?&]embed=1/.test(location.search))document.documentElement.dataset.embed='1'}catch(e){}</script>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -35,8 +35,8 @@
   .nav-inner { max-width:1080px; }
   .nav-product-links { gap:2px; }
   .nav-product-link { font-size:14px; display:inline-flex; align-items:center; gap:8px; }
-  .nav-product-link.is-active { background:transparent; box-shadow:none; color:#111; }
-  .nav-product-indicator { top:3px; height:calc(100% - 6px); width:0; opacity:0; background:color-mix(in srgb, var(--accent) 78%, transparent) !important; border:1px solid rgba(255,255,255,.28); box-shadow:inset 0 1px 0 rgba(255,255,255,.18), inset 0 -1px 0 rgba(255,255,255,.05), inset 1px 0 2px -1px rgba(255,255,255,.14), inset -1px 0 2px -1px rgba(255,255,255,.14) !important; -webkit-backdrop-filter:blur(10px) saturate(140%); backdrop-filter:blur(10px) saturate(140%); box-sizing:border-box; transform-origin:center; transition:transform .55s cubic-bezier(.22,1,.36,1), width .55s cubic-bezier(.22,1,.36,1), opacity .25s ease; will-change:transform,width; }
+  .nav-product-link.is-active { background:transparent; box-shadow:none; color:#fff; }
+  .nav-product-indicator { top:3px; height:calc(100% - 6px); width:0; opacity:0; background:color-mix(in srgb, var(--accent) 14%, var(--bg-white)) !important; border:1px solid color-mix(in srgb, var(--accent) 45%, transparent); box-shadow:inset 0 1px 0 rgba(255,255,255,.18), inset 0 -1px 0 rgba(255,255,255,.05), inset 1px 0 2px -1px rgba(255,255,255,.14), inset -1px 0 2px -1px rgba(255,255,255,.14) !important; -webkit-backdrop-filter:blur(10px) saturate(140%); backdrop-filter:blur(10px) saturate(140%); box-sizing:border-box; transform-origin:center; transition:transform .55s cubic-bezier(.22,1,.36,1), width .55s cubic-bezier(.22,1,.36,1), opacity .25s ease; will-change:transform,width; }
   .nav-product-indicator.is-moving { animation:pill-stretch .55s cubic-bezier(.22,1,.36,1); }
   @keyframes pill-stretch { 0% { scale:1 1; } 35% { scale:1.08 .9; } 100% { scale:1 1; } }
   @media (prefers-reduced-motion:reduce) { .nav-product-indicator { transition:none; animation:none !important; } }
@@ -82,10 +82,6 @@
   .nav-ca-addr { font-variant-numeric:tabular-nums; }
   @media (max-width:720px) { .nav-ca-addr { display:none; } .nav-ca { padding-right:10px; } }
   .stream-whois { font-size:12px; color:var(--text-subtle); white-space:nowrap; }
-  .theme-btn { width:40px; height:40px; border-radius:999px; margin-right:8px; }
-  .theme-btn .ico-sun { display:none; }
-  html[data-theme=dark] .theme-btn .ico-sun { display:block; }
-  html[data-theme=dark] .theme-btn .ico-moon { display:none; }
   .nav-wordmark { display:block; font-weight:900; font-size:20px; letter-spacing:-.04em; color:#fff; line-height:1; }
   main.bridge-shell { padding:22px 24px 60px; box-sizing:border-box; }
   .launchpad-explore-shell { max-width:1080px; }
@@ -97,7 +93,7 @@
   .launch-explore-grid > li { min-width:0; }
   .launchpad-explore-shell { display:grid; gap:16px; }
   .launch-card { display:grid; padding:10px; box-shadow:none; }
-  .launch-card-live-badge { -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); color:#111; background:var(--accent); border-radius:999px; padding:4px 8px; font-size:10px; line-height:1.2; display:inline-flex; align-items:center; gap:5px; }
+  .launch-card-live-badge { -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); color:#111; background:#fff; border-radius:999px; padding:4px 8px; font-size:10px; line-height:1.2; display:inline-flex; align-items:center; gap:5px; }
   .launch-card-live-badge::before { content:""; width:6px; height:6px; border-radius:50%; background:#111; animation:live-blink 1.2s infinite; }
   @keyframes live-blink { 50% { opacity:.25; } }
   .launch-card-viewers { -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); color:#fff; background:#111111b8; border-radius:999px; padding:4px 8px; font-size:10px; line-height:1.2; }
@@ -299,18 +295,15 @@
   .launch-card.is-skeleton strong, .launch-card.is-skeleton small { background:#1a1a1a; border-radius:6px; display:block; height:12px; width:60%; }
   @keyframes shimmer { from { background-position:200% 0; } to { background-position:-200% 0; } }
   /* liquid-glass treatment for every lime element: PONS's own glass recipe, tinted lime: flat, hairline rim, no gloss */
-  .nav-connect, .ui-btn-primary, .pbtn.primary, .trade-btn.pbtn, .token-info-links a.trade-btn, .launch-card-live-badge, .stream-action.ui-btn, .chat-card .chat-form button, .chat-lock.is-on, .about-num, .land-btn.ui-btn-primary {
-    background:rgba(255,255,255,.78) !important;
-    color:#111 !important;
-    border:1px solid rgba(255,255,255,.28) !important;
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.32), inset 0 -1px 0 rgba(255,255,255,.08), inset 1px 0 2px -1px rgba(255,255,255,.2), inset -1px 0 2px -1px rgba(255,255,255,.2) !important;
+  .nav-connect, .ui-btn-primary, .pbtn.primary, .trade-btn.pbtn, .token-info-links a.trade-btn, .stream-action.ui-btn, .chat-card .chat-form button, .chat-lock.is-on, .land-btn.ui-btn-primary, .land-btn-ghost, .float-icon-btn, .nav-logout, .land-more, .launch-explore-create-btn, .sc-btn, .cred-reset, .pbtn, .ui-btn {
+    background:color-mix(in srgb, var(--accent) 14%, var(--bg-white)) !important;
+    color:#fff !important;
+    border:1px solid color-mix(in srgb, var(--accent) 45%, transparent) !important;
+    box-shadow:none !important;
     -webkit-backdrop-filter:blur(10px) saturate(140%); backdrop-filter:blur(10px) saturate(140%);
     position:relative; isolation:isolate; text-shadow:none;
   }
-  .nav-connect::after, .ui-btn-primary::after, .pbtn.primary::after, .trade-btn::after, .launch-card-live-badge::after, .stream-action.ui-btn::after, .chat-card .chat-form button::after, .chat-lock.is-on::after, .about-num::after {
-    content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none; z-index:0;
-    background:linear-gradient(rgba(255,255,255,.07) 0%, transparent 55%);
-  }
+  .nav-connect:hover, .ui-btn-primary:hover, .land-btn:hover, .pbtn:hover, .float-icon-btn:hover, .nav-logout:hover { border-color:rgba(255,255,255,.7) !important; }
   .nav-connect > *, .ui-btn-primary > *, .pbtn.primary > *, .launch-card-live-badge > * { position:relative; z-index:1; }
   .launch-card-live-badge::before { z-index:1; position:relative; }
   .nav-connect:hover:not(:disabled), .ui-btn-primary:hover:not(:disabled), .pbtn.primary:hover, .trade-btn:hover { background:rgba(255,255,255,.9) !important; }
@@ -388,7 +381,6 @@
     </div>
     <div class="nav-right">
       <button class="nav-ca" id="ca-btn" title="Contract address"><span class="nav-ca-label">CA</span><span class="nav-ca-addr" id="ca-addr">Soon</span></button>
-      <button class="float-icon-btn theme-btn" id="theme-btn" title="Theme" aria-label="Switch theme"><svg class="ico-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><svg class="ico-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
       <button class="nav-connect" id="wallet">Connect</button>
       <button class="float-icon-btn nav-logout" id="logout" title="Sign out" aria-label="Sign out" hidden><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4M15 8l5 4-5 4M20 12H9"/></svg></button>
     </div>
@@ -499,7 +491,6 @@
   }
   if (ACCENT) applyAccent(ACCENT);
   (() => { const ca = (window.CFG || {}).ca; const b = $('#ca-btn'); if (!b) return; if (!ca) { b.onclick = () => toast('Contract address drops soon'); return; } $('#ca-addr').textContent = short(ca); b.title = 'Copy contract address'; b.onclick = () => { navigator.clipboard?.writeText(ca).then(() => toast('Contract address copied')).catch(() => {}); }; })();
-  $('#theme-btn').onclick = () => { const d = document.documentElement; d.dataset.theme = d.dataset.theme === 'dark' ? 'light' : 'dark'; try { localStorage.setItem('pl_theme', d.dataset.theme); } catch {} };
   $('#wallet').onclick = () => { if (session) { navigator.clipboard?.writeText(session.address).then(() => toast('Address copied')).catch(() => {}); } else walletModal(); };
   $('#logout').onclick = () => { session = null; localStorage.removeItem('pl_session'); paintWallet(); render(); if (window.PrivyLogin) window.PrivyLogin.logout().catch(() => {}); toast('Signed out'); };
   paintWallet();
