@@ -460,9 +460,14 @@
     s.onerror = () => { privyState = null; toast('Couldn’t load the wallet module'); walletModalFallback(); };
     document.head.append(s);
   }
-  function walletModal() { privyOpen(); }
+  function walletModal() {
+    const list = providers.length ? providers : (window.ethereum ? [{ info: { name: 'Browser wallet', uuid: 'legacy' }, provider: window.ethereum }] : []);
+    if (list.length === 1) return signIn(list[0]);
+    if (list.length > 1) return walletModalFallback();
+    privyOpen();
+  }
   const privyWarm = () => { if (privyState || !(window.CFG || {}).privyAppId || session) return; privyState = 'loading'; document.addEventListener('privy:ready', () => { privyState = 'ready'; }, { once: true }); document.addEventListener('privy:wallet', async (e) => { const d = e.detail; if (session && session.address === d.address) return; await signIn({ info: { name: d.name }, provider: d.provider }); }); const s = document.createElement('script'); s.src = '/assets/privy.js'; s.onload = () => window.PrivyMount((window.CFG || {}).privyAppId, { chain: ROBINHOOD_CHAIN, accent: '#ffffff', theme: (document.documentElement.dataset.theme === 'dark' ? '#161616' : '#ffffff'), logo: location.origin + '/assets/wordmark-motion.png', header: 'Connect wallet', message: 'Sign in with the wallet that launched your coin.' }); s.onerror = () => { privyState = null; }; document.head.append(s); };
-  (window.requestIdleCallback || ((f) => setTimeout(f, 2500)))(() => setTimeout(privyWarm, 1500));
+  (window.requestIdleCallback || ((f) => setTimeout(f, 2500)))(() => setTimeout(() => { if (!providers.length && !window.ethereum) privyWarm(); }, 1500));
   function walletModalFallback() {
     const list = providers.length ? providers : (window.ethereum ? [{ info: { name: 'Browser wallet', uuid: 'legacy' }, provider: window.ethereum }] : []);
     openModal(el('div', {}, el('h3', {}, 'Connect wallet'),
