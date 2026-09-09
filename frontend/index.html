@@ -383,7 +383,7 @@
 <main class="bridge-shell launchpad-explore-shell" id="page"></main>
 <footer class="site-foot">
   <div class="site-foot-links"><a href="/privacy" data-link>Privacy</a><a href="/terms" data-link>Terms</a><a href="https://www.ponsfamily.com/launchpad" target="_blank" rel="noopener">PONS</a><a href="https://robinhoodchain.blockscout.com" target="_blank" rel="noopener">Robinhood Chain</a></div>
-  <p>Wallets by Privy. Motion never holds keys or funds. Streams stay live only, trading stays on PONS.</p>
+  <p>Wallets by Privy. Motion never touches keys or funds. Streams are live only. Trading stays on PONS.</p>
 </footer>
 <div id="modal"></div>
 <script>
@@ -455,12 +455,12 @@
     document.addEventListener('privy:wallet', async (e) => { const d = e.detail; if (session && session.address === d.address) return; await signIn({ info: { name: d.name }, provider: d.provider }); });
     document.addEventListener('privy:error', (e) => { console.warn('privy', e.detail); toast('Wallet login didn’t go through'); });
     const s = document.createElement('script'); s.src = '/assets/privy.js';
-    s.onload = () => window.PrivyMount(appId, { chain: ROBINHOOD_CHAIN, accent: '#ffffff', theme: (document.documentElement.dataset.theme === 'dark' ? '#161616' : '#ffffff'), logo: location.origin + '/assets/wordmark-motion.png', header: 'Connect wallet', message: 'Sign in with the wallet that launched your coin' });
+    s.onload = () => window.PrivyMount(appId, { chain: ROBINHOOD_CHAIN, accent: '#ffffff', theme: (document.documentElement.dataset.theme === 'dark' ? '#161616' : '#ffffff'), logo: location.origin + '/assets/wordmark-motion.png', header: 'Connect wallet', message: 'Sign in with the wallet that launched your coin.' });
     s.onerror = () => { privyState = null; toast('Couldn’t load the wallet module'); walletModalFallback(); };
     document.head.append(s);
   }
   function walletModal() { privyOpen(); }
-  const privyWarm = () => { if (privyState || !(window.CFG || {}).privyAppId || session) return; privyState = 'loading'; document.addEventListener('privy:ready', () => { privyState = 'ready'; }, { once: true }); document.addEventListener('privy:wallet', async (e) => { const d = e.detail; if (session && session.address === d.address) return; await signIn({ info: { name: d.name }, provider: d.provider }); }); const s = document.createElement('script'); s.src = '/assets/privy.js'; s.onload = () => window.PrivyMount((window.CFG || {}).privyAppId, { chain: ROBINHOOD_CHAIN, accent: '#ffffff', theme: (document.documentElement.dataset.theme === 'dark' ? '#161616' : '#ffffff'), logo: location.origin + '/assets/wordmark-motion.png', header: 'Connect wallet', message: 'Sign in with the wallet that launched your coin' }); s.onerror = () => { privyState = null; }; document.head.append(s); };
+  const privyWarm = () => { if (privyState || !(window.CFG || {}).privyAppId || session) return; privyState = 'loading'; document.addEventListener('privy:ready', () => { privyState = 'ready'; }, { once: true }); document.addEventListener('privy:wallet', async (e) => { const d = e.detail; if (session && session.address === d.address) return; await signIn({ info: { name: d.name }, provider: d.provider }); }); const s = document.createElement('script'); s.src = '/assets/privy.js'; s.onload = () => window.PrivyMount((window.CFG || {}).privyAppId, { chain: ROBINHOOD_CHAIN, accent: '#ffffff', theme: (document.documentElement.dataset.theme === 'dark' ? '#161616' : '#ffffff'), logo: location.origin + '/assets/wordmark-motion.png', header: 'Connect wallet', message: 'Sign in with the wallet that launched your coin.' }); s.onerror = () => { privyState = null; }; document.head.append(s); };
   (window.requestIdleCallback || ((f) => setTimeout(f, 2500)))(() => setTimeout(privyWarm, 1500));
   function walletModalFallback() {
     const list = providers.length ? providers : (window.ethereum ? [{ info: { name: 'Browser wallet', uuid: 'legacy' }, provider: window.ethereum }] : []);
@@ -616,14 +616,14 @@
       const s = section({ title: `Results for “${qs}”`, h1: true, copy: 'Name, ticker or address, across every PONS launch.' });
       page.append(s.sec);
       skeletons(s.grid, 8);
-      await swr('/api/search?q=' + encodeURIComponent(qs), ({ rows }) => { s.count.textContent = rows.length; fill(s.grid, rows, 'Nothing here yet.'); });
+      await swr('/api/search?q=' + encodeURIComponent(qs), ({ rows }) => { s.count.textContent = rows.length; fill(s.grid, rows, 'Nothing here. Yet.'); });
       return;
     }
-    const live = section({ title: 'Live now', h1: true, hot: true, copy: 'Creators on air right now.' });
+    const live = section({ title: 'Live now', h1: true, hot: true, copy: 'On air right now.' });
     page.append(live.sec);
     let rec;
     if (!liveOnly) { rec = section({ title: 'New launches', copy: 'Every coin on PONS, the second it hits the chain.' }); page.append(rec.sec); }
-    const paintLive = () => swr('/api/streams', ({ rows }) => { live.count.textContent = rows.length; fill(live.grid, rows, 'Nobody is live right now. Own a coin? Go live.'); });
+    const paintLive = () => swr('/api/streams', ({ rows }) => { live.count.textContent = rows.length; fill(live.grid, rows, 'Nobody is live. Own a coin? Take the stage.'); });
     if (rec) skeletons(rec.grid, 12);
     paintLive();
     const PAGE = 24; let shown = 0;
@@ -885,24 +885,24 @@ void main(){
     const stat = (label) => { const b = el('b', {}, '…'); return { el: el('span', { class: 'land-stat' }, b, el('span', {}, label)), b }; };
     const sCoins = stat('coins on PONS'), sLive = stat('live now'), sWatch = stat('watching');
     const liveGrid = el('ul', { class: 'launch-explore-grid' });
-    const liveSec = el('section', { class: 'launch-explore float land-sec reveal', style: 'display:none' }, head('On air', 'Live now', ['All streams', '/live']), liveGrid);
+    const liveSec = el('section', { class: 'launch-explore float land-sec reveal', style: 'display:none' }, head('On air', 'Live right now', ['All streams', '/live']), liveGrid);
     const freshGrid = el('ul', { class: 'launch-explore-grid' });
     page.append(
       el('section', { class: 'launch-explore launch-explore-graduated float land-hero land-hero-motion' },
         (heroCv = heroRipples(() => { const t = heroWord && heroWord.querySelector('.motion-main').firstChild; if (!t) return null; const r = document.createRange(); r.setStart(t, 1); r.setEnd(t, 2); const b = r.getBoundingClientRect(), c = heroCv.getBoundingClientRect(); return { x: b.left + b.width / 2 - c.left, y: b.top + b.height / 2 - c.top }; })),
         (heroWord = motionWord()),
         (heroH1 = el('h1', {}, 'Livestream your coins.')),
-        (heroLead = el('p', { class: 'land-lead' }, 'Every PONS coin gets a stage. Watch the creator on camera, talk to holders in real time, and follow the chart while it moves. Trading is one tap away on PONS.')),
+        (heroLead = el('p', { class: 'land-lead' }, 'Every PONS coin gets a stage. The dev on camera, holders in the chat, the chart moving under all of it. One page, nothing to set up.')),
         (heroCta = el('div', { class: 'land-cta' }, el('button', { class: 'ui-btn ui-btn-primary land-btn', onclick: goLiveEntry }, el('span', { class: 'ui-btn-label' }, 'Go live')), el('a', { class: 'ui-btn land-btn land-btn-ghost', href: '/explore', 'data-link': '' }, el('span', { class: 'ui-btn-label' }, 'Explore coins')))),
         (heroStats = el('div', { class: 'land-stats' }, sCoins.el, sLive.el, sWatch.el))),
       liveSec,
       el('section', { class: 'launch-explore float land-sec reveal' }, head('Fresh from the chain', 'Just launched', ['Explore all', '/explore']), freshGrid),
       el('section', { class: 'launch-explore float land-sec reveal' },
-        head('How it works', 'Three moves, that’s it'),
+        head('How it works', 'Three moves. That’s it.'),
         el('div', { class: 'about-steps' },
-          step('1', 'Find your coin', 'Every PONS coin is already here, and new ones land the second they launch.'),
-          step('2', 'Connect the deploy wallet', 'One signature, no gas, no custody. That’s the whole login.'),
-          step('3', 'Go live', 'Webcam straight from the browser, or OBS with a key. Holders see you in seconds.'))),
+          step('1', 'Find your coin', 'Every PONS coin is already here. New ones land the second they launch.'),
+          step('2', 'Connect the deploy wallet', 'One signature. No gas, no custody, no forms.'),
+          step('3', 'Go live', 'Camera in the browser or OBS with a key. Your holders see you in seconds.'))),
       el('section', { class: 'launch-explore float land-sec reveal' },
         head('Why live', 'Markets are better live'),
         el('div', { class: 'land-feats' },
@@ -914,7 +914,7 @@ void main(){
         head('Creator fees', 'Fees buy the loudest stream'),
         el('p', { class: 'land-fees-lead' }, 'Creator fees from the platform coin go straight back into the platform: they buy the coin with the biggest volume among the ones streaming right now, and everything bought is split between holders of the coin. Hold the coin, get a piece of whatever is hot on air.'),
         (feesGrid = el('div', { class: 'land-fees-grid' },
-          el('div', { class: 'land-fee-card' }, el('span', { class: 'land-eyebrow' }, 'Latest pick'), (feePick = el('b', {}, '…')), el('small', {}, 'the top-volume coin on air')),
+          el('div', { class: 'land-fee-card' }, el('span', { class: 'land-eyebrow' }, 'Latest pick'), (feePick = el('b', {}, '…')), el('small', {}, 'the loudest coin on air')),
           el('div', { class: 'land-fee-card' }, el('span', { class: 'land-eyebrow' }, 'Drops so far'), (feeRuns = el('b', {}, '…')), el('small', {}, 'buys sent to holders')),
           el('div', { class: 'land-fee-card' }, el('span', { class: 'land-eyebrow' }, 'Wallets paid'), (feePaid = el('b', {}, '…')), el('small', {}, 'holders, pro rata'))))),
       el('section', { class: 'launch-explore float land-sec land-trust reveal' },
@@ -1046,7 +1046,7 @@ void main(){
     // left: identity + chat + action
     const msgs = el('div', { class: 'chat-msgs' });
     const chatCount = el('span', {}, c.viewers);
-    const input = el('input', { placeholder: session ? 'Say something…' : 'Connect wallet to chat', maxlength: 280 });
+    const input = el('input', { placeholder: session ? 'Say it.' : 'Connect a wallet to chat', maxlength: 280 });
     const form = el('form', { class: 'chat-form', onsubmit: (e) => { e.preventDefault(); if (!session) return walletModal(); if (input.value.trim()) { wsSend({ t: 'chat', text: input.value.trim() }); input.value = ''; } } }, input, el('button', { title: 'Send' }, svgIcon(ICON.send)));
     let roomState = { holders_only: false, mods: [], dev: c.deployer, you: '', can_chat: true, banned: [] };
     const myRole = () => roomState.you || (session && session.address === c.deployer ? 'dev' : '');
@@ -1070,7 +1070,7 @@ void main(){
     const paintRoom = () => {
       holdersBtn.classList.toggle('is-on', !!roomState.holders_only); holdersBtn.style.display = (myRole() === 'dev' || roomState.holders_only) ? '' : 'none'; holdersBtn.style.cursor = myRole() === 'dev' ? 'pointer' : 'default';
       input.disabled = !!(session && !roomState.can_chat);
-      input.placeholder = !session ? 'Connect wallet to chat' : (!roomState.can_chat ? (roomState.banned.includes(session.address) ? 'You’re out of this chat' : 'Holders only. Grab some $' + c.symbol + ' to chat') : 'Say something…');
+      input.placeholder = !session ? 'Connect wallet to chat' : (!roomState.can_chat ? (roomState.banned.includes(session.address) ? 'You’re out of this chat' : 'Holders only. Get some $' + c.symbol + ' to talk') : 'Say it.');
       msgs.querySelectorAll('.chat-msg[data-wallet]').forEach(n => { const w = n.dataset.wallet; const b = n.querySelector('.chat-role'); const r = roleOf(w); if (b) b.remove(); const nb = roleBadge(r); if (nb) n.querySelector('b').after(nb); n.classList.toggle('can-mod', canMod({ wallet: w })); });
     };
     const actionBtn = isDev ? el('button', { class: 'ui-btn ui-btn-primary stream-action', onclick: () => goLive(c) }, el('span', { class: 'ui-btn-label' }, c.live ? 'Stream settings' : 'Go live')) : (session ? el('span', { class: 'stream-whois', title: 'Only the wallet that launched this coin can go live' }, 'Signed in as ' + short(session.address) + ' · launched by ' + short(c.deployer)) : null);
@@ -1171,7 +1171,7 @@ void main(){
         if (c.ingest === 'webrtc' && c.whep_url && window.RTCPeerConnection) whepPlay(video).catch(() => { video.srcObject = null; hlsPlay(video); });
         else hlsPlay(video);
         stage.append(controlsBar(video, null, { host: isDev }));
-      } else stage.append(el('div', { class: 'stream-off' }, c.image && el('img', { src: c.image, alt: '' }), el('span', {}, isDev ? 'You’re not live yet' : 'No stream yet')));
+      } else stage.append(el('div', { class: 'stream-off' }, c.image && el('img', { src: c.image, alt: '' }), el('span', {}, isDev ? 'You’re not on air yet' : 'Not live yet')));
     };
     const onPub = () => paintPlayer(); document.addEventListener('publish-changed', onPub);
     paintPlayer();
@@ -1197,10 +1197,10 @@ void main(){
     page.append(wrap);
     // chat wiring
     wsRoom = c.address; wsSend({ t: 'sub', room: c.address });
-    const hHist = (m) => { msgs.innerHTML = ''; m.rows.forEach(r => addMsg(r)); if (!m.rows.length) addMsg({ text: 'New messages show up here' }, true); };
+    const hHist = (m) => { msgs.innerHTML = ''; m.rows.forEach(r => addMsg(r)); if (!m.rows.length) addMsg({ text: 'The room is quiet. Say something.' }, true); };
     const hChat = (m) => addMsg(m);
     const hViewers = (m) => { if (m.token !== c.address) return; c.viewers = m.n; chatCount.textContent = m.n; const v = $('#viewers'); if (v) v.textContent = m.n + ' watching'; };
-    const hLive = async (m) => { if (m.token !== c.address) return; if (m.live && !c.live && !(pubRoom && pubCoin === c.address)) toast('Creator went live'); try { c = { ...c, ...(await api('/api/token/' + addr)) }; } catch {} paintPlayer(); metaLeft.innerHTML = ''; metaLeft.append(c.live ? el('span', { class: 'launch-card-live-badge is-big' }, 'LIVE') : null, el('h2', { class: 'stream-title' }, c.title || c.name), startedEl); startedEl.textContent = c.started_ts && c.live ? 'Started ' + ago(Date.now() / 1000 - c.started_ts) : ''; actionBtn && (actionBtn.firstChild.textContent = c.live ? 'Stream settings' : 'Go live'); };
+    const hLive = async (m) => { if (m.token !== c.address) return; if (m.live && !c.live && !(pubRoom && pubCoin === c.address)) toast('Dev is live'); try { c = { ...c, ...(await api('/api/token/' + addr)) }; } catch {} paintPlayer(); metaLeft.innerHTML = ''; metaLeft.append(c.live ? el('span', { class: 'launch-card-live-badge is-big' }, 'LIVE') : null, el('h2', { class: 'stream-title' }, c.title || c.name), startedEl); startedEl.textContent = c.started_ts && c.live ? 'Started ' + ago(Date.now() / 1000 - c.started_ts) : ''; actionBtn && (actionBtn.firstChild.textContent = c.live ? 'Stream settings' : 'Go live'); };
     const hBan = (m) => { msgs.querySelectorAll('.chat-msg[data-wallet="' + m.wallet + '"]').forEach(n => n.remove()); addMsg({ text: (m.who || short(m.wallet)) + ' got banned' }, true); };
     const hUnban = (m) => addMsg({ text: (m.who || short(m.wallet)) + ' is back' }, true);
     const hRoom = (m) => { if (m.token !== c.address) return; roomState = m; paintRoom(); };
@@ -1291,8 +1291,8 @@ void main(){
   function credsModal(c, creds) {
     const row = (icon, value, hidden) => el('div', { class: 'cred-row' }, svgIcon(icon), el('span', { class: 'cred-val' }, hidden ? value.slice(0, 4) + '•'.repeat(10) : value), el('button', { class: 'cred-copy', title: 'Copy', onclick: () => { navigator.clipboard?.writeText(value); toast('Copied'); } }, svgIcon(ICON.copy)));
     const box = el('div', { class: 'golive' },
-      el('div', { class: 'golive-head' }, el('h3', {}, 'Stream credentials'), el('button', { class: 'golive-close', onclick: closeModal }, '✕')),
-      el('p', { class: 'hint', style: 'margin:0 0 14px;font-size:14px' }, 'Paste the URL and key into OBS and start streaming. Viewers see you in a couple of seconds.'),
+      el('div', { class: 'golive-head' }, el('h3', {}, 'Your stream keys'), el('button', { class: 'golive-close', onclick: closeModal }, '✕')),
+      el('p', { class: 'hint', style: 'margin:0 0 14px;font-size:14px' }, 'Paste both into OBS and hit start. You are on air in seconds.'),
       row(ICON.globe, creds.rtmps_url, false), row(ICON.key, creds.stream_key, true),
       el('button', { class: 'ui-btn cred-reset', onclick: async (e) => { if (!confirm('Reset credentials? The old key stops working.')) return; e.target.disabled = true; try { const n = await api('/api/stream/reset', { method: 'POST', body: { token: c.address } }); closeModal(); credsModal(c, n); toast('New credentials'); } catch (err) { toast(err.message); e.target.disabled = false; } } }, el('span', { class: 'ui-btn-label' }, 'Reset credentials')),
       c.live ? el('button', { class: 'ui-btn', style: 'margin-top:8px;background:var(--panel-blue)', onclick: async () => { await api('/api/stream/stop', { method: 'POST', body: { token: c.address } }).catch(() => {}); closeModal(); toast('Stream ended'); } }, el('span', { class: 'ui-btn-label' }, 'End stream')) : null);
