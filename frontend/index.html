@@ -375,97 +375,6 @@
   .pbtn.wide { width:100%; justify-content:flex-start; margin-bottom:8px; }
   .toast { position:fixed; bottom:22px; left:50%; transform:translateX(-50%); background:var(--bg-elevated); border:1px solid var(--float-border); padding:10px 16px; border-radius:999px; z-index:90; font-size:13px; }
   @media (max-width:900px) { .token-buy-layout { grid-template-columns:1fr; } .token-buy-card { position:static; max-height:none; } .chat-wrap { min-height:320px; } }
-
-  /* ================= MOTION restyle: black canvas, white type, hairlines, glass only where you touch ================= */
-  html[data-theme=dark] { --bg-page:#000; --bg-white:#000; --bg-elevated:#0e0e0e; --panel-blue:#0a0a0a; --divider:#ffffff1f; --float-bg:#000000cc; --float-border:#ffffff1f; --float-shadow:none; --glass-highlight:inset 0 1px 0 #ffffff14; --radius-float:22px; --text-muted:#ffffff8c; --text-subtle:#ffffff59; }
-  body { background:#000; }
-  .site-nav, main, .site-foot, #modal { position:relative; z-index:1; }
-  .site-nav .nav-glass { background:transparent !important; border:0 !important; box-shadow:none !important; -webkit-backdrop-filter:none; backdrop-filter:none; }
-  .nav-inner { border-bottom:1px solid var(--divider); }
-  .nav-wordmark { font-size:22px; }
-  .nav-product-links { background:#ffffff0d; }
-  .nav-product-indicator { background:#fff !important; border-color:#fff; }
-  .nav-product-link.is-active { color:#000; }
-  .nav-connect { background:#fff !important; color:#000 !important; border:0 !important; box-shadow:none !important; }
-  .nav-ca { background:transparent; border-color:#ffffff2e; }
-  .nav-ca-label { background:#fff; color:#000; }
-  /* primary actions: solid white, nothing else glows */
-  .ui-btn-primary, .pbtn.primary, .trade-btn.pbtn, .token-info-links a.trade-btn, .stream-action.ui-btn, .chat-card .chat-form button, .land-btn.ui-btn-primary { background:#fff !important; color:#000 !important; border:0 !important; box-shadow:none !important; -webkit-backdrop-filter:none; backdrop-filter:none; }
-  .ui-btn-primary::after, .pbtn.primary::after, .trade-btn::after, .stream-action.ui-btn::after, .chat-card .chat-form button::after, .nav-connect::after { display:none !important; }
-  .land-btn-ghost { background:transparent; border:1px solid #ffffff3d !important; color:#fff; }
-  .land-btn-ghost:hover { border-color:#fff !important; }
-  /* landing: sections are typographic bands with hairlines, not cards inside cards */
-  .launchpad-explore-shell .launch-explore.land-sec, .launchpad-explore-shell .launch-explore.land-final { background:transparent !important; border:0 !important; border-top:1px solid var(--divider) !important; border-radius:0 !important; box-shadow:none !important; padding:32px 0 40px !important; -webkit-backdrop-filter:none; backdrop-filter:none; }
-  .land-hero.land-hero-motion { background:transparent !important; border:0 !important; border-radius:0 !important; padding:40px 0 36px !important; min-height:0 !important; }
-  .motion-word { margin-left:-0.045em; font-size:clamp(72px, 13vw, 200px); }
-  .land-hero-motion h1 { font-size:26px; font-weight:600; letter-spacing:-.02em; margin:4px 0 8px; }
-  .land-lead { font-size:16px; max-width:52ch; margin-bottom:22px; }
-  .land-stats { margin-top:28px; gap:0; border-top:1px solid var(--divider); border-bottom:0; }
-  .land-stat { background:transparent; border:0; border-right:1px solid var(--divider); border-radius:0; padding:16px 26px 16px 0; margin-right:26px; -webkit-backdrop-filter:none; backdrop-filter:none; display:grid; gap:2px; }
-  .land-stat:last-child { border-right:0; }
-  .land-stat b { font-size:22px; font-weight:700; letter-spacing:-.02em; }
-  .land-stat span { font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--text-subtle); }
-  .land-eyebrow { font-size:11px; letter-spacing:.14em; color:var(--text-subtle); font-weight:500; }
-  .land-sec h2, .land-head h2 { font-size:26px; font-weight:700; letter-spacing:-.02em; line-height:1.1; }
-  .land-head { display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:26px; text-align:left; }
-  .land-head > div:first-child { flex:1 1 auto; min-width:0; }
-  .land-more { border:1px solid #ffffff3d; border-radius:999px; padding:8px 14px; background:transparent; color:#fff; }
-  .launch-explore-count { background:#ffffff14; color:#fff; }
-  /* steps: big numerals, no boxes */
-  .about-steps { gap:0; border-top:1px solid var(--divider); }
-  .about-step { background:transparent; border-radius:0; padding:20px 24px 20px 0; border-right:1px solid var(--divider); }
-  .about-step:last-child { border-right:0; }
-  .about-step + .about-step { padding-left:28px; }
-  .about-num { width:auto; height:auto; background:transparent !important; color:#ffffff59 !important; border:0 !important; box-shadow:none !important; -webkit-backdrop-filter:none; backdrop-filter:none; font-size:12px; font-weight:600; letter-spacing:.12em; margin-bottom:10px; display:block; place-items:unset; }
-  .about-num::before { content:"0"; }
-  .about-num::after { display:none !important; }
-  .about-step h3 { font-size:17px; font-weight:600; letter-spacing:-.01em; }
-  .about-step p { font-size:14px; color:var(--text-muted); }
-  /* features: hairline list rows */
-  .land-feats { gap:0; border-top:1px solid var(--divider); grid-template-columns:1fr 1fr; }
-  .land-feat { background:transparent; border-radius:0; border-bottom:1px solid var(--divider); padding:22px 28px 22px 0; }
-  .land-feat:nth-child(odd) { border-right:1px solid var(--divider); }
-  .land-feat:nth-child(even) { padding-left:28px; }
-  .land-ico { background:transparent; color:#fff; width:auto; height:auto; border-radius:0; }
-  .land-feat h3 { font-size:19px; font-weight:600; }
-  .land-feat p { font-size:15px; }
-  /* trust: three columns of plain statements */
-  .trust-grid { gap:0; border-top:1px solid var(--divider); }
-  .trust-card { background:transparent; border-radius:0; border-right:1px solid var(--divider); padding:22px 28px 22px 0; font-size:17px; font-weight:500; }
-  .trust-card:last-child { border-right:0; } .trust-card + .trust-card { padding-left:28px; }
-  .trust-card svg { color:#fff; }
-  /* fees: a statement plus three big numbers */
-  .land-fees-lead { font-size:15px; max-width:60ch; color:var(--text-muted); }
-  .land-fees-grid { gap:0; border-top:1px solid var(--divider); }
-  .land-fee-card { background:transparent; border:0; border-right:1px solid var(--divider); border-radius:0; padding:16px 24px 16px 0; }
-  .land-fee-card:last-child { border-right:0; } .land-fee-card + .land-fee-card { padding-left:28px; }
-  .land-fee-card b { font-size:24px; font-weight:700; letter-spacing:-.02em; }
-  /* closing: the second big word */
-  .land-final { text-align:left; justify-items:start; padding:36px 0 48px !important; gap:10px; }
-  .land-final h2 { font-size:26px; font-weight:700; letter-spacing:-.02em; line-height:1.15; text-transform:none; }
-  .land-final p { font-size:15px; max-width:52ch; }
-  /* ticker of what is moving on the chain */
-  /* reveal: wipe up from a mask instead of a fade */
-  .reveal { opacity:1; transform:none; clip-path:none; transition:none; }
-  .reveal.is-in { clip-path:none; }
-  /* coin cards everywhere: hairline, square art, heavy symbol, hover turns white */
-  .launch-card { background:#000 !important; border:1px solid var(--divider) !important; border-radius:16px !important; box-shadow:none !important; transition:border-color .2s ease, transform .2s ease !important; }
-  .launch-explore-grid .launch-card:hover, html[data-theme=dark] .launch-explore-grid .launch-card:hover { background:#000 !important; border-color:#fff !important; box-shadow:none !important; transform:translateY(-2px) !important; }
-  .launch-card-name-row strong { font-weight:800; letter-spacing:-.01em; }
-  .launch-card-mcap-value { font-weight:700; }
-  .launch-card-live-badge { background:#fff !important; color:#000 !important; border:0 !important; box-shadow:none !important; }
-  .launch-card-live-badge::before { background:#000; }
-  .launch-explore, .token-about-card, .stream-card, .chat-card, .token-market-card, .search-toolbar .float { box-shadow:none !important; }
-  .float { box-shadow:none; }
-  .site-foot { border-top:1px solid var(--divider); padding-top:22px; }
-  @media (max-width:720px) {
-    .about-steps, .land-feats, .trust-grid, .land-fees-grid { grid-template-columns:1fr; }
-    .about-step, .land-feat, .trust-card, .land-fee-card { border-right:0 !important; padding-left:0 !important; border-bottom:1px solid var(--divider); }
-    .land-head { flex-direction:column; align-items:flex-start; gap:10px; }
-    .land-stats { display:grid; grid-template-columns:1fr 1fr 1fr; }
-    .land-stat { margin-right:0; padding:12px 8px 12px 0; }
-    .land-stat b { font-size:20px; }
-  }
 </style>
 </head>
 <body>
@@ -753,7 +662,6 @@
 
   // ---- Landing ----
 
-
   // The word. Six silhouettes sit under it and slide toward the cursor with growing lag,
   // so a moving pointer pulls a trail out of the letters; the trail's look cycles
   // (outline → blur → ghost) so the page never settles.
@@ -827,16 +735,30 @@
           step('1', 'Find your coin', 'Every PONS coin is already here, and new ones land the second they launch.'),
           step('2', 'Connect the deploy wallet', 'One signature, no gas, no custody. That’s the whole login.'),
           step('3', 'Go live', 'Webcam straight from the browser, or OBS with a key. Holders see you in seconds.'))),
+      el('section', { class: 'launch-explore float land-sec reveal' },
+        head('Why live', 'Markets are better live'),
+        el('div', { class: 'land-feats' },
+          feat(I.chart, 'Stream and chart on one screen', 'The chart sits right under the video, so the story and the numbers move together.'),
+          feat(I.chat, 'Live chat', 'Wallet-signed messages, and creators run their own room.'),
+          feat(I.bolt, 'No lag', 'Under a second from camera to viewer, whichever way you broadcast.'),
+          feat(I.grid, 'Everything on PONS', 'The full catalog, searchable, plus a Live tab for whoever is on air right now.'))),
       el('section', { class: 'launch-explore launch-explore-graduated float land-sec land-fees reveal' },
-        head('Creator fees', 'Fees go back to holders'),
-        el('p', { class: 'land-fees-lead' }, 'Creator fees buy the top-volume coin on air and go to holders, pro rata.'),
+        head('Creator fees', 'Fees buy the loudest stream'),
+        el('p', { class: 'land-fees-lead' }, 'Creator fees from the platform coin go straight back into the platform: they buy the coin with the biggest volume among the ones streaming right now, and everything bought is split between holders of the coin. Hold the coin, get a piece of whatever is hot on air.'),
         (feesGrid = el('div', { class: 'land-fees-grid' },
           el('div', { class: 'land-fee-card' }, el('span', { class: 'land-eyebrow' }, 'Latest pick'), (feePick = el('b', {}, '…')), el('small', {}, 'the top-volume coin on air')),
           el('div', { class: 'land-fee-card' }, el('span', { class: 'land-eyebrow' }, 'Drops so far'), (feeRuns = el('b', {}, '…')), el('small', {}, 'buys sent to holders')),
           el('div', { class: 'land-fee-card' }, el('span', { class: 'land-eyebrow' }, 'Wallets paid'), (feePaid = el('b', {}, '…')), el('small', {}, 'holders, pro rata'))))),
+      el('section', { class: 'launch-explore float land-sec land-trust reveal' },
+        head('Ground rules', 'What we never touch'),
+        el('ul', { class: 'trust-grid' },
+          trust(I.key, 'No keys, no approvals, no transactions. Ever.'),
+          trust(I.shield, 'Trading stays on PONS. Every coin page links straight there.'),
+          trust(I.cam, 'Only the wallet that launched a coin can stream on it.'))),
       el('section', { class: 'launch-explore launch-explore-graduated float land-final reveal' },
-        el('h2', {}, 'Own a coin on PONS? Go live in a minute.'),
-        el('p', {}, 'Sign in with the wallet that launched it. No keys, no gas, no setup.'),
+        el('span', { class: 'land-eyebrow' }, 'Own a coin on PONS?'),
+        el('h2', {}, 'Go live in under a minute.'),
+        el('p', {}, 'No keys, no gas, no setup. Just your camera, your chart and your holders.'),
         el('button', { class: 'ui-btn ui-btn-primary land-btn', onclick: goLiveEntry }, el('span', { class: 'ui-btn-label' }, 'Go live'))));
     // sections rise in as they scroll into view
     if ('IntersectionObserver' in window && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
