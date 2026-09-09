@@ -39,7 +39,7 @@ CF_ACCOUNT = (os.environ.get("CF_ACCOUNT_ID") or "").strip()
 CF_TOKEN = (os.environ.get("CF_API_TOKEN") or "").strip()
 PRIVY_APP_ID = (os.environ.get("PRIVY_APP_ID") or "").strip()
 ADMIN_SECRET = (os.environ.get("ADMIN_SECRET") or "").strip()
-SITE_NAME = os.environ.get("SITE_NAME") or "Plink"
+SITE_NAME = os.environ.get("SITE_NAME") or "Motion"
 _ADDR = re.compile(r"^0x[0-9a-fA-F]{40}$")
 NO_CACHE = {"Cache-Control": "no-cache"}
 TOKEN_TTL = 7 * 86400
@@ -814,7 +814,7 @@ async def h_index(request):
     # wordmark so a palette change lands on the next load instead of after a hard refresh
     origin = f"{request.scheme}://{request.host}"
     html = html.replace('content="/assets/og.png"', f'content="{origin}/assets/og.png"')
-    for name in ("pons.css", "wordmark.png", "icon-32.png", "icon-192.png", "icon-180.png"):
+    for name in ("pons.css", "wordmark-motion.png", "icon-32.png", "icon-192.png", "icon-180.png", "og.png"):
         html = html.replace(f"/assets/{name}\"", f"/assets/{name}?v={_asset_ver(name)}\"")
     return web.Response(text=html, content_type="text/html", headers=NO_CACHE)
 

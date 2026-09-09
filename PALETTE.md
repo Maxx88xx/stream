@@ -1,6 +1,6 @@
 # Palette
 
-Current accent: **sky** `#8fd3ff` (sky blue, chosen 2026-09-08; the previous mist #c3d4bd is one commit back), applied 2026-09-08.
+Current accent: **white** `#ffffff` on black (Motion rebrand 2026-09-09; the Plink state is tag `plink-v1`) (sky blue, chosen 2026-09-08; the previous mist #c3d4bd is one commit back), applied 2026-09-08.
 
 Rollback to the original PONS lime (`#d4fc50`):
 

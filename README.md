@@ -1,4 +1,4 @@
-# Plink
+# Motion
 
 Livestream PONS coins in seconds. Every coin launched on PONS (Robinhood Chain) gets a page with the creator on camera,
 the market-cap chart underneath and a wallet-signed chat. Only the coin's deployer wallet can go live (Privy sign-in,
