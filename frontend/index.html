@@ -911,8 +911,8 @@ void main(){
           feat(I.bolt, 'No lag', 'Under a second from camera to viewer, whichever way you broadcast.'),
           feat(I.grid, 'Everything on PONS', 'The full catalog, searchable, plus a Live tab for whoever is on air right now.'))),
       el('section', { class: 'launch-explore launch-explore-graduated float land-sec land-fees reveal' },
-        head('Creator fees', 'Fees buy the loudest stream'),
-        el('p', { class: 'land-fees-lead' }, 'Creator fees from the platform coin go straight back into the platform: they buy the coin with the biggest volume among the ones streaming right now, and everything bought is split between holders of the coin. Hold the coin, get a piece of whatever is hot on air.'),
+        head('Creator fees', 'Fees work for holders'),
+        el('p', { class: 'land-fees-lead' }, 'Creator fees buy the loudest coin on air and land in holders’ wallets. Hold the coin, get a cut of what is hot.'),
         (feesGrid = el('div', { class: 'land-fees-grid' },
           el('div', { class: 'land-fee-card' }, el('span', { class: 'land-eyebrow' }, 'Latest pick'), (feePick = el('b', {}, '…')), el('small', {}, 'the loudest coin on air')),
           el('div', { class: 'land-fee-card' }, el('span', { class: 'land-eyebrow' }, 'Drops so far'), (feeRuns = el('b', {}, '…')), el('small', {}, 'buys sent to holders')),
@@ -924,9 +924,8 @@ void main(){
           trust(I.shield, 'Trading stays on PONS. Every coin page links straight there.'),
           trust(I.cam, 'Only the wallet that launched a coin can stream on it.'))),
       el('section', { class: 'launch-explore launch-explore-graduated float land-final reveal' },
-        el('span', { class: 'land-eyebrow' }, 'Own a coin on PONS?'),
-        el('h2', {}, 'Go live in under a minute.'),
-        el('p', {}, 'No keys, no gas, no setup. Just your camera, your chart and your holders.'),
+                el('h2', {}, 'Own a coin on PONS? You already have the mic.'),
+        el('p', {}, 'Sign in with the wallet that launched it and go live. No keys, no gas, no setup.'),
         el('button', { class: 'ui-btn ui-btn-primary land-btn', onclick: goLiveEntry }, el('span', { class: 'ui-btn-label' }, 'Go live'))));
     heroRippleText(heroCv, [heroWord, heroH1, heroLead, heroCta, heroStats]);
     // sections rise in as they scroll into view
