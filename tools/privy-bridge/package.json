@@ -1,0 +1,1 @@
+{ "name": "privy-bridge", "private": true, "dependencies": { "@privy-io/react-auth": "^2", "react": "^18", "react-dom": "^18" }, "devDependencies": { "esbuild": "^0.24" } }
