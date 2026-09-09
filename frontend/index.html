@@ -375,6 +375,105 @@
   .pbtn.wide { width:100%; justify-content:flex-start; margin-bottom:8px; }
   .toast { position:fixed; bottom:22px; left:50%; transform:translateX(-50%); background:var(--bg-elevated); border:1px solid var(--float-border); padding:10px 16px; border-radius:999px; z-index:90; font-size:13px; }
   @media (max-width:900px) { .token-buy-layout { grid-template-columns:1fr; } .token-buy-card { position:static; max-height:none; } .chat-wrap { min-height:320px; } }
+
+  /* ================= MOTION restyle: black canvas, white type, hairlines, glass only where you touch ================= */
+  html[data-theme=dark] { --bg-page:#000; --bg-white:#000; --bg-elevated:#0e0e0e; --panel-blue:#0a0a0a; --divider:#ffffff1f; --float-bg:#000000cc; --float-border:#ffffff1f; --float-shadow:none; --glass-highlight:inset 0 1px 0 #ffffff14; --radius-float:22px; --text-muted:#ffffff8c; --text-subtle:#ffffff59; }
+  body { background:#000; }
+  #bg-fx { position:fixed; inset:0; z-index:0; pointer-events:none; opacity:.9; }
+  .site-nav, main, .site-foot, #modal { position:relative; z-index:1; }
+  .site-nav .nav-glass { background:transparent !important; border:0 !important; box-shadow:none !important; -webkit-backdrop-filter:none; backdrop-filter:none; }
+  .nav-inner { border-bottom:1px solid var(--divider); }
+  .nav-wordmark { font-size:22px; }
+  .nav-product-links { background:#ffffff0d; }
+  .nav-product-indicator { background:#fff !important; border-color:#fff; }
+  .nav-product-link.is-active { color:#000; }
+  .nav-connect { background:#fff !important; color:#000 !important; border:0 !important; box-shadow:none !important; }
+  .nav-ca { background:transparent; border-color:#ffffff2e; }
+  .nav-ca-label { background:#fff; color:#000; }
+  /* primary actions: solid white, nothing else glows */
+  .ui-btn-primary, .pbtn.primary, .trade-btn.pbtn, .token-info-links a.trade-btn, .stream-action.ui-btn, .chat-card .chat-form button, .land-btn.ui-btn-primary { background:#fff !important; color:#000 !important; border:0 !important; box-shadow:none !important; -webkit-backdrop-filter:none; backdrop-filter:none; }
+  .ui-btn-primary::after, .pbtn.primary::after, .trade-btn::after, .stream-action.ui-btn::after, .chat-card .chat-form button::after, .nav-connect::after { display:none !important; }
+  .land-btn-ghost { background:transparent; border:1px solid #ffffff3d !important; color:#fff; }
+  .land-btn-ghost:hover { border-color:#fff !important; }
+  /* landing: sections are typographic bands with hairlines, not cards inside cards */
+  .launchpad-explore-shell .launch-explore.land-sec, .launchpad-explore-shell .launch-explore.land-final { background:transparent !important; border:0 !important; border-top:1px solid var(--divider) !important; border-radius:0 !important; box-shadow:none !important; padding:44px 0 52px !important; -webkit-backdrop-filter:none; backdrop-filter:none; }
+  .land-hero.land-hero-motion { background:transparent !important; border:0 !important; border-radius:0 !important; padding:56px 0 40px !important; min-height:0 !important; }
+  .motion-word { margin-left:-0.045em; font-size:clamp(84px, 17.5vw, 300px); }
+  .land-hero-motion h1 { font-size:34px; font-weight:600; letter-spacing:-.02em; margin:6px 0 10px; }
+  .land-lead { font-size:18px; max-width:52ch; }
+  .land-stats { margin-top:34px; gap:0; border-top:1px solid var(--divider); border-bottom:1px solid var(--divider); }
+  .land-stat { background:transparent; border:0; border-right:1px solid var(--divider); border-radius:0; padding:16px 26px 16px 0; margin-right:26px; -webkit-backdrop-filter:none; backdrop-filter:none; display:grid; gap:2px; }
+  .land-stat:last-child { border-right:0; }
+  .land-stat b { font-size:30px; font-weight:700; letter-spacing:-.02em; }
+  .land-stat span { font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--text-subtle); }
+  .land-eyebrow { font-size:11px; letter-spacing:.14em; color:var(--text-subtle); font-weight:500; }
+  .land-sec h2, .land-head h2 { font-size:clamp(32px, 4vw, 48px); font-weight:800; letter-spacing:-.03em; line-height:1; }
+  .land-head { display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:26px; text-align:left; }
+  .land-head > div:first-child { flex:1 1 auto; min-width:0; }
+  .land-more { border:1px solid #ffffff3d; border-radius:999px; padding:8px 14px; background:transparent; color:#fff; }
+  .launch-explore-count { background:#ffffff14; color:#fff; }
+  /* steps: big numerals, no boxes */
+  .about-steps { gap:0; border-top:1px solid var(--divider); }
+  .about-step { background:transparent; border-radius:0; padding:26px 28px 26px 0; border-right:1px solid var(--divider); }
+  .about-step:last-child { border-right:0; }
+  .about-step + .about-step { padding-left:28px; }
+  .about-num { width:auto; height:auto; background:transparent !important; color:#ffffff59 !important; border:0 !important; box-shadow:none !important; -webkit-backdrop-filter:none; backdrop-filter:none; font-size:44px; font-weight:800; letter-spacing:-.03em; margin-bottom:18px; display:block; place-items:unset; }
+  .about-num::before { content:"0"; }
+  .about-num::after { display:none !important; }
+  .about-step h3 { font-size:20px; font-weight:600; letter-spacing:-.01em; }
+  .about-step p { font-size:15px; color:var(--text-muted); }
+  /* features: hairline list rows */
+  .land-feats { gap:0; border-top:1px solid var(--divider); grid-template-columns:1fr 1fr; }
+  .land-feat { background:transparent; border-radius:0; border-bottom:1px solid var(--divider); padding:22px 28px 22px 0; }
+  .land-feat:nth-child(odd) { border-right:1px solid var(--divider); }
+  .land-feat:nth-child(even) { padding-left:28px; }
+  .land-ico { background:transparent; color:#fff; width:auto; height:auto; border-radius:0; }
+  .land-feat h3 { font-size:19px; font-weight:600; }
+  .land-feat p { font-size:15px; }
+  /* trust: three columns of plain statements */
+  .trust-grid { gap:0; border-top:1px solid var(--divider); }
+  .trust-card { background:transparent; border-radius:0; border-right:1px solid var(--divider); padding:22px 28px 22px 0; font-size:17px; font-weight:500; }
+  .trust-card:last-child { border-right:0; } .trust-card + .trust-card { padding-left:28px; }
+  .trust-card svg { color:#fff; }
+  /* fees: a statement plus three big numbers */
+  .land-fees-lead { font-size:19px; max-width:60ch; color:#fff; }
+  .land-fees-grid { gap:0; border-top:1px solid var(--divider); }
+  .land-fee-card { background:transparent; border:0; border-right:1px solid var(--divider); border-radius:0; padding:22px 28px 22px 0; }
+  .land-fee-card:last-child { border-right:0; } .land-fee-card + .land-fee-card { padding-left:28px; }
+  .land-fee-card b { font-size:44px; font-weight:800; letter-spacing:-.03em; }
+  /* closing: the second big word */
+  .land-final { text-align:left; justify-items:start; padding:56px 0 64px !important; }
+  .land-final h2 { font-size:clamp(56px, 11vw, 190px); font-weight:900; letter-spacing:-.05em; line-height:.9; text-transform:uppercase; }
+  .land-final p { font-size:18px; max-width:52ch; }
+  /* ticker of what is moving on the chain */
+  .land-ticker { overflow:hidden; border-top:1px solid var(--divider); border-bottom:1px solid var(--divider); margin:36px 0 0; padding:12px 0; white-space:nowrap; -webkit-mask-image:linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); mask-image:linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); }
+  .land-ticker-track { display:inline-flex; gap:40px; animation:ticker 60s linear infinite; will-change:transform; }
+  .land-ticker:hover .land-ticker-track { animation-play-state:paused; }
+  .land-ticker a { color:#fff; text-decoration:none; font-weight:700; letter-spacing:-.01em; font-size:15px; display:inline-flex; gap:10px; align-items:baseline; }
+  .land-ticker a small { color:var(--text-subtle); font-weight:400; font-variant-numeric:tabular-nums; }
+  .land-ticker a.is-live::before { content:"LIVE"; font-size:10px; letter-spacing:.12em; background:#fff; color:#000; padding:2px 6px; border-radius:999px; align-self:center; }
+  @keyframes ticker { to { transform:translateX(-50%); } }
+  /* reveal: wipe up from a mask instead of a fade */
+  .reveal { opacity:1; transform:none; clip-path:inset(0 0 100% 0); transition:clip-path .9s cubic-bezier(.22,1,.36,1); }
+  .reveal.is-in { clip-path:inset(0 0 0 0); }
+  /* coin cards everywhere: hairline, square art, heavy symbol, hover turns white */
+  .launch-card { background:#000 !important; border:1px solid var(--divider) !important; border-radius:16px !important; box-shadow:none !important; transition:border-color .2s ease, transform .2s ease !important; }
+  .launch-explore-grid .launch-card:hover, html[data-theme=dark] .launch-explore-grid .launch-card:hover { background:#000 !important; border-color:#fff !important; box-shadow:none !important; transform:translateY(-2px) !important; }
+  .launch-card-name-row strong { font-weight:800; letter-spacing:-.01em; }
+  .launch-card-mcap-value { font-weight:700; }
+  .launch-card-live-badge { background:#fff !important; color:#000 !important; border:0 !important; box-shadow:none !important; }
+  .launch-card-live-badge::before { background:#000; }
+  .launch-explore, .token-about-card, .stream-card, .chat-card, .token-market-card, .search-toolbar .float { box-shadow:none !important; }
+  .float { box-shadow:none; }
+  .site-foot { border-top:1px solid var(--divider); padding-top:22px; }
+  @media (max-width:720px) {
+    .about-steps, .land-feats, .trust-grid, .land-fees-grid { grid-template-columns:1fr; }
+    .about-step, .land-feat, .trust-card, .land-fee-card { border-right:0 !important; padding-left:0 !important; border-bottom:1px solid var(--divider); }
+    .land-stats { display:grid; grid-template-columns:1fr 1fr 1fr; }
+    .land-stat { margin-right:0; padding:12px 8px 12px 0; }
+    .land-stat b { font-size:20px; }
+    .land-final h2 { font-size:clamp(44px, 16vw, 90px); }
+  }
 </style>
 </head>
 <body>
@@ -662,6 +761,32 @@
 
   // ---- Landing ----
 
+
+  // Background: film grain at 12 fps plus a soft light that trails the cursor. Cheap, monochrome, always moving.
+  (function bgFx() {
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const cv = document.createElement('canvas'); cv.id = 'bg-fx'; document.body.prepend(cv);
+    const ctx = cv.getContext('2d', { alpha: true });
+    let w = 0, h = 0, lx = innerWidth * 0.6, ly = innerHeight * 0.3, tx = lx, ty = ly, last = 0;
+    const grain = document.createElement('canvas'); grain.width = grain.height = 160; const g = grain.getContext('2d');
+    const noise = () => { const img = g.createImageData(160, 160), d = img.data; for (let i = 0; i < d.length; i += 4) { const v = 255 * Math.random(); d[i] = d[i + 1] = d[i + 2] = v; d[i + 3] = 26; } g.putImageData(img, 0, 0); };
+    const resize = () => { w = cv.width = innerWidth; h = cv.height = innerHeight; };
+    addEventListener('resize', resize); resize();
+    addEventListener('pointermove', (e) => { tx = e.clientX; ty = e.clientY; }, { passive: true });
+    const frame = (t) => {
+      requestAnimationFrame(frame);
+      if (document.hidden) return;
+      lx += (tx - lx) * 0.06; ly += (ty - ly) * 0.06;
+      ctx.clearRect(0, 0, w, h);
+      const r = Math.max(w, h) * 0.55;
+      const grd = ctx.createRadialGradient(lx, ly, 0, lx, ly, r);
+      grd.addColorStop(0, 'rgba(255,255,255,0.055)'); grd.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = grd; ctx.fillRect(0, 0, w, h);
+      if (t - last > 83) { last = t; noise(); }
+      ctx.globalAlpha = 1; ctx.fillStyle = ctx.createPattern(grain, 'repeat'); ctx.fillRect(0, 0, w, h);
+    };
+    requestAnimationFrame(frame);
+  })();
   // The word. Six silhouettes sit under it and slide toward the cursor with growing lag,
   // so a moving pointer pulls a trail out of the letters; the trail's look cycles
   // (outline → blur → ghost) so the page never settles.
@@ -714,7 +839,7 @@
     const feat = (d, title, text) => el('div', { class: 'land-feat' }, ico(d), el('div', {}, el('h3', {}, title), el('p', {}, text)));
     const trust = (d, text) => el('li', { class: 'trust-card' }, svgPath(d), el('span', {}, text));
     const head = (eyebrow, title, link) => el('div', { class: 'land-head' }, el('div', {}, el('span', { class: 'land-eyebrow' }, eyebrow), el('h2', {}, title)), link ? el('a', { class: 'launch-explore-count land-more', href: link[1], 'data-link': '' }, link[0]) : null);
-    let heroWord, heroH1, heroLead, heroCta, heroStats, feesGrid, feePick, feeRuns, feePaid;
+    let heroWord, heroH1, heroLead, heroCta, heroStats, heroTicker, feesGrid, feePick, feeRuns, feePaid;
     const stat = (label) => { const b = el('b', {}, '…'); return { el: el('span', { class: 'land-stat' }, b, el('span', {}, label)), b }; };
     const sCoins = stat('coins on PONS'), sLive = stat('live now'), sWatch = stat('watching');
     const liveGrid = el('ul', { class: 'launch-explore-grid' });
@@ -726,7 +851,8 @@
         (heroH1 = el('h1', {}, 'Livestream your coins.')),
         (heroLead = el('p', { class: 'land-lead' }, 'Every PONS coin gets a stage. Watch the creator on camera, talk to holders in real time, and follow the chart while it moves. Trading is one tap away on PONS.')),
         (heroCta = el('div', { class: 'land-cta' }, el('button', { class: 'ui-btn ui-btn-primary land-btn', onclick: goLiveEntry }, el('span', { class: 'ui-btn-label' }, 'Go live')), el('a', { class: 'ui-btn land-btn land-btn-ghost', href: '/explore', 'data-link': '' }, el('span', { class: 'ui-btn-label' }, 'Explore coins')))),
-        (heroStats = el('div', { class: 'land-stats' }, sCoins.el, sLive.el, sWatch.el))),
+        (heroStats = el('div', { class: 'land-stats' }, sCoins.el, sLive.el, sWatch.el)),
+        (heroTicker = el('div', { class: 'land-ticker' }, el('div', { class: 'land-ticker-track' })))),
       liveSec,
       el('section', { class: 'launch-explore float land-sec reveal' }, head('Fresh from the chain', 'Just launched', ['Explore all', '/explore']), freshGrid),
       el('section', { class: 'launch-explore float land-sec reveal' },
@@ -757,8 +883,8 @@
           trust(I.cam, 'Only the wallet that launched a coin can stream on it.'))),
       el('section', { class: 'launch-explore launch-explore-graduated float land-final reveal' },
         el('span', { class: 'land-eyebrow' }, 'Own a coin on PONS?'),
-        el('h2', {}, 'Go live in under a minute.'),
-        el('p', {}, 'No keys, no gas, no setup. Just your camera, your chart and your holders.'),
+        el('h2', {}, 'Go live'),
+        el('p', {}, 'Under a minute from the wallet that launched your coin to your holders watching. No keys, no gas, no setup.'),
         el('button', { class: 'ui-btn ui-btn-primary land-btn', onclick: goLiveEntry }, el('span', { class: 'ui-btn-label' }, 'Go live'))));
     // sections rise in as they scroll into view
     if ('IntersectionObserver' in window && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
@@ -772,7 +898,18 @@
     };
     swr('/api/streams', paintLive).catch(() => {});
     api('/api/fees').then((f) => { const last = (f.runs || []).find(r => Number(r.bought) > 0); feePick.textContent = last ? '$' + (last.target_symbol || '…') : 'Coming up'; feeRuns.textContent = nf(f.done); feePaid.textContent = nf(f.recipients); }).catch(() => { feePick.textContent = 'Coming up'; feeRuns.textContent = '0'; feePaid.textContent = '0'; });
+    const paintTicker = async () => {
+      try {
+        const [live, fresh] = await Promise.all([api('/api/streams').catch(() => ({ rows: [] })), api('/api/recent?limit=24')]);
+        const seen = new Set(), items = [];
+        for (const r of [...live.rows, ...fresh.rows]) { if (seen.has(r.address)) continue; seen.add(r.address); items.push(r); }
+        const mk = (r) => el('a', { class: r.live ? 'is-live' : '', href: '/coin/' + r.address, 'data-link': '' }, '$' + (r.symbol || short(r.address)), el('small', {}, fmtUsd(r.mcap_usd)));
+        const track = heroTicker.firstChild; track.innerHTML = '';
+        [...items, ...items].forEach(r => track.append(mk(r)));      // doubled so the loop is seamless
+      } catch {}
+    };
     swr('/api/recent?limit=4', ({ rows, stats }) => { sCoins.b.textContent = nf(stats.tokens); freshGrid.innerHTML = ''; rows.slice(0, 4).forEach(r => freshGrid.append(el('li', {}, card(r)))); }).catch(() => {});
+    paintTicker();
     const onLive = () => swr('/api/streams', paintLive).catch(() => {});
     on('live', onLive); cleanup = () => off('live', onLive);
   }
