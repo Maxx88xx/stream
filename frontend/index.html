@@ -892,7 +892,7 @@ void main(){
         (heroCv = heroRipples(() => { const t = heroWord && heroWord.querySelector('.motion-main').firstChild; if (!t) return null; const r = document.createRange(); r.setStart(t, 1); r.setEnd(t, 2); const b = r.getBoundingClientRect(), c = heroCv.getBoundingClientRect(); return { x: b.left + b.width / 2 - c.left, y: b.top + b.height / 2 - c.top }; })),
         (heroWord = motionWord()),
         (heroH1 = el('h1', {}, 'Livestream your coins.')),
-        (heroLead = el('p', { class: 'land-lead' }, 'Every PONS coin gets a stage. The dev on camera, holders in the chat, the chart moving under all of it. One page, nothing to set up.')),
+        (heroLead = el('p', { class: 'land-lead' }, 'Every PONS coin gets a stage. Showcase what you got, talk to your holders live and let the chart do the rest. One page, no setup, on air in seconds.')),
         (heroCta = el('div', { class: 'land-cta' }, el('button', { class: 'ui-btn ui-btn-primary land-btn', onclick: goLiveEntry }, el('span', { class: 'ui-btn-label' }, 'Go live')), el('a', { class: 'ui-btn land-btn land-btn-ghost', href: '/explore', 'data-link': '' }, el('span', { class: 'ui-btn-label' }, 'Explore coins')))),
         (heroStats = el('div', { class: 'land-stats' }, sCoins.el, sLive.el, sWatch.el))),
       liveSec,
